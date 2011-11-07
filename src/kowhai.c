@@ -29,11 +29,14 @@ int kowhai_get_setting_size(int setting_type)
     }
 }
 
-int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* symbols, int symbols_matched)
+int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* symbols, int symbols_matched, int* finished, int* steps)
 {
     int offset = 0;
     do
     {
+        // increment step counter
+        (*steps)++;
+
 #ifdef KOWHAI_DBG
         printf(KOWHAI_INFO" tree->type: %d, tree->name: %d, tree->count: %d\n", tree->type, tree->name, tree->count);
 #endif
@@ -42,19 +45,31 @@ int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* s
         if (symbols_matched < num_symbols)
         {
             if (symbols[symbols_matched] == tree->name)
+            {
                 symbols_matched++;
+#ifdef KOWHAI_DBG
+                printf(KOWHAI_INFO" symbol match, tree->name: %d, symbols_matched: %d\n", tree->name, symbols_matched);
+#endif
+            }
         }
 
         // return offset if we have matched the symbols
         if (symbols_matched == num_symbols)
+        {
+#ifdef KOWHAI_DBG
+            printf(KOWHAI_INFO" return offset: %d\n", offset);
+#endif
+            *finished = 1;
             return offset;
+        }
         
         switch (tree->type)
         {
             case NODE_TYPE_BRANCH:
             {
                 // recurse into branch
-                int temp = _get_setting_offset(tree + 1, num_symbols, symbols, symbols_matched);
+                int _steps = 0;
+                int temp = _get_setting_offset(tree + 1, num_symbols, symbols, symbols_matched, finished, &_steps);
                 if (temp == -1)
                 {
 #ifdef KOWHAI_DBG
@@ -63,6 +78,19 @@ int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* s
                     return -1;
                 }
                 offset += temp * tree->count;
+                *steps += _steps;
+
+                // return offset if we have matched the symbols
+                if (*finished)
+                    return offset;
+                else
+                {
+#ifdef KOWHAI_DBG
+                    printf(KOWHAI_INFO" step tree: %d, current offset: %d\n", _steps, offset);
+#endif
+                    tree += _steps;
+                }
+
                 break;
             }
             case NODE_TYPE_END:
@@ -91,7 +119,8 @@ int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* s
 
 int kowhai_get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* symbols)
 {
-    return _get_setting_offset(tree, num_symbols, symbols, 0);
+    int finished = 0, steps = 0;
+    return _get_setting_offset(tree, num_symbols, symbols, 0, &finished, &steps);
 }
 
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, char* result);
