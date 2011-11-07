@@ -117,10 +117,63 @@ int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* s
     while (1);
 }
 
+/* TODO, this function should take a tree count for safety */
 int kowhai_get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* symbols)
 {
     int finished = 0, steps = 0;
     return _get_setting_offset(tree, num_symbols, symbols, 0, &finished, &steps);
+}
+
+int _get_branch_size(struct kowhai_node_t* tree, int* steps)
+{
+    int size = 0;
+
+    do
+    {
+        // increment step counter
+        (*steps)++;
+
+#ifdef KOWHAI_DBG
+        printf(KOWHAI_INFO" tree->type: %d, tree->name: %d, tree->count: %d\n", tree->type, tree->name, tree->count);
+#endif
+
+        switch (tree->type)
+        {
+            case NODE_TYPE_BRANCH:
+            {
+                // recurse into branch
+                int _steps = 0;
+                int branch_size = _get_branch_size(tree + 1, &_steps);
+                size += branch_size * tree->count;
+                *steps += _steps;
+                tree += _steps;
+                break;
+            }
+            case NODE_TYPE_END:
+                // return from branch
+                return size;
+            case NODE_TYPE_LEAF:
+                // append leaf settings to size
+                if (tree->param1 == LEAF_TYPE_SETTING)
+                    size += kowhai_get_setting_size(tree->param2) * tree->count;
+                break;
+            default:
+#ifdef KOWHAI_DBG
+                printf(KOWHAI_ERR" unknown node type (#2) %d\n", tree->type);
+#endif
+                return -1;
+        }
+        
+        // increment tree node pointer
+        tree++;
+    }
+    while (1);
+}
+
+int kowhai_get_branch_size(struct kowhai_node_t* tree)
+{
+    int steps = 0;
+    return _get_branch_size(tree + 1, &steps);
 }
 
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, char* result);

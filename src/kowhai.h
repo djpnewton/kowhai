@@ -34,6 +34,7 @@ struct kowhai_node_t
 
 int kowhai_get_setting_size(int setting_type);
 int kowhai_get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* symbols);
+int kowhai_get_branch_size(struct kowhai_node_t* tree);
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, char* result);
 int kowhai_get_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int16_t* result);
 int kowhai_get_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int32_t* result);
