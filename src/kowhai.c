@@ -38,17 +38,17 @@ int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* s
         (*steps)++;
 
 #ifdef KOWHAI_DBG
-        printf(KOWHAI_INFO" tree->type: %d, tree->name: %d, tree->count: %d\n", tree->type, tree->name, tree->count);
+        printf(KOWHAI_INFO" tree->type: %d, tree->symbol: %d, tree->count: %d\n", tree->type, tree->symbol, tree->count);
 #endif
 
         // match symbols here
         if (symbols_matched < num_symbols)
         {
-            if (symbols[symbols_matched] == tree->name)
+            if (symbols[symbols_matched] == tree->symbol)
             {
                 symbols_matched++;
 #ifdef KOWHAI_DBG
-                printf(KOWHAI_INFO" symbol match, tree->name: %d, symbols_matched: %d\n", tree->name, symbols_matched);
+                printf(KOWHAI_INFO" symbol match, tree->symbol: %d, symbols_matched: %d\n", tree->symbol, symbols_matched);
 #endif
             }
         }
@@ -73,7 +73,7 @@ int _get_setting_offset(struct kowhai_node_t* tree, int num_symbols, uint16_t* s
                 if (temp == -1)
                 {
 #ifdef KOWHAI_DBG
-                    printf(KOWHAI_ERR" branch parse failed, node name: %d, current offset: %d\n", tree->name, offset);
+                    printf(KOWHAI_ERR" branch parse failed, node symbol: %d, current offset: %d\n", tree->symbol, offset);
 #endif
                     return -1;
                 }
@@ -136,7 +136,7 @@ int _get_branch_size(struct kowhai_node_t* tree, int* steps)
         (*steps)++;
 
 #ifdef KOWHAI_DBG
-        printf(KOWHAI_INFO" tree->type: %d, tree->name: %d, tree->count: %d\n", tree->type, tree->name, tree->count);
+        printf(KOWHAI_INFO" tree->type: %d, tree->symbol: %d, tree->count: %d\n", tree->type, tree->symbol, tree->count);
 #endif
 
         switch (tree->type)

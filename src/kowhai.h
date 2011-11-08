@@ -7,7 +7,7 @@
 struct kowhai_node_t
 {
     uint16_t type;
-    uint16_t name;
+    uint16_t symbol;
     uint16_t count;
     uint16_t param1;
     uint16_t param2;

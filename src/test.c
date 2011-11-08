@@ -4,20 +4,20 @@
 #include <assert.h>
 
 //
-// treenode name symbols
+// treenode symbols
 //
 
-#define NAME_GENERAL       0
-#define NAME_START         1
-#define NAME_STOP          2
-#define NAME_RUNNING       3
-#define NAME_FLUXCAPACITOR 4
-#define NAME_FREQUENCY     5
-#define NAME_COEFFICIENT   6
-#define NAME_GAIN          7
-#define NAME_OVEN          8
-#define NAME_TEMP          9
-#define NAME_TIMEOUT       10
+#define SYM_GENERAL       0
+#define SYM_START         1
+#define SYM_STOP          2
+#define SYM_RUNNING       3
+#define SYM_FLUXCAPACITOR 4
+#define SYM_FREQUENCY     5
+#define SYM_COEFFICIENT   6
+#define SYM_GAIN          7
+#define SYM_OVEN          8
+#define SYM_TEMP          9
+#define SYM_TIMEOUT       10
 
 //
 // settings tree definition
@@ -28,20 +28,20 @@
 
 struct kowhai_node_t settings_tree[] =
 {
-    { NODE_TYPE_BRANCH, NAME_GENERAL,       1, 0, 0 },
-    { NODE_TYPE_LEAF,   NAME_START,         0, LEAF_TYPE_ACTION, 0 },
-    { NODE_TYPE_LEAF,   NAME_STOP,          0, LEAF_TYPE_ACTION, 0 },
-    { NODE_TYPE_LEAF,   NAME_RUNNING,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UCHAR },
-    { NODE_TYPE_BRANCH, NAME_FLUXCAPACITOR, FLUX_CAP_COUNT, 0, 0 },
-    { NODE_TYPE_LEAF,   NAME_FREQUENCY,     1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   NAME_GAIN,          1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   NAME_COEFFICIENT,   COEFF_COUNT, LEAF_TYPE_SETTING, SETTING_TYPE_FLOAT },
-    { NODE_TYPE_END,    NAME_FLUXCAPACITOR, 0, 0, 0 },
-    { NODE_TYPE_BRANCH, NAME_OVEN,          1, 0, 0 },
-    { NODE_TYPE_LEAF,   NAME_TEMP,          1, LEAF_TYPE_SETTING, SETTING_TYPE_INT16 },
-    { NODE_TYPE_LEAF,   NAME_TIMEOUT,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT16 },
-    { NODE_TYPE_END,    NAME_OVEN,          0, 0, 0 },
-    { NODE_TYPE_END,    NAME_GENERAL,       0, 0, 0 },
+    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0, 0 },
+    { NODE_TYPE_LEAF,   SYM_START,         0, LEAF_TYPE_ACTION, 0 },
+    { NODE_TYPE_LEAF,   SYM_STOP,          0, LEAF_TYPE_ACTION, 0 },
+    { NODE_TYPE_LEAF,   SYM_RUNNING,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UCHAR },
+    { NODE_TYPE_BRANCH, SYM_FLUXCAPACITOR, FLUX_CAP_COUNT, 0, 0 },
+    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
+    { NODE_TYPE_LEAF,   SYM_GAIN,          1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
+    { NODE_TYPE_LEAF,   SYM_COEFFICIENT,   COEFF_COUNT, LEAF_TYPE_SETTING, SETTING_TYPE_FLOAT },
+    { NODE_TYPE_END,    SYM_FLUXCAPACITOR, 0, 0, 0 },
+    { NODE_TYPE_BRANCH, SYM_OVEN,          1, 0, 0 },
+    { NODE_TYPE_LEAF,   SYM_TEMP,          1, LEAF_TYPE_SETTING, SETTING_TYPE_INT16 },
+    { NODE_TYPE_LEAF,   SYM_TIMEOUT,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT16 },
+    { NODE_TYPE_END,    SYM_OVEN,          0, 0, 0 },
+    { NODE_TYPE_END,    SYM_GENERAL,       0, 0, 0 },
 };
 
 //
@@ -78,13 +78,13 @@ struct settings_tree_t
 
 int main()
 {
-    uint16_t symbols1[] = {NAME_GENERAL, NAME_OVEN, NAME_TEMP};
-    uint16_t symbols2[] = {NAME_GENERAL, NAME_OVEN, NAME_TIMEOUT};
-    uint16_t symbols3[] = {NAME_GENERAL, NAME_FLUXCAPACITOR};
+    uint16_t symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
+    uint16_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
+    uint16_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
     uint16_t symbols4[] = {431, 12343};
-    uint16_t symbols5[] = {NAME_GENERAL, NAME_RUNNING};
-    uint16_t symbols6[] = {NAME_GENERAL, NAME_FLUXCAPACITOR, NAME_GAIN};
-    uint16_t symbols7[] = {NAME_GENERAL, NAME_FLUXCAPACITOR, NAME_COEFFICIENT};
+    uint16_t symbols5[] = {SYM_GENERAL, SYM_RUNNING};
+    uint16_t symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
+    uint16_t symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
 
     struct settings_tree_t settings;
 
