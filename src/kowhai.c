@@ -177,10 +177,33 @@ int kowhai_get_branch_size(struct kowhai_node_t* tree)
 }
 
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, char* result);
-int kowhai_get_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int16_t* result);
+
+int kowhai_get_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int16_t* result)
+{
+    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols);
+    if (offset != -1)
+    {
+        *result = *((int16_t*)(settings_buffer + offset));
+        return 1;
+    }
+    return 0;
+}
+
 int kowhai_get_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int32_t* result);
 int kowhai_get_float(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, float* result);
 int kowhai_set_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, char value);
-int kowhai_set_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int16_t value);
+
+int kowhai_set_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int16_t value)
+{
+    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols);
+    if (offset != -1)
+    {
+        int16_t* target_address = (int16_t*)(settings_buffer + offset);
+        *target_address = value;
+        return 1;
+    }
+    return 0;
+}
+
 int kowhai_set_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, int32_t value);
 int kowhai_set_float(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, uint16_t* symbols, float value);

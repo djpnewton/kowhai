@@ -1,5 +1,5 @@
 CC 	   = gcc
-CFLAGS = -g -DKOWHAI_DBG
+CFLAGS = -g -UKOWHAI_DBG
 
 all: kowhai test
 
