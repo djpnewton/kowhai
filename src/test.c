@@ -82,8 +82,17 @@ int main()
     uint16_t symbols2[] = {NAME_GENERAL, NAME_OVEN, NAME_TIMEOUT};
     uint16_t symbols3[] = {NAME_GENERAL, NAME_FLUXCAPACITOR};
     uint16_t symbols4[] = {431, 12343};
+    uint16_t symbols5[] = {NAME_GENERAL, NAME_RUNNING};
+    uint16_t symbols6[] = {NAME_GENERAL, NAME_FLUXCAPACITOR, NAME_GAIN};
+    uint16_t symbols7[] = {NAME_GENERAL, NAME_FLUXCAPACITOR, NAME_COEFFICIENT};
 
     struct settings_tree_t settings;
+
+    uint8_t running;
+    uint16_t temp;
+    uint16_t timeout;
+    uint32_t gain;
+    float coeff;
 
 #ifdef KOWHAI_DBG
     printf("kowhai debugging enabled!\n");
@@ -95,6 +104,7 @@ int main()
     assert(kowhai_get_setting_offset(settings_tree, 3, symbols2) == 67);
     assert(kowhai_get_setting_offset(settings_tree, 2, symbols3) == 1);
     assert(kowhai_get_setting_offset(settings_tree, 2, symbols4) == -1);
+    assert(kowhai_get_setting_offset(settings_tree, 3, symbols6) == 5);
     printf(" passed!\n");
 
     // test branch size
@@ -104,18 +114,31 @@ int main()
     
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
-    uint16_t temp;
+    settings.running = 0;
+    assert(kowhai_set_char(settings_tree, &settings, 2, symbols5, 255));
+    assert(settings.running == 255);
+    assert(kowhai_get_char(settings_tree, &settings, 2, symbols5, &running));
+    assert(running == 255);
     settings.oven.temp = 0;
     assert(kowhai_set_int16(settings_tree, &settings, 3, symbols1, 999));
     assert(settings.oven.temp == 999);
     assert(kowhai_get_int16(settings_tree, &settings, 3, symbols1, &temp));
     assert(temp == 999);
-    uint16_t timeout;
     settings.oven.timeout = 0;
     assert(kowhai_set_int16(settings_tree, &settings, 3, symbols2, 999));
     assert(settings.oven.timeout == 999);
     assert(kowhai_get_int16(settings_tree, &settings, 3, symbols2, &timeout));
     assert(timeout == 999);
+    settings.flux_capacitor[0].gain = 0;
+    assert(kowhai_set_int32(settings_tree, &settings, 3, symbols6, 999));
+    assert(settings.flux_capacitor[0].gain == 999);
+    assert(kowhai_get_int32(settings_tree, &settings, 3, symbols6, &gain));
+    assert(gain == 999);
+    settings.flux_capacitor[0].coefficient[0] = 0;
+    assert(kowhai_set_float(settings_tree, &settings, 3, symbols7, 999.9f));
+    assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
+    assert(kowhai_get_float(settings_tree, &settings, 3, symbols7, &coeff));
+    assert(coeff == 999.9f);
     printf(" passed!\n");
 
     return 0;
