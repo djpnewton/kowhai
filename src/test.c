@@ -90,6 +90,7 @@ int main()
     union kowhai_symbol_t symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
 
     struct settings_tree_t settings;
+    int offset;
     struct kowhai_node_t* node;
 
     uint8_t running;
@@ -103,15 +104,22 @@ int main()
 #endif
 
     // test tree parsing
-    printf("test kowhai_get_setting_offset...\t");
-    assert(kowhai_get_setting_offset(settings_tree, 3, symbols1, &node) == 65);
-    assert(kowhai_get_setting_offset(settings_tree, 3, symbols2, &node) == 67);
-    assert(kowhai_get_setting_offset(settings_tree, 2, symbols3, &node) == 1);
-    assert(kowhai_get_setting_offset(settings_tree, 2, symbols4, &node) == -1);
-    assert(kowhai_get_setting_offset(settings_tree, 3, symbols6, &node) == 5);
-    assert(kowhai_get_setting_offset(settings_tree, 3, symbols8, &node) == 1 + sizeof(struct flux_capacitor_t) + 4);
-    assert(kowhai_get_setting_offset(settings_tree, 3, symbols9, &node) == 1 + sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
-    assert(kowhai_get_setting_offset(settings_tree, 3, symbols10, &node) == 1 + 8 + 3 * 4);
+    printf("test kowhai_get_setting...\t\t");
+    assert(kowhai_get_setting(settings_tree, 3, symbols1, &offset, &node));
+    assert(offset == 65);
+    assert(kowhai_get_setting(settings_tree, 3, symbols2, &offset, &node));
+    assert(offset == 67);
+    assert(kowhai_get_setting(settings_tree, 2, symbols3, &offset, &node));
+    assert(offset == 1);
+    assert(!kowhai_get_setting(settings_tree, 2, symbols4, &offset, &node));
+    assert(kowhai_get_setting(settings_tree, 3, symbols6, &offset, &node));
+    assert(offset == 5);
+    assert(kowhai_get_setting(settings_tree, 3, symbols8, &offset, &node));
+    assert(offset == 1 + sizeof(struct flux_capacitor_t) + 4);
+    assert(kowhai_get_setting(settings_tree, 3, symbols9, &offset, &node));
+    assert(offset == 1 + sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
+    assert(kowhai_get_setting(settings_tree, 3, symbols10, &offset, &node));
+    assert(offset == 1 + 8 + 3 * 4);
     printf(" passed!\n");
 
     // test branch size

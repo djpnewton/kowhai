@@ -192,13 +192,18 @@ int _get_setting_offset(struct kowhai_node_t** tree, int num_symbols, union kowh
 }
 
 /* TODO, this function should take a tree count for safety */
-int kowhai_get_setting_offset(struct kowhai_node_t* tree, int num_symbols, union kowhai_symbol_t* symbols, struct kowhai_node_t** target_node)
+int kowhai_get_setting(struct kowhai_node_t* tree, int num_symbols, union kowhai_symbol_t* symbols, int* offset, struct kowhai_node_t** target_node)
 {
     struct kowhai_node_t* node = tree;
     int finished = 0, finished_on_leaf = 0;
-    int offset = _get_setting_offset(&node, num_symbols, symbols, 0, &finished, &finished_on_leaf);
-    *target_node = node;
-    return offset;
+    int _offset = _get_setting_offset(&node, num_symbols, symbols, 0, &finished, &finished_on_leaf);
+    if (_offset > -1)
+    {
+        *offset = _offset;
+        *target_node = node;
+        return 1;
+    }
+    return 0;
 }
 
 int kowhai_get_branch_size(struct kowhai_node_t* tree)
@@ -210,8 +215,10 @@ int kowhai_get_branch_size(struct kowhai_node_t* tree)
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, char* result)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         (KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_CHAR || KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_UCHAR))
     {
         *result = *((char*)((char*)settings_buffer + offset));
@@ -223,8 +230,10 @@ int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_s
 int kowhai_get_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         (KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_INT16 || KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_UINT16))
     {
         *result = *((int16_t*)((char*)settings_buffer + offset));
@@ -236,8 +245,10 @@ int kowhai_get_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_
 int kowhai_get_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, int32_t* result)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         (KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_INT32 || KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_UINT32))
     {
         *result = *((uint32_t*)((char*)settings_buffer + offset));
@@ -249,8 +260,10 @@ int kowhai_get_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_
 int kowhai_get_float(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, float* result)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_FLOAT)
     {
         *result = *((float*)((char*)settings_buffer + offset));
@@ -262,8 +275,10 @@ int kowhai_get_float(struct kowhai_node_t* tree, void* settings_buffer, int num_
 int kowhai_set_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, char value)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         (KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_CHAR || KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_UCHAR))
     {
         char* target_address = (char*)((char*)settings_buffer + offset);
@@ -276,8 +291,10 @@ int kowhai_set_char(struct kowhai_node_t* tree, void* settings_buffer, int num_s
 int kowhai_set_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, int16_t value)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         (KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_INT16 || KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_UINT16))
     {
         int16_t* target_address = (int16_t*)((char*)settings_buffer + offset);
@@ -290,8 +307,10 @@ int kowhai_set_int16(struct kowhai_node_t* tree, void* settings_buffer, int num_
 int kowhai_set_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, int32_t value)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         (KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_INT32 || KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_UINT32))
     {
         uint32_t* target_address = (uint32_t*)((char*)settings_buffer + offset);
@@ -304,8 +323,10 @@ int kowhai_set_int32(struct kowhai_node_t* tree, void* settings_buffer, int num_
 int kowhai_set_float(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, float value)
 {
     struct kowhai_node_t* node;
-    int offset = kowhai_get_setting_offset(tree, num_symbols, symbols, &node);
-    if (offset != -1 && node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (node->type == NODE_TYPE_LEAF && node->param1 == LEAF_TYPE_SETTING &&
         KOWHAI_RAW_SETTING_TYPE(node->param2) == SETTING_TYPE_FLOAT)
     {
         float* target_address = (float*)((char*)settings_buffer + offset);
