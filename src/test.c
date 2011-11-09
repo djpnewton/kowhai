@@ -78,13 +78,16 @@ struct settings_tree_t
 
 int main()
 {
-    uint16_t symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
-    uint16_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
-    uint16_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
-    uint16_t symbols4[] = {431, 12343};
-    uint16_t symbols5[] = {SYM_GENERAL, SYM_RUNNING};
-    uint16_t symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
-    uint16_t symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
+    union kowhai_symbol_t symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
+    union kowhai_symbol_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
+    union kowhai_symbol_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
+    union kowhai_symbol_t symbols4[] = {431, 12343};
+    union kowhai_symbol_t symbols5[] = {SYM_GENERAL, SYM_RUNNING};
+    union kowhai_symbol_t symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
+    union kowhai_symbol_t symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
+    union kowhai_symbol_t symbols8[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), SYM_GAIN};
+    union kowhai_symbol_t symbols9[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
+    union kowhai_symbol_t symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
 
     struct settings_tree_t settings;
 
@@ -105,6 +108,9 @@ int main()
     assert(kowhai_get_setting_offset(settings_tree, 2, symbols3) == 1);
     assert(kowhai_get_setting_offset(settings_tree, 2, symbols4) == -1);
     assert(kowhai_get_setting_offset(settings_tree, 3, symbols6) == 5);
+    assert(kowhai_get_setting_offset(settings_tree, 3, symbols8) == 1 + sizeof(struct flux_capacitor_t) + 4);
+    assert(kowhai_get_setting_offset(settings_tree, 3, symbols9) == 1 + sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
+    assert(kowhai_get_setting_offset(settings_tree, 3, symbols10) == 1 + 8 + 3 * 4);
     printf(" passed!\n");
 
     // test branch size
