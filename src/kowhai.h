@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define KOWHAI_SYMBOL(name, array_index) ((array_index << 16) + name)
-#define KOWHAI_RAW_SETTING_TYPE(setting_type) (setting_type & (~SETTING_TYPE_READONLY))
+#define KOWHAI_RAW_DATA_TYPE(data_type) (data_type & (~DATA_TYPE_READONLY))
 
 struct kowhai_symbol_parts_t
 {
@@ -24,8 +24,7 @@ struct kowhai_node_t
     uint16_t type;
     uint16_t symbol;
     uint16_t count;
-    uint16_t param1;
-    uint16_t param2;
+    uint16_t data_type;
 };
 
 // tree node types
@@ -33,24 +32,20 @@ struct kowhai_node_t
 #define NODE_TYPE_LEAF   1
 #define NODE_TYPE_END    2
 
-// leaf node types
-#define LEAF_TYPE_SETTING 0
-#define LEAF_TYPE_ACTION  1
-
-// leaf settings types
-#define SETTING_TYPE_CHAR     0
-#define SETTING_TYPE_UCHAR    1
-#define SETTING_TYPE_INT16    2
-#define SETTING_TYPE_UINT16   3
-#define SETTING_TYPE_INT32    4
-#define SETTING_TYPE_UINT32   5
-#define SETTING_TYPE_FLOAT    6
-#define SETTING_TYPE_READONLY 0x8000
+// leaf data types
+#define DATA_TYPE_CHAR     0
+#define DATA_TYPE_UCHAR    1
+#define DATA_TYPE_INT16    2
+#define DATA_TYPE_UINT16   3
+#define DATA_TYPE_INT32    4
+#define DATA_TYPE_UINT32   5
+#define DATA_TYPE_FLOAT    6
+#define DATA_TYPE_READONLY 0x8000
 
 /* 
- * Return the size of a setting type
+ * Return the size of a data type
  */
-int kowhai_get_setting_size(int setting_type);
+int kowhai_get_data_size(int data_type);
 
 /* 
  * Get the memory offset (and node) of a setting in the tree specified by

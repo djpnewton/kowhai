@@ -18,6 +18,8 @@
 #define SYM_OVEN          8
 #define SYM_TEMP          9
 #define SYM_TIMEOUT       10
+#define SYM_DELAY         11
+#define SYM_STATUS        11
 
 //
 // settings tree definition
@@ -28,20 +30,44 @@
 
 struct kowhai_node_t settings_tree[] =
 {
-    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0, 0 },
-    { NODE_TYPE_LEAF,   SYM_START,         0, LEAF_TYPE_ACTION, 0 },
-    { NODE_TYPE_LEAF,   SYM_STOP,          0, LEAF_TYPE_ACTION, 0 },
-    { NODE_TYPE_LEAF,   SYM_RUNNING,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UCHAR },
-    { NODE_TYPE_BRANCH, SYM_FLUXCAPACITOR, FLUX_CAP_COUNT, 0, 0 },
-    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   SYM_GAIN,          1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   SYM_COEFFICIENT,   COEFF_COUNT, LEAF_TYPE_SETTING, SETTING_TYPE_FLOAT },
-    { NODE_TYPE_END,    SYM_FLUXCAPACITOR, 0, 0, 0 },
-    { NODE_TYPE_BRANCH, SYM_OVEN,          1, 0, 0 },
-    { NODE_TYPE_LEAF,   SYM_TEMP,          1, LEAF_TYPE_SETTING, SETTING_TYPE_INT16 },
-    { NODE_TYPE_LEAF,   SYM_TIMEOUT,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT16 },
-    { NODE_TYPE_END,    SYM_OVEN,          0, 0, 0 },
-    { NODE_TYPE_END,    SYM_GENERAL,       0, 0, 0 },
+    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0 },
+    { NODE_TYPE_BRANCH, SYM_FLUXCAPACITOR, FLUX_CAP_COUNT, 0 },
+    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, DATA_TYPE_UINT32 },
+    { NODE_TYPE_LEAF,   SYM_GAIN,          1, DATA_TYPE_UINT32 },
+    { NODE_TYPE_LEAF,   SYM_COEFFICIENT,   COEFF_COUNT, DATA_TYPE_FLOAT },
+    { NODE_TYPE_END,    SYM_FLUXCAPACITOR, 0, 0 },
+    { NODE_TYPE_BRANCH, SYM_OVEN,          1, 0 },
+    { NODE_TYPE_LEAF,   SYM_TEMP,          1, DATA_TYPE_INT16 },
+    { NODE_TYPE_LEAF,   SYM_TIMEOUT,       1, DATA_TYPE_UINT16 },
+    { NODE_TYPE_END,    SYM_OVEN,          0, 0 },
+    { NODE_TYPE_END,    SYM_GENERAL,       0, 0 },
+};
+
+//
+// shadow tree definition
+//
+
+struct kowhai_node_t shadow_tree[] =
+{
+    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0 },
+    { NODE_TYPE_LEAF,   SYM_RUNNING,       1, DATA_TYPE_UCHAR },
+    { NODE_TYPE_LEAF,   SYM_STATUS,        1, DATA_TYPE_UCHAR },
+    { NODE_TYPE_END,    SYM_GENERAL,       0, 0 },
+};
+
+//
+// action tree definition
+//
+
+struct kowhai_node_t action_tree[] =
+{
+    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0 },
+    { NODE_TYPE_BRANCH, SYM_START,         1, 0 },
+    { NODE_TYPE_LEAF,   SYM_DELAY,         1, DATA_TYPE_UINT32 },
+    { NODE_TYPE_END,    SYM_START,         0, 0 },
+    { NODE_TYPE_BRANCH, SYM_STOP,          1, 0 },
+    { NODE_TYPE_END,    SYM_STOP,          0, 0 },
+    { NODE_TYPE_END,    SYM_GENERAL,       0, 0 },
 };
 
 //
@@ -65,9 +91,18 @@ struct oven_t
 
 struct settings_tree_t
 {
-    uint8_t running;
     struct flux_capacitor_t flux_capacitor[FLUX_CAP_COUNT];
     struct oven_t oven;
+};
+
+//
+// shadow tree stucts
+//
+
+struct shadow_tree_t
+{
+    uint8_t running;
+    uint8_t status;
 };
 
 #pragma pack()
@@ -82,7 +117,7 @@ int main()
     union kowhai_symbol_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
     union kowhai_symbol_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
     union kowhai_symbol_t symbols4[] = {431, 12343};
-    union kowhai_symbol_t symbols5[] = {SYM_GENERAL, SYM_RUNNING};
+    union kowhai_symbol_t symbols5[] = {SYM_GENERAL, SYM_STATUS};
     union kowhai_symbol_t symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
     union kowhai_symbol_t symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
     union kowhai_symbol_t symbols8[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), SYM_GAIN};
@@ -90,11 +125,12 @@ int main()
     union kowhai_symbol_t symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
 
     struct settings_tree_t settings;
+    struct shadow_tree_t shadow;
     int offset;
     int size;
     struct kowhai_node_t* node;
 
-    uint8_t running;
+    uint8_t status;
     uint16_t temp;
     uint16_t timeout;
     uint32_t gain;
@@ -108,20 +144,20 @@ int main()
     // test tree parsing
     printf("test kowhai_get_setting...\t\t");
     assert(kowhai_get_setting(settings_tree, 3, symbols1, &offset, &node));
-    assert(offset == 65);
+    assert(offset == 64);
     assert(kowhai_get_setting(settings_tree, 3, symbols2, &offset, &node));
-    assert(offset == 67);
+    assert(offset == 66);
     assert(kowhai_get_setting(settings_tree, 2, symbols3, &offset, &node));
-    assert(offset == 1);
+    assert(offset == 0);
     assert(!kowhai_get_setting(settings_tree, 2, symbols4, &offset, &node));
     assert(kowhai_get_setting(settings_tree, 3, symbols6, &offset, &node));
-    assert(offset == 5);
+    assert(offset == 4);
     assert(kowhai_get_setting(settings_tree, 3, symbols8, &offset, &node));
-    assert(offset == 1 + sizeof(struct flux_capacitor_t) + 4);
+    assert(offset == sizeof(struct flux_capacitor_t) + 4);
     assert(kowhai_get_setting(settings_tree, 3, symbols9, &offset, &node));
-    assert(offset == 1 + sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
+    assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
     assert(kowhai_get_setting(settings_tree, 3, symbols10, &offset, &node));
-    assert(offset == 1 + 8 + 3 * 4);
+    assert(offset == 8 + 3 * 4);
     printf(" passed!\n");
 
     // test branch size
@@ -132,13 +168,13 @@ int main()
 
     // test read/write settings
     printf("test kowhai_read/kowhai_write...\t");
-    running = 1;
-    settings.running = 0;
-    assert(kowhai_write(settings_tree, &settings, 2, symbols5, &running, 1));
-    assert(settings.running == 1);
-    running = 0;
-    assert(kowhai_read(settings_tree, &settings, 2, symbols5, &running, 1));
-    assert(running == 1);
+    status = 1;
+    shadow.status = 0;
+    assert(kowhai_write(shadow_tree, &shadow, 2, symbols5, &status, 1));
+    assert(shadow.status == 1);
+    status = 0;
+    assert(kowhai_read(shadow_tree, &shadow, 2, symbols5, &status, 1));
+    assert(status == 1);
     timeout = 999;
     settings.oven.timeout = 0;
     assert(kowhai_write(settings_tree, &settings, 3, symbols2, &timeout, sizeof(timeout)));
@@ -164,11 +200,11 @@ int main()
 
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
-    settings.running = 0;
-    assert(kowhai_set_char(settings_tree, &settings, 2, symbols5, 255));
-    assert(settings.running == 255);
-    assert(kowhai_get_char(settings_tree, &settings, 2, symbols5, &running));
-    assert(running == 255);
+    shadow.status = 0;
+    assert(kowhai_set_char(shadow_tree, &shadow, 2, symbols5, 255));
+    assert(shadow.status == 255);
+    assert(kowhai_get_char(shadow_tree, &shadow, 2, symbols5, &status));
+    assert(status == 255);
     settings.oven.temp = 0;
     assert(kowhai_set_int16(settings_tree, &settings, 3, symbols1, 999));
     assert(settings.oven.temp == 999);
