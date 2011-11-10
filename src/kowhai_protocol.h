@@ -7,28 +7,22 @@
 // Protocol commands
 //
 
-// Write a setting
-#define CMD_WRITE_SETTING        0x00
-#define CMD_WRITE_SETTING_SHADOW 0x01
-// Acknowledge write setting command
-#define CMD_WRITE_SETTING_ACK    0x0F
-// Read a setting
-#define CMD_READ_SETTING         0x10
-#define CMD_READ_SETTING_SHADOW  0x11
-// Acknowledge read setting command (and return setting contents)
-#define CMD_READ_SETTING_ACK     0x1F
-// Acknowledge read setting command (this is the final packet)
-#define CMD_READ_SETTING_ACK_END 0x1E
-// Trigger an action
-#define CMD_TRIGGER_ACTION       0x20
-// Acknowledge trigger action command
-#define CMD_TRIGGER_ACTION_ACK   0x2F
-// Read the tree
-#define CMD_READ_TREE            0xF0
+// Write tree data
+#define CMD_WRITE_DATA              0x00
+// Acknowledge write tree data command
+#define CMD_WRITE_DATA_ACK          0x0F
+// Read tree data
+#define CMD_READ_DATA               0x10
+// Acknowledge read tree data command (and return the data)
+#define CMD_READ_DATA_ACK           0x1F
+// Acknowledge read tree data command (this is the final packet)
+#define CMD_READ_DATA_ACK_END       0x1E
+// Read the tree descriptor
+#define CMD_READ_DESCRIPTOR         0xF0
 // Acknowledge read tree command (and return tree contents)
-#define CMD_READ_TREE_ACK        0xFF
+#define CMD_READ_DESCRIPTOR_ACK     0xFF
 // Acknowledge read tree command (this is the final packet)
-#define CMD_READ_TREE_ACK_END    0xFE
+#define CMD_READ_DESCRIPTOR_ACK_END 0xFE
 
 //
 // Functions

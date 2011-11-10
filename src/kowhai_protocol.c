@@ -11,6 +11,7 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, uint8_t* tree_id,
     int header_plus_syms_size;
     union kowhai_symbol_t* symbols;
     
+    *tree_id = -1;
     *cmd = -1;
     *node = NULL;
     *node_offset = -1;
@@ -22,10 +23,14 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, uint8_t* tree_id,
         return 0;
 
     // establish tree id
-    *cmd = *((uint8_t*)proto_packet);
+    *tree_id = *((uint8_t*)proto_packet);
 
     // establish protocol command
     *cmd = *((uint8_t*)proto_packet + 1);
+
+    // read descriptor command requires no more parameters
+    if (*cmd == CMD_READ_DESCRIPTOR)
+        return 1;
 
     // get symbol count
     symbol_count = *((uint8_t*)proto_packet + 2);
@@ -44,18 +49,10 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, uint8_t* tree_id,
 
     switch (*cmd)
     {
-        case CMD_WRITE_SETTING:
-        case CMD_WRITE_SETTING_SHADOW:
+        case CMD_WRITE_DATA:
             //TODO
             break;
-        case CMD_READ_SETTING:
-        case CMD_READ_SETTING_SHADOW:
-            //TODO
-            break;
-        case CMD_TRIGGER_ACTION:
-            //TODO
-            break;
-        case CMD_READ_TREE:
+        case CMD_READ_DATA:
             //TODO
             break;
         default:
