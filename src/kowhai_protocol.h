@@ -36,13 +36,14 @@
 
 /*
  * Parse a protocol packet and return the:
- *   - protocol command
+ *   - tree id
+ *   - tree command
  *   - referenced node
  *   - node memory offset in the tree
  *   - payload offset (if reading or writing a setting, or reading the tree)
  *   - payload (if reading or writing a setting, or reading the tree)
  */
-int kowhai_protocol_parse(void* proto_packet, int packet_size, uint8_t* cmd, struct kowhai_node_t** node, int* node_offset, int* payload_offset, void** payload);
+int kowhai_protocol_parse(void* proto_packet, int packet_size, uint8_t* tree_id, uint8_t* cmd, struct kowhai_node_t** node, int* node_offset, int* payload_offset, void** payload);
 
 #endif
 
