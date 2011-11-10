@@ -9,9 +9,12 @@ test: src/test.o src/kowhai.o
 src/test.o: src/test.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-kowhai: src/kowhai.o
+kowhai: src/kowhai.o src/kowhai_protocol.o
 
 src/kowhai.o: src/kowhai.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/kowhai_protocol.o: src/kowhai_protocol.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean: 

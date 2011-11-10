@@ -21,9 +21,15 @@
     <ClCompile Include="..\src\test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\kowhai_protocol.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\kowhai.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\kowhai_protocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
