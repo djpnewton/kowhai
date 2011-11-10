@@ -1,5 +1,7 @@
 #include "kowhai.h"
 
+#include <string.h>
+
 #ifdef KOWHAI_DBG
 #include <stdio.h>
 #define KOWHAI_ERR "KOWHAI ERROR:"
@@ -216,6 +218,58 @@ int kowhai_get_branch_size(struct kowhai_node_t* tree, int* size)
         return 1;
     }
     return 0;
+}
+
+int _get_node_size(struct kowhai_node_t* node)
+{
+    switch (node->type)
+    {
+        case NODE_TYPE_BRANCH:
+        {
+            int branch_size;
+            if (kowhai_get_branch_size(node, &branch_size))
+                return branch_size;
+            else
+                return -1;
+            break;
+        }
+        case NODE_TYPE_LEAF:
+            if (node->param1 == LEAF_TYPE_SETTING)
+            {
+                int leaf_size = kowhai_get_setting_size(node->param2);
+                leaf_size *= node->count;
+                return leaf_size;
+            }
+            else
+                return -1;
+            break;
+        default:
+            return -1;
+    }
+}
+
+int kowhai_read(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, void* result, int read_size)
+{
+    struct kowhai_node_t* node;
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (read_size > _get_node_size(node))
+        return 0;
+    memcpy(result, (char*)settings_buffer + offset, read_size);
+    return 1;
+}
+
+int kowhai_write(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, void* value, int write_size)
+{
+    struct kowhai_node_t* node;
+    int offset;
+    if (!kowhai_get_setting(tree, num_symbols, symbols, &offset, &node))
+        return 0;
+    if (write_size > _get_node_size(node))
+        return 0;
+    memcpy((char*)settings_buffer + offset, value, write_size);
+    return 1;
 }
 
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, char* result)

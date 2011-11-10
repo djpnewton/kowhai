@@ -64,6 +64,20 @@ int kowhai_get_setting(struct kowhai_node_t* tree, int num_symbols, union kowhai
 int kowhai_get_branch_size(struct kowhai_node_t* tree, int* size);
 
 /*
+ * Read from a settings buffer starting at a symbol path
+ * @param result, the buffer to read the result into
+ * @param read_size, the number of bytes to read into the result
+ */
+int kowhai_read(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, void* result, int read_size);
+
+/*
+ * Write to a settings buffer starting at a symbol path
+ * @param value, the buffer to write from
+ * @param write_size, the number of bytes to write into the settings buffer
+ */
+int kowhai_write(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, void* value, int write_size);
+
+/*
  * Get a single byte char setting specified by a symbol path from a settings buffer
  */
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, char* result);

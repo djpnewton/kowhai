@@ -99,6 +99,7 @@ int main()
     uint16_t timeout;
     uint32_t gain;
     float coeff;
+    struct flux_capacitor_t flux_capacitor;
 
 #ifdef KOWHAI_DBG
     printf("kowhai debugging enabled!\n");
@@ -128,7 +129,39 @@ int main()
     assert(kowhai_get_branch_size(settings_tree, &size));
     assert(size == sizeof(struct settings_tree_t));
     printf(" passed!\n");
-    
+
+    // test read/write settings
+    printf("test kowhai_read/kowhai_write...\t");
+    running = 1;
+    settings.running = 0;
+    assert(kowhai_write(settings_tree, &settings, 2, symbols5, &running, 1));
+    assert(settings.running == 1);
+    running = 0;
+    assert(kowhai_read(settings_tree, &settings, 2, symbols5, &running, 1));
+    assert(running == 1);
+    timeout = 999;
+    settings.oven.timeout = 0;
+    assert(kowhai_write(settings_tree, &settings, 3, symbols2, &timeout, sizeof(timeout)));
+    assert(settings.oven.timeout == 999);
+    timeout = 0;
+    assert(kowhai_read(settings_tree, &settings, 3, symbols2, &timeout, sizeof(timeout)));
+    assert(timeout == 999);
+    flux_capacitor.frequency = 100; flux_capacitor.gain = 200;
+    settings.flux_capacitor[0].frequency = 0; settings.flux_capacitor[0].gain = 0;
+    assert(kowhai_write(settings_tree, &settings, 2, symbols3, &flux_capacitor, sizeof(flux_capacitor)));
+    assert(settings.flux_capacitor[0].frequency == 100 && settings.flux_capacitor[0].gain == 200);
+    flux_capacitor.frequency = 0; flux_capacitor.gain = 0;
+    assert(kowhai_read(settings_tree, &settings, 2, symbols3, &flux_capacitor, sizeof(flux_capacitor)));
+    assert(flux_capacitor.frequency == 100 && flux_capacitor.gain == 200);
+    coeff = 999.9f;
+    settings.flux_capacitor[1].coefficient[3] = 0;
+    assert(kowhai_write(settings_tree, &settings, 3, symbols9, &coeff, sizeof(coeff)));
+    assert(settings.flux_capacitor[1].coefficient[3] == 999.9f);
+    coeff = 0;
+    assert(kowhai_read(settings_tree, &settings, 3, symbols9, &coeff, sizeof(coeff)));
+    assert(coeff == 999.9f);
+    printf(" passed!\n");
+
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
     settings.running = 0;
