@@ -91,6 +91,7 @@ int main()
 
     struct settings_tree_t settings;
     int offset;
+    int size;
     struct kowhai_node_t* node;
 
     uint8_t running;
@@ -124,7 +125,8 @@ int main()
 
     // test branch size
     printf("test kowhai_get_branch_size...\t\t");
-    assert(kowhai_get_branch_size(settings_tree) == sizeof(struct settings_tree_t));
+    assert(kowhai_get_branch_size(settings_tree, &size));
+    assert(size == sizeof(struct settings_tree_t));
     printf(" passed!\n");
     
     // test set/get settings

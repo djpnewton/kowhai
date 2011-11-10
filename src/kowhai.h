@@ -52,16 +52,16 @@ struct kowhai_node_t
  */
 int kowhai_get_setting_size(int setting_type);
 
-/* Return the memory offset of a setting in the tree specified by
+/* 
+ * Get the memory offset (and node) of a setting in the tree specified by
  * a symbol path (array of symbols).
- * This function also supplies the settings node specified in the symbol path
  */
 int kowhai_get_setting(struct kowhai_node_t* tree, int num_symbols, union kowhai_symbol_t* symbols, int* offset, struct kowhai_node_t** target_node);
 
 /* 
- * Return the memory size of a branch of settings
+ * Get the memory size of a branch of settings
  */
-int kowhai_get_branch_size(struct kowhai_node_t* tree);
+int kowhai_get_branch_size(struct kowhai_node_t* tree, int* size);
 
 /*
  * Get a single byte char setting specified by a symbol path from a settings buffer

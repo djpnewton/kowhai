@@ -206,10 +206,16 @@ int kowhai_get_setting(struct kowhai_node_t* tree, int num_symbols, union kowhai
     return 0;
 }
 
-int kowhai_get_branch_size(struct kowhai_node_t* tree)
+int kowhai_get_branch_size(struct kowhai_node_t* tree, int* size)
 {
     int steps = 0;
-    return _get_branch_size(tree + 1, &steps);
+    int _size = _get_branch_size(tree + 1, &steps);
+    if (_size > -1)
+    {
+        *size = _size;
+        return 1;
+    }
+    return 0;
 }
 
 int kowhai_get_char(struct kowhai_node_t* tree, void* settings_buffer, int num_symbols, union kowhai_symbol_t* symbols, char* result)
