@@ -19,34 +19,41 @@
 #define SYM_TEMP          9
 #define SYM_TIMEOUT       10
 
+
 //
-// settings tree definition
+// settings tree
 //
 
 #define FLUX_CAP_COUNT 2
 #define COEFF_COUNT    6
 
-struct kowhai_node_t settings_tree[] =
+// settings descriptor
+
+struct kowhai_node_t settings_desc[] =
 {
-    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0, 0 },
-    { NODE_TYPE_LEAF,   SYM_START,         0, LEAF_TYPE_ACTION, 0 },
-    { NODE_TYPE_LEAF,   SYM_STOP,          0, LEAF_TYPE_ACTION, 0 },
-    { NODE_TYPE_LEAF,   SYM_RUNNING,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UCHAR },
-    { NODE_TYPE_BRANCH, SYM_FLUXCAPACITOR, FLUX_CAP_COUNT, 0, 0 },
-    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   SYM_GAIN,          1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   SYM_COEFFICIENT,   COEFF_COUNT, LEAF_TYPE_SETTING, SETTING_TYPE_FLOAT },
-    { NODE_TYPE_END,    SYM_FLUXCAPACITOR, 0, 0, 0 },
-    { NODE_TYPE_BRANCH, SYM_OVEN,          1, 0, 0 },
-    { NODE_TYPE_LEAF,   SYM_TEMP,          1, LEAF_TYPE_SETTING, SETTING_TYPE_INT16 },
-    { NODE_TYPE_LEAF,   SYM_TIMEOUT,       1, LEAF_TYPE_SETTING, SETTING_TYPE_UINT16 },
-    { NODE_TYPE_END,    SYM_OVEN,          0, 0, 0 },
-    { NODE_TYPE_END,    SYM_GENERAL,       0, 0, 0 },
+	// root level
+	{ BRANCH_START, 	SYM_GENERAL, 		1 },
+	{ UINT8_T, 			SYM_RUNNING, 		1 },
+	
+	// our flux capacitors
+	{ BRANCH_START, 	SYM_FLUXCAPACITOR, 	FLUX_CAP_COUNT },
+	{ UINT32_T,			SYM_FREQUENCY, 		1 },
+	{ UINT32_T,			SYM_GAIN,	 		1 },
+	{ FLOAT_T, 			SYM_COEFFICIENT,	COEFF_COUNT },
+	{ BRANCH_END, 		SYM_FLUXCAPACITOR,	FLUX_CAP_COUNT },
+
+	// our oven
+	{ BRANCH_START, 	SYM_OVEN, 			1 },
+	{ UINT16_T, 		SYM_TEMP, 			1 },
+	{ UINT16_T, 		SYM_TIMEOUT, 		1 },
+	{ BRANCH_END, 		SYM_OVEN,			1 },
+
+	// end of root 
+	{ BRANCH_END, 		SYM_GENERAL, 		1 },
 };
 
-//
-// settings tree structs
-//
+
+// settings buffers 
 
 #pragma pack(1)
 
@@ -63,14 +70,38 @@ struct oven_t
     uint16_t timeout;
 };
 
-struct settings_tree_t
+struct settings_buf_t
 {
     uint8_t running;
     struct flux_capacitor_t flux_capacitor[FLUX_CAP_COUNT];
     struct oven_t oven;
 };
 
+struct settings_buf_t settings_buf =
+{
+	// general
+	255,
+
+	// flux capacitors
+	{
+		{ 1000, 10, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6} },
+		{ 2000,	20, {0.7, 0.8, 0.9, 1.1, 1.2, 1.3} },
+	},
+
+	// oven
+	{ 180, 30 },
+};
+
 #pragma pack()
+
+// settings tree
+struct kowhai_tree_t tree = 
+{
+	settings_desc,
+	KOWHAI_DESC_SIZE(settings_desc),
+	&settings_buf,
+};
+
 
 //
 // main
@@ -78,18 +109,46 @@ struct settings_tree_t
 
 int main()
 {
-    union kowhai_symbol_t symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
-    union kowhai_symbol_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
-    union kowhai_symbol_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
-    union kowhai_symbol_t symbols4[] = {431, 12343};
-    union kowhai_symbol_t symbols5[] = {SYM_GENERAL, SYM_RUNNING};
-    union kowhai_symbol_t symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
-    union kowhai_symbol_t symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
-    union kowhai_symbol_t symbols8[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), SYM_GAIN};
-    union kowhai_symbol_t symbols9[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
-    union kowhai_symbol_t symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
+	// basic type tests
+	assert(kowhai_get_node_type_size(BRANCH_START) == 0);
+	assert(kowhai_get_node_type_size(BRANCH_END) == 0);
+	assert(kowhai_get_node_type_size(INT8_T) == 1);
+	assert(kowhai_get_node_type_size(UINT8_T) == 1);
+	assert(kowhai_get_node_type_size(INT32_T) == 4);
+	assert(kowhai_get_node_type_size(UINT32_T) == 4);
 
-    struct settings_tree_t settings;
+	int nodes = 12;
+	assert(kowhai_get_node_size(&tree.desc[1], NULL) == sizeof(settings_buf.running)); 			// size of running
+	assert(kowhai_get_node_size(&tree.desc[7], NULL) == sizeof(settings_buf.oven)); 			// size of oven
+	assert(kowhai_get_node_size(&tree.desc[2], NULL) == sizeof(settings_buf.flux_capacitor)); 	// size of fluxcap
+	assert(kowhai_get_node_size(tree.desc, &nodes) == sizeof(struct settings_buf_t)); 			// size of everything 
+	assert(nodes == 12);
+
+	uint16_t offset;
+	union kowhai_path_item path1[] = {SYM_GENERAL, SYM_RUNNING};
+	nodes = 12;
+	assert(seek_item(tree.desc, &nodes, 2, path1, NULL) == 0);
+	nodes = 12;
+	assert(seek_item(tree.desc, &nodes, 2, path1, &offset) == 0);
+	assert(offset == 0);
+	union kowhai_path_item path2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
+	assert(seek_item(tree.desc, NULL, 3, path2, NULL) == 67);
+	nodes = 12;
+	assert(seek_item(tree.desc, &nodes, 3, path2, NULL) == 67);
+	assert(seek_item(tree.desc, NULL, 3, path2, &offset) == 67);
+	assert(offset == 67);
+#if 0
+    union kowhai_node_address symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
+    union kowhai_node_address symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
+    union kowhai_node_address symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
+    union kowhai_node_address symbols4[] = {431, 12343};
+    union kowhai_node_address symbols5[] = {SYM_GENERAL, SYM_RUNNING};
+    union kowhai_node_address symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
+    union kowhai_node_address symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
+    union kowhai_node_address symbols8[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), SYM_GAIN};
+    union kowhai_node_address symbols9[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
+    union kowhai_node_address symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
+
     int offset;
     int size;
     struct kowhai_node_t* node;
@@ -162,6 +221,7 @@ int main()
     assert(coeff == 999.9f);
     printf(" passed!\n");
 
+#if 0
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
     settings.running = 0;
@@ -189,6 +249,9 @@ int main()
     assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
     assert(kowhai_get_float(settings_tree, &settings, 3, symbols7, &coeff));
     assert(coeff == 999.9f);
+#endif
+
+#endif
     printf(" passed!\n");
 
     return 0;

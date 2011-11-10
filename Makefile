@@ -1,5 +1,5 @@
 CC 	   = gcc
-CFLAGS = -g -UKOWHAI_DBG
+CFLAGS = -g -DKOWHAI_DBG
 
 all: kowhai test
 
@@ -9,7 +9,7 @@ test: src/test.o src/kowhai.o
 src/test.o: src/test.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-kowhai: src/kowhai.o src/kowhai_protocol.o
+kowhai: src/kowhai.o
 
 src/kowhai.o: src/kowhai.c
 	$(CC) $(CFLAGS) -c -o $@ $<
