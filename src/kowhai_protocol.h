@@ -36,14 +36,20 @@ struct kowhai_protocol_header_t
     union kowhai_symbol_t* symbols;
 };
 
-struct kowhai_protocol_payload_t
+struct kowhai_protocol_payload_spec_t
 {
     uint16_t type;
     uint16_t count;
     uint16_t offset;
     uint16_t size;
+};
+
+struct kowhai_protocol_payload_t
+{
+    struct kowhai_protocol_payload_spec_t spec;
     void* data;
 };
+
 
 struct kowhai_protocol_t
 {
@@ -64,11 +70,9 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
 
 /*
  * Parse a protocol packet and return the:
- *   - protocol header
+ *   - protocol header and payload information
+ *   - node memory offset in the tree data
  *   - referenced node
- *   - node memory offset in the tree
- *   - payload offset (if reading or writing a setting, or reading the tree)
- *   - payload (if reading or writing a setting, or reading the tree)
  */
 int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_node_t* tree_descriptor, struct kowhai_protocol_t* protocol);
 

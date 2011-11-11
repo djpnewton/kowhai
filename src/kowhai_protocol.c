@@ -1,6 +1,7 @@
 #include "kowhai_protocol.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #define TREE_ID_SIZE 1
 #define CMD_SIZE 1
@@ -14,6 +15,17 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
     // establish tree id
     *tree_id = *((uint8_t*)proto_packet);
 
+    return 1;
+}
+
+int _parse_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+{
+    if (packet_size < sizeof(struct kowhai_protocol_payload_spec_t))
+        return 0;
+    memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_payload_spec_t));
+    if (payload->spec.size > packet_size - sizeof(struct kowhai_protocol_payload_spec_t))
+        return 0;
+    payload->data = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_payload_spec_t));
     return 1;
 }
 
@@ -37,10 +49,10 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_nod
     {
         protocol->header.symbol_count = 0;
         protocol->header.symbols = NULL;
-        protocol->payload.type = -1;
-        protocol->payload.count = -1;
-        protocol->payload.offset = -1;
-        protocol->payload.size = -1;
+        protocol->payload.spec.type = -1;
+        protocol->payload.spec.count = -1;
+        protocol->payload.spec.offset = -1;
+        protocol->payload.spec.size = -1;
         protocol->payload.data = NULL;
         protocol->node_offset = -1;
         return 1;
@@ -61,17 +73,15 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_nod
     // get symbol array
     protocol->header.symbols = (union kowhai_symbol_t*)((uint8_t*)proto_packet + TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE);
     
-    // increment proto_packet pointer
-    proto_packet = (void*)((uint8_t*)proto_packet + packet_to_syms_size);
-    packet_size -= packet_to_syms_size;
-
     switch (protocol->header.command)
     {
         case CMD_WRITE_DATA:
         {
             struct kowhai_node_t* target;
-            //TODO fill out protocol.payload
-            int result = kowhai_get_setting(tree_descriptor, protocol->header.symbol_count, protocol->header.symbols, &protocol->node_offset, &target);
+            int result;
+            if (!_parse_payload((void*)((uint8_t*)proto_packet + packet_to_syms_size), packet_size - packet_to_syms_size, &protocol->payload))
+                return 0;
+            result = kowhai_get_node(tree_descriptor, protocol->header.symbol_count, protocol->header.symbols, &protocol->node_offset, &target);
             if (result)
             {
                 protocol->node = *target;
@@ -82,8 +92,10 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_nod
         case CMD_READ_DATA:
         {
             struct kowhai_node_t* target;
-            //TODO fill out protocol.payload
-            int result = kowhai_get_setting(tree_descriptor, protocol->header.symbol_count, protocol->header.symbols, &protocol->node_offset, &target);
+            int result;
+            if (!_parse_payload((void*)((uint8_t*)proto_packet + packet_to_syms_size), packet_size - packet_to_syms_size, &protocol->payload))
+                return 0;
+            result = kowhai_get_node(tree_descriptor, protocol->header.symbol_count, protocol->header.symbols, &protocol->node_offset, &target);
             if (result)
             {
                 protocol->node = *target;
