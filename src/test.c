@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include <stddef.h>
 
 //
 // treenode symbols
@@ -137,6 +138,16 @@ int main()
 	assert(seek_item(tree.desc, &nodes, 3, path2, NULL) == 67);
 	assert(seek_item(tree.desc, NULL, 3, path2, &offset) == 67);
 	assert(offset == 67);
+
+	nodes = 12;
+	union kowhai_path_item path3[] = {SYM_GENERAL, FULL_PATH(SYM_FLUXCAPACITOR, 1), FULL_PATH(SYM_COEFFICIENT, 2)};
+	assert (seek_item(tree.desc, NULL, 3, path3, NULL) == offsetof(struct settings_buf_t, flux_capacitor[1].coefficient[2]));
+	assert (seek_item(tree.desc, &nodes, 3, path3, &offset) == offsetof(struct settings_buf_t, flux_capacitor[1].coefficient[2]));
+	nodes = 12;
+	union kowhai_path_item path4[] = {SYM_GENERAL, FULL_PATH(SYM_FLUXCAPACITOR, 0), FULL_PATH(SYM_COEFFICIENT, 5)};
+	assert (seek_item(tree.desc, NULL, 3, path4, NULL) == offsetof(struct settings_buf_t, flux_capacitor[0].coefficient[5]));
+	assert (seek_item(tree.desc, &nodes, 3, path4, &offset) == offsetof(struct settings_buf_t, flux_capacitor[0].coefficient[5]));
+
 #if 0
     union kowhai_node_address symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
     union kowhai_node_address symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};

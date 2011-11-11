@@ -79,6 +79,8 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count)
 				break;
 			}
 			case BRANCH_END:
+				// accumulate the hole array
+				size *= node[0].count;
 				goto done;
 			
 			// accumulate the size of all the other node_count
@@ -95,7 +97,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count)
 done:
 	if (node_count != NULL)
 		*node_count = i+1;
-	return size * node[0].count;
+	return size;
 	
 }
 
@@ -112,6 +114,8 @@ int seek_item(const struct kowhai_node_t *node, int *node_count, int path_items,
 	int i;
 	uint16_t _offset = 0;
 	uint16_t _node_count = 0xFFFF;
+	uint16_t found_item_size;
+	int remaining_nodes;
 
 	// if node_count is non null then limit the search items
 	if (node_count != NULL)
@@ -128,21 +132,21 @@ int seek_item(const struct kowhai_node_t *node, int *node_count, int path_items,
 			case BRANCH_END:
 				// if we got a branch end then we didn't find it on this path
 				#ifdef KOWHAI_DBG
-				printf(KOWHAI_ERR" dead end on branch: %d\n", node[i].symbol);
+				printf(KOWHAI_INFO" dead end on branch: %d\n", node[i].symbol);
 				#endif
 				return -1;
 			case BRANCH_START:
 			default:
 				// if the path symbols match and the item array is large enough to contain our index this could be it ...
 				#ifdef KOWHAI_DBG
-				printf(KOWHAI_ERR" node.sym = %d, path.sym = %d, node.count = %d path_items = %d\n", node[i].symbol, path->full.symbol, node[i].count, path_items);
+				printf(KOWHAI_INFO" node.sym = %d, path.sym = %d, node.count = %d path_items = %d\n", node[i].symbol, path->full.symbol, node[i].count, path_items);
 				#endif
 				if ((path->full.symbol == node[i].symbol) && (node[i].count > path->full.index))
 				{
 					if (path_items == 1)
 					{
 						#ifdef KOWHAI_DBG
-						printf(KOWHAI_ERR" found symbol: %d\n", node[i].symbol);
+						printf(KOWHAI_INFO" found symbol: %d\n", node[i].symbol);
 						#endif
 						// the path fully match in values and length so this is the item we are looking for
 						goto done;
@@ -152,7 +156,7 @@ int seek_item(const struct kowhai_node_t *node, int *node_count, int path_items,
 					{
 						// this is not the item but it maybe in this branch so drill baby drill
 						#ifdef KOWHAI_DBG
-						printf(KOWHAI_ERR" drill on branch: %d\n", node[i].symbol);
+						printf(KOWHAI_INFO" drill on branch: %d\n", node[i].symbol);
 						#endif
 						uint16_t branch_offset = 0;					// offset into this branch for the item
 						int branch_node_count = _node_count - i;	// max nodes to search from here
@@ -163,9 +167,8 @@ int seek_item(const struct kowhai_node_t *node, int *node_count, int path_items,
 						if (ret == -1)
 							// branch ended without finding our item so continue to next item
 							break;
-						// we found the item in this branch so update _offset and i
+						// we found the item in this branch so update _offset
 						_offset += branch_offset;
-						i += branch_node_count - 1;
 						goto done;
 					}
 				}
@@ -174,22 +177,41 @@ int seek_item(const struct kowhai_node_t *node, int *node_count, int path_items,
 		
 		// this item is not a match so skip it (find out how many bytes and nodes to skip)
 		#ifdef KOWHAI_DBG
-		printf(KOWHAI_ERR" doing skip on symbol: %d\n", node[i].symbol);
+		printf(KOWHAI_INFO" doing skip on symbol: %d\n", node[i].symbol);
 		#endif
 		skip_nodes = _node_count - i; // max nodes left
 		skip_size = kowhai_get_node_size(&node[i], &skip_nodes);
+		if (skip_size < 0)
+			// propagate the error
+			return skip_size;
 		#ifdef KOWHAI_DBG
-		printf(KOWHAI_ERR" skipping %d nodes and %d bytes on symbol: %d\n", skip_nodes, skip_size, node[i].symbol);
+		printf(KOWHAI_INFO" skipping %d nodes and %d bytes on symbol: %d\n", skip_nodes, skip_size, node[i].symbol);
 		#endif
 		_offset += skip_size;
 		i += skip_nodes - 1;
 	}
 
 done:
+	
+	// we are pointing at the root of this setting but now we need to move to the correct array index
+	// all we need is (the size of this node / its count) * index bytes offset
+	remaining_nodes = _node_count - i; // max nodes left
+	found_item_size = kowhai_get_node_size(&node[i], &remaining_nodes);
+	if (found_item_size < 0)
+		return found_item_size;
+	_offset += (found_item_size / node[i].count) * path->full.index;
+	#ifdef KOWHAI_DBG
+	printf(KOWHAI_INFO" shifting offset by index %d, bytes %d, node.count = %d node.sym = %d\n", path->full.index, (found_item_size / node[i].count) * path->full.index, node[i].count, node[i].symbol);
+	printf(KOWHAI_INFO" found_item_size = %d, remaining_nodes = %d \n", found_item_size, remaining_nodes);
+	#endif
+
 	if (node_count != NULL)
 		*node_count = i + 1;
 	if (offset != NULL)
 		*offset = _offset;
+	#ifdef KOWHAI_DBG
+	printf(KOWHAI_INFO" returning\n");
+	#endif
 	return _offset;	// success
 }
 

@@ -48,6 +48,7 @@ union kowhai_path_item
 		uint16_t index;			///< zero based array index of this node
 	} full;
 };
+#define FULL_PATH(symbol, index) (((uint16_t)index << 16) + symbol) ///@todo this sucks because it is endian sensative !!
 
 
 /**
