@@ -18,6 +18,6 @@ src/kowhai_protocol.o: src/kowhai_protocol.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean: 
-	rm -f test.exe src/test.o src/kowhai.o
+	rm -f test.exe src/test.o src/kowhai.o src/kowhai_protocol.o
 
 .PHONY: clean
