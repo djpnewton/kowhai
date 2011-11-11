@@ -55,8 +55,6 @@ struct kowhai_protocol_t
 {
     struct kowhai_protocol_header_t header;
     struct kowhai_protocol_payload_t payload;
-    int node_offset;
-    struct kowhai_node_t node;
 };
 
 //
@@ -74,7 +72,14 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
  *   - node memory offset in the tree data
  *   - referenced node
  */
-int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_node_t* tree_descriptor, struct kowhai_protocol_t* protocol);
+int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol);
+
+/*
+ * Create a protocol packet
+ * If function succeeds bytes_required has number of bytes written to proto_packet,
+ * if function fails because proto_packet size is too small bytes_required has number of bytes needed
+ */
+int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol, int* bytes_required);
 
 #endif
 

@@ -29,7 +29,7 @@ int _parse_payload(void* payload_packet, int packet_size, struct kowhai_protocol
     return 1;
 }
 
-int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_node_t* tree_descriptor, struct kowhai_protocol_t* protocol)
+int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol)
 {
     int packet_to_syms_size;
 
@@ -54,7 +54,6 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_nod
         protocol->payload.spec.offset = -1;
         protocol->payload.spec.size = -1;
         protocol->payload.data = NULL;
-        protocol->node_offset = -1;
         return 1;
     }
 
@@ -76,34 +75,54 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_nod
     switch (protocol->header.command)
     {
         case CMD_WRITE_DATA:
-        {
-            struct kowhai_node_t* target;
-            int result;
-            if (!_parse_payload((void*)((uint8_t*)proto_packet + packet_to_syms_size), packet_size - packet_to_syms_size, &protocol->payload))
-                return 0;
-            result = kowhai_get_node(tree_descriptor, protocol->header.symbol_count, protocol->header.symbols, &protocol->node_offset, &target);
-            if (result)
-            {
-                protocol->node = *target;
-                return 1;
-            }
-            return 0;
-        }
         case CMD_READ_DATA:
         {
-            struct kowhai_node_t* target;
-            int result;
             if (!_parse_payload((void*)((uint8_t*)proto_packet + packet_to_syms_size), packet_size - packet_to_syms_size, &protocol->payload))
                 return 0;
-            result = kowhai_get_node(tree_descriptor, protocol->header.symbol_count, protocol->header.symbols, &protocol->node_offset, &target);
-            if (result)
-            {
-                protocol->node = *target;
-                return 1;
-            }
-            return 0;
+            return 1;
         }
         default:
             return 0;
     }
+}
+
+int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol, int* bytes_required)
+{
+    char* pkt = (char*)proto_packet;
+
+    // write tree id
+    *bytes_required = TREE_ID_SIZE;
+    if (packet_size < *bytes_required)
+        return 0;
+    *pkt = protocol->header.tree_id;
+    pkt += TREE_ID_SIZE;
+
+    // write protocol command
+    *bytes_required += CMD_SIZE;
+    if (packet_size < *bytes_required)
+        return 0;
+    *pkt = protocol->header.command;
+    pkt += CMD_SIZE;
+
+    if (protocol->header.command == CMD_READ_DESCRIPTOR_ACK || protocol->header.command == CMD_READ_DESCRIPTOR_ACK_END)
+    {
+        //TODO, figure this out
+        return 0;
+    }
+
+    // write symbol count
+    *bytes_required += SYM_COUNT_SIZE;
+    if (packet_size < *bytes_required)
+        return 0;
+    *pkt = protocol->header.symbol_count
+    pkt += SYM_COUNT_SIZE;
+
+    // write symbols
+    *bytes_required += protocol->header.symbol_count * sizeof(kowhai_symbol_t);
+    if (packet_size < *bytes_required)
+        return 0;
+    memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(kowhai_symbol_t));
+    pkt += protocol->header.symbol_count * sizeof(kowhai_symbol_t);;
+
+    //TODO, the rest!
 }
