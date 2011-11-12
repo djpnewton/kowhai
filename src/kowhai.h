@@ -6,6 +6,8 @@
 #define KOWHAI_SYMBOL(name, array_index) ((array_index << 16) + name)
 #define KOWHAI_RAW_DATA_TYPE(data_type) (data_type & (~DATA_TYPE_READONLY))
 
+#pragma pack(1)
+
 struct kowhai_symbol_parts_t
 {
     uint16_t name;
@@ -26,6 +28,8 @@ struct kowhai_node_t
     uint16_t count;
     uint16_t data_type;
 };
+
+#pragma pack()
 
 // tree descriptor node types
 #define NODE_TYPE_BRANCH 0

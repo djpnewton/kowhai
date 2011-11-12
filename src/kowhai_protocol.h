@@ -28,6 +28,8 @@
 // Protocol structures
 //
 
+#pragma pack(1)
+
 struct kowhai_protocol_header_t
 {
     uint8_t tree_id;
@@ -56,6 +58,8 @@ struct kowhai_protocol_t
     struct kowhai_protocol_header_t header;
     struct kowhai_protocol_payload_t payload;
 };
+
+#pragma pack()
 
 //
 // Functions

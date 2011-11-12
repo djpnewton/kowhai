@@ -104,10 +104,19 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     *pkt = protocol->header.command;
     pkt += CMD_SIZE;
 
-    if (protocol->header.command == CMD_READ_DESCRIPTOR_ACK || protocol->header.command == CMD_READ_DESCRIPTOR_ACK_END)
+    // check protocol command
+    switch (protocol->header.command)
     {
-        //TODO, figure this out
-        return 0;
+        case CMD_READ_DESCRIPTOR_ACK:
+        case CMD_READ_DESCRIPTOR_ACK_END:
+            //TODO, figure this out
+            return 0;
+        case CMD_WRITE_DATA_ACK:
+        case CMD_READ_DATA_ACK:
+        case CMD_READ_DATA_ACK_END:
+            break;
+        default:
+            return 0;
     }
 
     // write symbol count
@@ -124,5 +133,18 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(union kowhai_symbol_t));
     pkt += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);;
 
-    //TODO, the rest!
+    // write payload spec
+    *bytes_required += sizeof(struct kowhai_protocol_payload_spec_t);
+    if (packet_size < *bytes_required)
+        return 0;
+    memcpy(pkt, &protocol->payload.spec, sizeof(struct kowhai_protocol_payload_spec_t));
+    pkt += sizeof(struct kowhai_protocol_payload_spec_t);
+
+    // write payload
+    *bytes_required += protocol->payload.spec.size;
+    if (packet_size < *bytes_required)
+        return 0;
+    memcpy(pkt, protocol->payload.data, protocol->payload.spec.size);
+
+    return 1;
 }
