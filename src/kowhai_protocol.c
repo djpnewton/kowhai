@@ -114,15 +114,15 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     *bytes_required += SYM_COUNT_SIZE;
     if (packet_size < *bytes_required)
         return 0;
-    *pkt = protocol->header.symbol_count
+    *pkt = protocol->header.symbol_count;
     pkt += SYM_COUNT_SIZE;
 
     // write symbols
-    *bytes_required += protocol->header.symbol_count * sizeof(kowhai_symbol_t);
+    *bytes_required += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);
     if (packet_size < *bytes_required)
         return 0;
-    memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(kowhai_symbol_t));
-    pkt += protocol->header.symbol_count * sizeof(kowhai_symbol_t);;
+    memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(union kowhai_symbol_t));
+    pkt += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);;
 
     //TODO, the rest!
 }
