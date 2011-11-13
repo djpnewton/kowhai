@@ -69,8 +69,19 @@ int xpsocket_serve()
     }
 
     bytes_received = recv(sock, recv_buffer, BUF_SIZE, 0);
-
-    printf(recv_buffer);
+    if (bytes_received > 0)
+    {
+        printf("received: \"%s\"\n", recv_buffer);
+    }
+    else if (bytes_received == 0)
+    {
+        printf("connection closed\n");
+    }
+    else
+    {
+        printf("recv(): Error on socket %ld.\n", WSAGetLastError());
+        return 0;
+    }
 
     return 1;
 }
@@ -105,6 +116,13 @@ int xpsocket_send(char* buffer, int size)
         printf("send() error %ld.\n", WSAGetLastError());
         return 0;
     }
+
+    if (shutdown(sock, SD_SEND) == SOCKET_ERROR)
+    {
+        printf("shutdown() failed with error: %d\n", WSAGetLastError());
+        return 0;
+    }
+
 
     return 1;
 }
