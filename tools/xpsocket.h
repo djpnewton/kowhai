@@ -30,9 +30,14 @@ typedef socklen_t SocketSizeType;
 
 #endif // WIN32
 
+typedef struct xpsocket_t* xpsocket_handle;
+
 int xpsocket_init();
 void xpsocket_cleanup();
 int xpsocket_serve();
-int xpsocket_send(char* buffer, int size);
+int xpsocket_send(xpsocket_handle conn, char* buffer, int size);
+int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* received_size);
+xpsocket_handle xpsocket_init_client();
+void xpsocket_free_client();
 
 #endif

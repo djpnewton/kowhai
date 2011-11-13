@@ -1,4 +1,5 @@
 #include "../src/kowhai.h"
+#include "xpsocket.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -258,9 +259,17 @@ int main(int argc, char* argv[])
     // test client protocol
     if (test_command == TEST_PROTOCOL_CLIENT)
     {
+        xpsocket_handle conn;
         printf("test client protocol\n");
         xpsocket_init();
-        xpsocket_send("hello", 6);
+        conn = xpsocket_init_client();
+        if (conn != NULL)
+        {
+            char buffer[0x1000];
+            int received_size;
+            xpsocket_send(conn, "hello", 6);
+            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+        }
         xpsocket_cleanup();
     }
 

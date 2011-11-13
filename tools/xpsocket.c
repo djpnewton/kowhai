@@ -2,6 +2,11 @@
 
 #include <stdio.h>
 
+struct xpsocket_t
+{
+    SOCKET sock;
+};
+
 int xpsocket_init()
 {
 #ifdef WIN32
@@ -26,6 +31,7 @@ void xpsocket_cleanup()
 #endif
 }
 
+#define BUF_SIZE 0x1000
 
 int xpsocket_serve()
 {
@@ -33,7 +39,6 @@ int xpsocket_serve()
     struct sockaddr_in service;
     SOCKET acc_socket = SOCKET_ERROR;
     int bytes_received;
-#define BUF_SIZE 0x1000
     char recv_buffer[BUF_SIZE];
 
     if (sock == INVALID_SOCKET)
@@ -68,12 +73,61 @@ int xpsocket_serve()
         break;
     }
 
-    bytes_received = recv(sock, recv_buffer, BUF_SIZE, 0);
-    if (bytes_received > 0)
+    while (1)
     {
-        printf("received: \"%s\"\n", recv_buffer);
+        bytes_received = recv(sock, recv_buffer, BUF_SIZE, 0);
+        if (bytes_received > 0)
+        {
+            printf("received: \"%s\"\n", recv_buffer);
+            send(sock, recv_buffer, bytes_received, 0);
+        }
+        else if (bytes_received == 0)
+        {
+            printf("connection closed\n");
+            break;
+        }
+        else
+        {
+            printf("recv(): Error on socket %ld.\n", WSAGetLastError());
+            return 0;
+        }
     }
-    else if (bytes_received == 0)
+
+    return 1;
+}
+
+int xpsocket_send(xpsocket_handle conn, char* buffer, int size)
+{
+    int bytes_sent;
+
+    bytes_sent = send(conn->sock, buffer, size, 0);
+
+    if (bytes_sent == SOCKET_ERROR)
+    {
+        printf("send() error %ld.\n", WSAGetLastError());
+        return 0;
+    }
+
+    if (shutdown(conn->sock, SD_SEND) == SOCKET_ERROR)
+    {
+        printf("shutdown() failed with error: %d\n", WSAGetLastError());
+        return 0;
+    }
+
+    printf("sent: \"%s\"\n", buffer);
+
+    return 1;
+}
+
+int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* received_size)
+{
+    *received_size = recv(conn->sock, buffer, buffer_size, 0);
+
+    if (*received_size > 0)
+    {
+        printf("received: \"%s\"\n", buffer);
+    }
+    else if (*received_size == 0)
     {
         printf("connection closed\n");
     }
@@ -86,45 +140,44 @@ int xpsocket_serve()
     return 1;
 }
 
-int xpsocket_send(char* buffer, int size)
+xpsocket_handle xpsocket_init_client()
 {
-    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     struct sockaddr_in service;
-    int bytes_sent;
+    struct xpsocket_t* xpsock = malloc(sizeof(struct xpsocket_t));
+    if (xpsock == NULL)
+        return NULL;
 
-    if (sock == INVALID_SOCKET)
+    xpsock->sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    if (xpsock->sock == INVALID_SOCKET)
     {
         printf("Error at socket(): %ld.\n", WSAGetLastError());
-        return 0;
+        goto cleanup;
     }
 
     service.sin_family = AF_INET;
     service.sin_addr.s_addr = inet_addr("127.0.0.1");
     service.sin_port = htons(55555);
     
-    if (connect(sock, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
+    if (connect(xpsock->sock, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
     {
         printf("connect() failed: %ld.\n", WSAGetLastError());
-        closesocket(sock);
-        return 0;
+        closesocket(xpsock->sock);
+        goto cleanup;
     }
 
-    bytes_sent = send(sock, buffer, size, 0);
+    return xpsock;
 
-    if (bytes_sent == SOCKET_ERROR)
-    {
-        printf("send() error %ld.\n", WSAGetLastError());
-        return 0;
-    }
+cleanup:
 
-    if (shutdown(sock, SD_SEND) == SOCKET_ERROR)
-    {
-        printf("shutdown() failed with error: %d\n", WSAGetLastError());
-        return 0;
-    }
+    if (xpsock != NULL)
+        free(xpsock);
 
-
-    return 1;
+    return NULL;
 }
 
-
+void xpsocket_free_client(xpsocket_handle conn)
+{
+    closesocket(conn->sock);
+    free(conn);
+}
