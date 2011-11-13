@@ -3,11 +3,8 @@ CFLAGS = -g -UKOWHAI_DBG
 
 all: kowhai test
 
-test: src/test.o src/kowhai.o
-	$(CC) $(LDFLAGS) -o $@ $^
-
-src/test.o: src/test.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+test: tools/test.o src/kowhai.o src/kowhai_protocol.o tools/xpsocket.o
+	$(CC) $(LDFLAGS) -o $@ $^ -lws2_32
 
 kowhai: src/kowhai.o src/kowhai_protocol.o
 
@@ -17,7 +14,13 @@ src/kowhai.o: src/kowhai.c
 src/kowhai_protocol.o: src/kowhai_protocol.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+src/test.o: tools/test.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/xpsocket.o: tools/xpsocket.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 clean: 
-	rm -f test.exe src/test.o src/kowhai.o src/kowhai_protocol.o
+	rm -f test.exe tools/test.o tools/xpsocket.o src/kowhai.o src/kowhai_protocol.o
 
 .PHONY: clean

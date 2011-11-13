@@ -1,4 +1,4 @@
-#include "kowhai.h"
+#include "../src/kowhai.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -108,11 +108,21 @@ struct shadow_tree_t
 #pragma pack()
 
 //
+// test commands
+//
+
+#define TEST_BASIC           0
+#define TEST_PROTOCOL_SERVER 1
+#define TEST_PROTOCOL_CLIENT 2
+
+//
 // main
 //
 
-int main()
+int main(int argc, char* argv[])
 {
+    int test_command = TEST_BASIC;
+
     union kowhai_symbol_t symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
     union kowhai_symbol_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
     union kowhai_symbol_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
@@ -140,6 +150,15 @@ int main()
 #ifdef KOWHAI_DBG
     printf("kowhai debugging enabled!\n");
 #endif
+
+    // determine test command
+    if (argc > 1)
+    {
+        if (strcmp("server", argv[1]) == 0)
+            test_command = TEST_PROTOCOL_SERVER;
+        else if (strcmp("client", argv[1]) == 0)
+            test_command = TEST_PROTOCOL_CLIENT;
+    }
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
@@ -226,6 +245,24 @@ int main()
     assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff));
     assert(coeff == 999.9f);
     printf(" passed!\n");
+
+    // test server protocol
+    if (test_command == TEST_PROTOCOL_SERVER)
+    {
+        printf("test server protocol\n");
+        xpsocket_init();
+        xpsocket_serve();
+        xpsocket_cleanup();
+    }
+
+    // test client protocol
+    if (test_command == TEST_PROTOCOL_CLIENT)
+    {
+        printf("test client protocol\n");
+        xpsocket_init();
+        xpsocket_send("hello", 6);
+        xpsocket_cleanup();
+    }
 
     return 0;
 }
