@@ -3,7 +3,6 @@
 
 #ifdef WIN32
 
-#include <windows.h>
 #include <winsock2.h>
 extern const char *LOCAL_TX_IP;
 extern char AltLocalIP[48];
