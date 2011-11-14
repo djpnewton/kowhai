@@ -77,7 +77,7 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
         bytes_received = recv(sock, recv_buffer, buffer_size, 0);
         if (bytes_received > 0)
         {
-            printf("received: \"%s\"\n", recv_buffer);
+            printf("  received %d bytes\n", bytes_received);
             conn.sock = sock;
             buffer_received(&conn, recv_buffer, bytes_received);
         }
@@ -108,7 +108,7 @@ int xpsocket_send(xpsocket_handle conn, char* buffer, int size)
         return 0;
     }
 
-    printf("sent: \"%s\"\n", buffer);
+    printf("  sent %d bytes\n", bytes_sent);
 
     return 1;
 }
@@ -119,7 +119,7 @@ int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* r
 
     if (*received_size > 0)
     {
-        printf("received: \"%s\"\n", buffer);
+        printf("  received %d bytes\n", *received_size);
     }
     else if (*received_size == 0)
     {

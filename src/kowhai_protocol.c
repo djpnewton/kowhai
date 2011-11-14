@@ -107,12 +107,15 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     // check protocol command
     switch (protocol->header.command)
     {
+        case CMD_READ_DESCRIPTOR:
         case CMD_READ_DESCRIPTOR_ACK:
         case CMD_READ_DESCRIPTOR_ACK_END:
             //TODO, figure this out
             return 0;
+        case CMD_WRITE_DATA:
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:
+        case CMD_READ_DATA:
         case CMD_READ_DATA_ACK_END:
             break;
         default:

@@ -1,4 +1,5 @@
 #include "../src/kowhai.h"
+#include "../src/kowhai_protocol.h"
 #include "xpsocket.h"
 
 #include <stdio.h>
@@ -117,13 +118,45 @@ struct shadow_tree_t
 #define TEST_PROTOCOL_CLIENT 2
 
 //
+// test tree ids
+//
+
+#define TREE_ID_SETTINGS 0
+#define TREE_ID_SHADOW   1
+#define TREE_ID_ACTIONS  2
+
+//
 // main
 //
 
+struct settings_data_t settings;
+struct shadow_tree_t shadow;
+
 void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
 {
-    // echo buffer back
-    xpsocket_send(conn, buffer, buffer_size);
+    char buffer2[0x1000];
+    struct kowhai_protocol_t prot;
+    int bytes_required;
+    kowhai_protocol_parse(buffer, buffer_size, &prot);
+    if (prot.header.tree_id == TREE_ID_SETTINGS)
+    {
+        switch (prot.header.command)
+        {
+            case CMD_WRITE_DATA:
+                printf("    CMD write data\n");
+                kowhai_write(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.data, prot.payload.spec.size);
+                prot.header.command = CMD_READ_DATA_ACK_END;
+                kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.data, prot.payload.spec.size);
+                kowhai_protocol_create(buffer2, 0x1000, &prot, &bytes_required);
+                xpsocket_send(conn, buffer2, bytes_required);
+                break;
+            default:
+                printf("unsupported command\n");
+                break;
+        }
+    }
+    else
+        printf("unsupported tree id\n");
 }
 
 int main(int argc, char* argv[])
@@ -141,8 +174,6 @@ int main(int argc, char* argv[])
     union kowhai_symbol_t symbols9[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
     union kowhai_symbol_t symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
 
-    struct settings_data_t settings;
-    struct shadow_tree_t shadow;
     int offset;
     int size;
     struct kowhai_node_t* node;
@@ -256,7 +287,7 @@ int main(int argc, char* argv[])
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)
     {
-        printf("test server protocol\n");
+        printf("test server protocol...\n");
         xpsocket_init();
         xpsocket_serve(server_buffer_received, 0x1000);
         xpsocket_cleanup();
@@ -266,20 +297,39 @@ int main(int argc, char* argv[])
     if (test_command == TEST_PROTOCOL_CLIENT)
     {
         xpsocket_handle conn;
-        printf("test client protocol\n");
+        printf("test client protocol...\n");
         xpsocket_init();
         conn = xpsocket_init_client();
         if (conn != NULL)
         {
             char buffer[0x1000];
+            int bytes_required;
             int received_size;
-            xpsocket_send(conn, "hello", 6);
+            struct kowhai_protocol_t prot =
+            {
+                { TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1 },
+                { { DATA_TYPE_UINT16, 1, 0, sizeof(uint16_t) }, &temp }
+            };
+            assert(kowhai_protocol_create(buffer, 0x1000, &prot, &bytes_required));
+            temp = 25;
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, 0x1000);
             xpsocket_receive(conn, buffer, 0x1000, &received_size);
-            xpsocket_send(conn, "world!", 6);
-            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.symbol_count == 3);
+            assert(memcmp(prot.header.symbols, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
+            assert(prot.payload.spec.type == DATA_TYPE_UINT16); 
+            assert(prot.payload.spec.count == 1); 
+            assert(prot.payload.spec.offset == 0); 
+            assert(prot.payload.spec.size == sizeof(uint16_t)); 
+            assert(*((uint16_t*)prot.payload.data) == temp);
+
             xpsocket_free_client(conn);
         }
         xpsocket_cleanup();
+        printf("\t\t\t\t\t passed!");
     }
 
     return 0;

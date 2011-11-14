@@ -52,7 +52,6 @@ struct kowhai_protocol_payload_t
     void* data;
 };
 
-
 struct kowhai_protocol_t
 {
     struct kowhai_protocol_header_t header;
