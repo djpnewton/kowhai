@@ -120,6 +120,12 @@ struct shadow_tree_t
 // main
 //
 
+void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
+{
+    // echo buffer back
+    xpsocket_send(conn, buffer, buffer_size);
+}
+
 int main(int argc, char* argv[])
 {
     int test_command = TEST_BASIC;
@@ -252,7 +258,7 @@ int main(int argc, char* argv[])
     {
         printf("test server protocol\n");
         xpsocket_init();
-        xpsocket_serve();
+        xpsocket_serve(server_buffer_received, 0x1000);
         xpsocket_cleanup();
     }
 
@@ -269,6 +275,9 @@ int main(int argc, char* argv[])
             int received_size;
             xpsocket_send(conn, "hello", 6);
             xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            xpsocket_send(conn, "world!", 6);
+            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            xpsocket_free_client(conn);
         }
         xpsocket_cleanup();
     }

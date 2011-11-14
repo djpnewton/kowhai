@@ -31,15 +31,14 @@ void xpsocket_cleanup()
 #endif
 }
 
-#define BUF_SIZE 0x1000
-
-int xpsocket_serve()
+int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
 {
+    struct xpsocket_t conn;
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     struct sockaddr_in service;
     SOCKET acc_socket = SOCKET_ERROR;
     int bytes_received;
-    char recv_buffer[BUF_SIZE];
+    char* recv_buffer = malloc(buffer_size);
 
     if (sock == INVALID_SOCKET)
     {
@@ -75,11 +74,12 @@ int xpsocket_serve()
 
     while (1)
     {
-        bytes_received = recv(sock, recv_buffer, BUF_SIZE, 0);
+        bytes_received = recv(sock, recv_buffer, buffer_size, 0);
         if (bytes_received > 0)
         {
             printf("received: \"%s\"\n", recv_buffer);
-            send(sock, recv_buffer, bytes_received, 0);
+            conn.sock = sock;
+            buffer_received(&conn, recv_buffer, bytes_received);
         }
         else if (bytes_received == 0)
         {
@@ -105,12 +105,6 @@ int xpsocket_send(xpsocket_handle conn, char* buffer, int size)
     if (bytes_sent == SOCKET_ERROR)
     {
         printf("send() error %ld.\n", WSAGetLastError());
-        return 0;
-    }
-
-    if (shutdown(conn->sock, SD_SEND) == SOCKET_ERROR)
-    {
-        printf("shutdown() failed with error: %d\n", WSAGetLastError());
         return 0;
     }
 
@@ -178,6 +172,11 @@ cleanup:
 
 void xpsocket_free_client(xpsocket_handle conn)
 {
+    if (shutdown(conn->sock, SD_BOTH) == SOCKET_ERROR)
+    {
+        printf("shutdown() failed with error: %d\n", WSAGetLastError());
+    }
+
     closesocket(conn->sock);
     free(conn);
 }
