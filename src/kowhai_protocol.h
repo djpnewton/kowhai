@@ -60,6 +60,20 @@ struct kowhai_protocol_t
 
 #pragma pack()
 
+
+#define POPULATE_PROTOCOL(protocol, tree_id_, cmd, symbol_count_, symbols_, data_type, data_count, data_offset, data_size, data_) \
+    {                                                   \
+        protocol.header.tree_id = tree_id_;             \
+        protocol.header.command = cmd;                  \
+        protocol.header.symbol_count = symbol_count_;   \
+        protocol.header.symbols = symbols_;             \
+        protocol.payload.spec.type = data_type;         \
+        protocol.payload.spec.count = data_count;       \
+        protocol.payload.spec.offset = data_offset;     \
+        protocol.payload.spec.size = data_size;         \
+        protocol.payload.data = data_;                  \
+    }
+
 //
 // Functions
 //
