@@ -50,7 +50,6 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         protocol->header.symbol_count = 0;
         protocol->header.symbols = NULL;
         protocol->payload.spec.type = -1;
-        protocol->payload.spec.count = -1;
         protocol->payload.spec.offset = -1;
         protocol->payload.spec.size = -1;
         protocol->payload.data = NULL;
