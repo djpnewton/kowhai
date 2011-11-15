@@ -76,7 +76,7 @@ int _get_branch_size(struct kowhai_node_t* tree_descriptor, int* steps)
     while (1);
 }
 
-int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int symbols_matched, int* finished, int* finished_on_leaf)
+int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int symbols_matched, int* finished)
 {
     int offset = 0;
     do
@@ -100,11 +100,31 @@ int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbol
         // return offset if we have matched the symbols
         if (symbols_matched == num_symbols)
         {
+            int array_index = symbols[symbols_matched - 1].parts.array_index;
+            if (array_index > 0)
+            {
+                struct kowhai_node_t* node = *tree_descriptor;
+                if (array_index > node->count - 1)
+                    return -1;
+                switch (node->type)
+                {
+                    case NODE_TYPE_BRANCH:
+                    {
+                        int __steps;
+                        offset += _get_branch_size(node + 1, &__steps) * array_index;
+                        break;
+                    }
+                    case NODE_TYPE_LEAF:
+                        offset += kowhai_get_data_size(node->data_type) * array_index;
+                        break;
+                }
+            }
+
 #ifdef KOWHAI_DBG
             printf(KOWHAI_INFO" return offset: %d\n", offset);
 #endif
             *finished = 1;
-            *finished_on_leaf = (*tree_descriptor)->type == NODE_TYPE_LEAF;
+
             return offset;
         }
         
@@ -116,7 +136,7 @@ int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbol
                 struct kowhai_node_t* branch = *tree_descriptor;
                 int temp;
                 (*tree_descriptor)++;
-                temp = _get_node_data_offset(tree_descriptor, num_symbols, symbols, symbols_matched, finished, finished_on_leaf);
+                temp = _get_node_data_offset(tree_descriptor, num_symbols, symbols, symbols_matched, finished);
                 if (temp == -1)
                 {
 #ifdef KOWHAI_DBG
@@ -141,21 +161,6 @@ int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbol
                             return -1;
                         }
                         temp += _get_branch_size(branch + 1, &__steps) * array_index;
-                    }
-                    // leaf array
-                    if (*finished_on_leaf)
-                    {
-                        *finished_on_leaf = 0;
-                        array_index = symbols[symbols_matched].parts.array_index;
-                        if (array_index > 0)
-                        {
-                            struct kowhai_node_t* leaf = *tree_descriptor;
-                            if (leaf->type != NODE_TYPE_LEAF)
-                                return -1;
-                            if (array_index > leaf->count - 1)
-                                return -1;
-                            temp += kowhai_get_data_size(leaf->data_type) * array_index;
-                        }
                     }
                 }
                 offset += temp;
@@ -193,8 +198,8 @@ int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbol
 int kowhai_get_node(struct kowhai_node_t* tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int* offset, struct kowhai_node_t** target_node)
 {
     struct kowhai_node_t* node = tree_descriptor;
-    int finished = 0, finished_on_leaf = 0;
-    int _offset = _get_node_data_offset(&node, num_symbols, symbols, 0, &finished, &finished_on_leaf);
+    int finished = 0;
+    int _offset = _get_node_data_offset(&node, num_symbols, symbols, 0, &finished);
     if (_offset > -1)
     {
         *offset = _offset;
@@ -211,7 +216,7 @@ int _get_node_size(struct kowhai_node_t* node)
         case NODE_TYPE_BRANCH:
         {
             int steps = 0;
-            return _get_branch_size(node + 1, &steps);
+            return _get_branch_size(node + 1, &steps) * node->count;
         }
         case NODE_TYPE_LEAF:
         {
