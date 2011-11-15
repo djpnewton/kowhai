@@ -38,6 +38,6 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size);
 int xpsocket_send(xpsocket_handle conn, char* buffer, int size);
 int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* received_size);
 xpsocket_handle xpsocket_init_client();
-void xpsocket_free_client();
+void xpsocket_free_client(xpsocket_handle conn);
 
 #endif

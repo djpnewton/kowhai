@@ -33,6 +33,8 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
 {
     int packet_to_syms_size;
 
+    memset(protocol, 0, sizeof(struct kowhai_protocol_t));
+
     // establish tree id
     if (!kowhai_protocol_get_tree_id(proto_packet, packet_size, &protocol->header.tree_id))
         return 0;
@@ -46,15 +48,7 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
 
     // read descriptor command requires no more parameters
     if (protocol->header.command == CMD_READ_DESCRIPTOR)
-    {
-        protocol->header.symbol_count = 0;
-        protocol->header.symbols = NULL;
-        protocol->payload.spec.type = -1;
-        protocol->payload.spec.offset = -1;
-        protocol->payload.spec.size = -1;
-        protocol->payload.data = NULL;
         return 1;
-    }
 
     // check packet is large enough for symbol count byte
     if (packet_size < TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE)
@@ -74,7 +68,9 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
     switch (protocol->header.command)
     {
         case CMD_WRITE_DATA:
-        case CMD_READ_DATA:
+        case CMD_WRITE_DATA_ACK:
+        case CMD_READ_DATA_ACK:
+        case CMD_READ_DATA_ACK_END:
         {
             if (!_parse_payload((void*)((uint8_t*)proto_packet + packet_to_syms_size), packet_size - packet_to_syms_size, &protocol->payload))
                 return 0;
@@ -134,6 +130,10 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
         return 0;
     memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(union kowhai_symbol_t));
     pkt += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);;
+
+    // check protocol command
+    if (protocol->header.command == CMD_READ_DATA)
+        return 1;
 
     // write payload spec
     *bytes_required += sizeof(struct kowhai_protocol_payload_spec_t);

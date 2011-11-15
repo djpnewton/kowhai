@@ -132,11 +132,16 @@ struct shadow_tree_t
 struct settings_data_t settings;
 struct shadow_tree_t shadow;
 
+#define BUF_SIZE 0x1000
+
 void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
 {
-    char buffer2[0x1000];
+    char buffer2[BUF_SIZE];
     struct kowhai_protocol_t prot;
     int bytes_required;
+    int node_offset;
+    int size;
+    struct kowhai_node_t* node;
     kowhai_protocol_parse(buffer, buffer_size, &prot);
     if (prot.header.tree_id == TREE_ID_SETTINGS)
     {
@@ -144,11 +149,25 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
         {
             case CMD_WRITE_DATA:
                 printf("    CMD write data\n");
-                kowhai_write(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.data, prot.payload.spec.size);
-                prot.header.command = CMD_READ_DATA_ACK_END;
-                kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.data, prot.payload.spec.size);
-                kowhai_protocol_create(buffer2, 0x1000, &prot, &bytes_required);
+                kowhai_write(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
+                prot.header.command = CMD_WRITE_DATA_ACK;
+                kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
+                kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
                 xpsocket_send(conn, buffer2, bytes_required);
+                break;
+            case CMD_READ_DATA:
+                printf("    CMD read data\n");
+                kowhai_get_node(settings_descriptor, prot.header.symbol_count, prot.header.symbols, &node_offset, &node);
+                prot.header.command = CMD_READ_DATA_ACK_END;
+                prot.payload.spec.type = node->data_type;
+                prot.payload.spec.offset = 0;
+                kowhai_get_node_size(node, &size);
+                prot.payload.spec.size = size;
+                prot.payload.data = malloc(size);
+                kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
+                kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                xpsocket_send(conn, buffer2, bytes_required);
+                free(prot.payload.data);
                 break;
             default:
                 printf("unsupported command\n");
@@ -219,9 +238,9 @@ int main(int argc, char* argv[])
     assert(offset == 8 + 3 * 4);
     printf(" passed!\n");
 
-    // test branch size
-    printf("test kowhai_get_branch_size...\t\t");
-    assert(kowhai_get_branch_size(settings_descriptor, &size));
+    // test get node size
+    printf("test kowhai_get_node_size...\t\t");
+    assert(kowhai_get_node_size(settings_descriptor, &size));
     assert(size == sizeof(struct settings_data_t));
     printf(" passed!\n");
 
@@ -229,31 +248,31 @@ int main(int argc, char* argv[])
     printf("test kowhai_read/kowhai_write...\t");
     status = 1;
     shadow.status = 0;
-    assert(kowhai_write(shadow_descriptor, &shadow, 2, symbols5, &status, 1));
+    assert(kowhai_write(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1));
     assert(shadow.status == 1);
     status = 0;
-    assert(kowhai_read(shadow_descriptor, &shadow, 2, symbols5, &status, 1));
+    assert(kowhai_read(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1));
     assert(status == 1);
     timeout = 999;
     settings.oven.timeout = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 3, symbols2, &timeout, sizeof(timeout)));
+    assert(kowhai_write(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)));
     assert(settings.oven.timeout == 999);
     timeout = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 3, symbols2, &timeout, sizeof(timeout)));
+    assert(kowhai_read(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)));
     assert(timeout == 999);
     flux_capacitor.frequency = 100; flux_capacitor.gain = 200;
     settings.flux_capacitor[0].frequency = 0; settings.flux_capacitor[0].gain = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 2, symbols3, &flux_capacitor, sizeof(flux_capacitor)));
+    assert(kowhai_write(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)));
     assert(settings.flux_capacitor[0].frequency == 100 && settings.flux_capacitor[0].gain == 200);
     flux_capacitor.frequency = 0; flux_capacitor.gain = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 2, symbols3, &flux_capacitor, sizeof(flux_capacitor)));
+    assert(kowhai_read(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)));
     assert(flux_capacitor.frequency == 100 && flux_capacitor.gain == 200);
     coeff = 999.9f;
     settings.flux_capacitor[1].coefficient[3] = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 3, symbols9, &coeff, sizeof(coeff)));
+    assert(kowhai_write(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)));
     assert(settings.flux_capacitor[1].coefficient[3] == 999.9f);
     coeff = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 3, symbols9, &coeff, sizeof(coeff)));
+    assert(kowhai_read(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)));
     assert(coeff == 999.9f);
     printf(" passed!\n");
 
@@ -291,7 +310,7 @@ int main(int argc, char* argv[])
     {
         printf("test server protocol...\n");
         xpsocket_init();
-        xpsocket_serve(server_buffer_received, 0x1000);
+        xpsocket_serve(server_buffer_received, BUF_SIZE);
         xpsocket_cleanup();
     }
 
@@ -304,90 +323,113 @@ int main(int argc, char* argv[])
         conn = xpsocket_init_client();
         if (conn != NULL)
         {
-            char buffer[0x1000];
+            char buffer[BUF_SIZE];
             int bytes_required;
             int received_size;
             struct kowhai_protocol_t prot;
             char value;
-            struct oven_t oven = {123, 321};
+            struct oven_t oven = {0x0102, 321};
             struct flux_capacitor_t flux_cap[2] = {{100, 200, {1, 2, 3, 4, 5, 6}}, {110, 210, {11, 12, 13, 14, 15, 16}}};
-            // write and read oven.temp
-            POPULATE_PROTOCOL(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_UINT16, 0, sizeof(uint16_t), &temp);
-            assert(kowhai_protocol_create(buffer, 0x1000, &prot, &bytes_required));
+            // write oven.temp
             temp = 25;
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
             xpsocket_send(conn, buffer, bytes_required);
-            memset(buffer, 0, 0x1000);
-            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
-            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.header.symbol_count == 3);
             assert(memcmp(prot.header.symbols, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.type == DATA_TYPE_UINT16);
+            assert(prot.payload.spec.type == DATA_TYPE_INT16);
             assert(prot.payload.spec.offset == 0);
             assert(prot.payload.spec.size == sizeof(uint16_t));
             assert(*((uint16_t*)prot.payload.data) == temp);
-            // write and read low byte of oven.temp
-            POPULATE_PROTOCOL(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_UINT16, 1, 1, &value);
-            assert(kowhai_protocol_create(buffer, 0x1000, &prot, &bytes_required));
+            // write low byte of oven.temp
             value = 255;
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 1, 1, &value);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
             xpsocket_send(conn, buffer, bytes_required);
-            memset(buffer, 0, 0x1000);
-            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
-            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.header.symbol_count == 3);
             assert(memcmp(prot.header.symbols, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.type == DATA_TYPE_UINT16);
+            assert(prot.payload.spec.type == DATA_TYPE_INT16);
             assert(prot.payload.spec.offset == 1);
             assert(prot.payload.spec.size == 1);
             assert(*((char*)prot.payload.data) == value);
-            // write and read oven
-            POPULATE_PROTOCOL(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols11, 0, 0, sizeof(oven), &oven);
-            assert(kowhai_protocol_create(buffer, 0x1000, &prot, &bytes_required));
+            // double check oven.temp
+            POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 3, symbols1);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
             xpsocket_send(conn, buffer, bytes_required);
-            memset(buffer, 0, 0x1000);
-            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(*((uint16_t*)prot.payload.data) >> 8 == (uint8_t)value);
+            // write oven
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols11, 0, 0, sizeof(oven), &oven);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
-            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.header.symbol_count == 2);
             assert(memcmp(prot.header.symbols, symbols11, sizeof(union kowhai_symbol_t) * 2) == 0);
             assert(prot.payload.spec.type == 0);
             assert(prot.payload.spec.offset == 0);
             assert(prot.payload.spec.size == sizeof(oven));
             assert(memcmp(prot.payload.data, &oven, sizeof(oven)) == 0);
-            // write and read flux capacitor array
-            POPULATE_PROTOCOL(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols3, 0, 0, sizeof(struct flux_capacitor_t) * 2, flux_cap);
-            assert(kowhai_protocol_create(buffer, 0x1000, &prot, &bytes_required));
+            // write flux capacitor array
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols3, 0, 0, sizeof(struct flux_capacitor_t) * 2, flux_cap);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
             xpsocket_send(conn, buffer, bytes_required);
-            memset(buffer, 0, 0x1000);
-            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
-            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.header.symbol_count == 2);
             assert(memcmp(prot.header.symbols, symbols3, sizeof(union kowhai_symbol_t) * 2) == 0);
             assert(prot.payload.spec.type == 0);
             assert(prot.payload.spec.offset == 0);
             assert(prot.payload.spec.size == sizeof(struct flux_capacitor_t) * 2);
             assert(memcmp(prot.payload.data, flux_cap, sizeof(struct flux_capacitor_t) * 2) == 0);
-            // write and read flux capacitor[1]
-            POPULATE_PROTOCOL(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols12, 0, 0, sizeof(struct flux_capacitor_t), &flux_cap[1]);
-            assert(kowhai_protocol_create(buffer, 0x1000, &prot, &bytes_required));
+            // write flux capacitor[1]
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols12, 0, 0, sizeof(struct flux_capacitor_t), &flux_cap[1]);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
             xpsocket_send(conn, buffer, bytes_required);
-            memset(buffer, 0, 0x1000);
-            xpsocket_receive(conn, buffer, 0x1000, &received_size);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
-            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.header.symbol_count == 2);
             assert(memcmp(prot.header.symbols, symbols12, sizeof(union kowhai_symbol_t) * 2) == 0);
             assert(prot.payload.spec.type == 0);
             assert(prot.payload.spec.offset == 0);
             assert(prot.payload.spec.size == sizeof(struct flux_capacitor_t));
             assert(memcmp(prot.payload.data, &flux_cap[1], sizeof(struct flux_capacitor_t)) == 0);
+            // read oven.temp
+            POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 3, symbols1);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_READ_DATA_ACK_END);
+            assert(prot.header.symbol_count == 3);
+            assert(memcmp(prot.header.symbols, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
+            assert(prot.payload.spec.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.offset == 0);
+            assert(prot.payload.spec.size == sizeof(int16_t));
+            assert(*((int16_t*)prot.payload.data) == 0x0102);
 
             xpsocket_free_client(conn);
         }

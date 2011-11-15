@@ -204,30 +204,14 @@ int kowhai_get_node(struct kowhai_node_t* tree_descriptor, int num_symbols, unio
     return 0;
 }
 
-int kowhai_get_branch_size(struct kowhai_node_t* tree_descriptor, int* size)
-{
-    int steps = 0;
-    int _size = _get_branch_size(tree_descriptor + 1, &steps);
-    if (_size > -1)
-    {
-        *size = _size;
-        return 1;
-    }
-    return 0;
-}
-
 int _get_node_size(struct kowhai_node_t* node)
 {
     switch (node->type)
     {
         case NODE_TYPE_BRANCH:
         {
-            int branch_size;
-            if (kowhai_get_branch_size(node, &branch_size))
-                return branch_size;
-            else
-                return -1;
-            break;
+            int steps = 0;
+            return _get_branch_size(node + 1, &steps);
         }
         case NODE_TYPE_LEAF:
         {
@@ -240,27 +224,42 @@ int _get_node_size(struct kowhai_node_t* node)
     }
 }
 
-int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, void* result, int read_size)
+int kowhai_get_node_size(struct kowhai_node_t* tree_descriptor, int* size)
+{
+    int _size = _get_node_size(tree_descriptor);
+    if (_size > -1)
+    {
+        *size = _size;
+        return 1;
+    }
+    return 0;
+}
+
+int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size)
 {
     struct kowhai_node_t* node;
-    int offset;
-    if (!kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node))
+    int node_offset;
+    if (!kowhai_get_node(tree_descriptor, num_symbols, symbols, &node_offset, &node))
         return 0;
-    if (read_size > _get_node_size(node))
+    if (read_offset < 0)
         return 0;
-    memcpy(result, (char*)tree_data + offset, read_size);
+    if (read_size + read_offset > _get_node_size(node))
+        return 0;
+    memcpy(result, (char*)tree_data + node_offset + read_offset, read_size);
     return 1;
 }
 
-int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, void* value, int write_size)
+int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size)
 {
     struct kowhai_node_t* node;
-    int offset;
-    if (!kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node))
+    int node_offset;
+    if (!kowhai_get_node(tree_descriptor, num_symbols, symbols, &node_offset, &node))
         return 0;
-    if (write_size > _get_node_size(node))
+    if (write_offset < 0)
         return 0;
-    memcpy((char*)tree_data + offset, value, write_size);
+    if (write_size + write_offset > _get_node_size(node))
+        return 0;
+    memcpy((char*)tree_data + node_offset + write_offset, value, write_size);
     return 1;
 }
 

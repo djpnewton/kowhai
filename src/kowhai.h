@@ -58,23 +58,25 @@ int kowhai_get_data_size(int data_type);
 int kowhai_get_node(struct kowhai_node_t* tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int* offset, struct kowhai_node_t** target_node);
 
 /* 
- * Get the memory size of a branch of settings
+ * Get the memory size of a tree node (could be a branch or leaf)
  */
-int kowhai_get_branch_size(struct kowhai_node_t* tree_descriptor, int* size);
+int kowhai_get_node_size(struct kowhai_node_t* tree_descriptor, int* size);
 
 /*
- * Read from a settings buffer starting at a symbol path
+ * Read from a tree data buffer starting at a symbol path
+ * @param read_offset, the offset into the node data to start reading from
  * @param result, the buffer to read the result into
  * @param read_size, the number of bytes to read into the result
  */
-int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, void* result, int read_size);
+int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size);
 
 /*
- * Write to a settings buffer starting at a symbol path
+ * Write to a tree data buffer starting at a symbol path
+ * @param write_offset, the offset into the node data to start writing at
  * @param value, the buffer to write from
  * @param write_size, the number of bytes to write into the settings buffer
  */
-int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, void* value, int write_size);
+int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size);
 
 /*
  * Get a single byte char setting specified by a symbol path from a settings buffer
