@@ -150,3 +150,32 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
 
     return 1;
 }
+
+int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhead)
+{
+    // check protocol command
+    switch (protocol->header.command)
+    {
+        case CMD_READ_DESCRIPTOR:
+            *overhead = TREE_ID_SIZE + CMD_SIZE;
+            return 1;
+        case CMD_READ_DESCRIPTOR_ACK:
+        case CMD_READ_DESCRIPTOR_ACK_END:
+            //TODO, figure this out
+            return 0;
+        case CMD_WRITE_DATA:
+        case CMD_WRITE_DATA_ACK:
+        case CMD_READ_DATA_ACK:
+        case CMD_READ_DATA_ACK_END:
+            *overhead = sizeof(struct kowhai_protocol_t) - sizeof(protocol->header.symbols) +
+                sizeof(union kowhai_symbol_t) * protocol->header.symbol_count -
+                sizeof(protocol->payload.data);
+            return 1;
+        case CMD_READ_DATA:
+            *overhead = sizeof(struct kowhai_protocol_header_t) - sizeof(protocol->header.symbols) +
+                sizeof(union kowhai_symbol_t) * protocol->header.symbol_count;
+            return 1;
+        default:
+            return 0;
+    }
+}

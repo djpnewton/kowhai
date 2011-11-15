@@ -103,5 +103,11 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
  */
 int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol, int* bytes_required);
 
+/*
+ * Return the protocol overhead (header, payload specification etc, ie the meta part of the protocol that describes the payload)
+ * If function succeeds overhead has number of bytes of overhead
+ */
+int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhead);
+
 #endif
 
