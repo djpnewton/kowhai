@@ -490,7 +490,7 @@ int main(int argc, char* argv[])
             xpsocket_free_client(conn);
         }
         xpsocket_cleanup();
-        printf("\t\t\t\t\t passed!");
+        printf("\t\t\t\t\t passed!\n");
     }
 
     return 0;
