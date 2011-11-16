@@ -7,6 +7,9 @@ struct xpsocket_t
     SOCKET sock;
 };
 
+#define HOST "127.0.0.1"
+#define PORT 55555
+
 int xpsocket_init()
 {
 #ifdef WIN32
@@ -47,8 +50,8 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
     }
 
     service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr("127.0.0.1");
-    service.sin_port = htons(55555);
+    service.sin_addr.s_addr = inet_addr(HOST);
+    service.sin_port = htons(PORT);
     
     if (bind(sock, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
     {
@@ -150,8 +153,8 @@ xpsocket_handle xpsocket_init_client()
     }
 
     service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr("127.0.0.1");
-    service.sin_port = htons(55555);
+    service.sin_addr.s_addr = inet_addr(HOST);
+    service.sin_port = htons(PORT);
     
     if (connect(xpsock->sock, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
     {
