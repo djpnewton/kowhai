@@ -1,6 +1,7 @@
 #include "xpsocket.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 struct xpsocket_t
 {
@@ -9,6 +10,24 @@ struct xpsocket_t
 
 #define HOST "127.0.0.1"
 #define PORT 55555
+
+void _close_socket(SOCKET sock)
+{
+#ifdef WIN32
+    closesocket(sock);
+#else
+    close(sock);
+#endif
+}
+
+long _socket_error()
+{
+#ifdef WIN32
+    return WSAGetLastError();
+#else
+    return errno;
+#endif
+}
 
 int xpsocket_init()
 {
@@ -45,7 +64,7 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
 
     if (sock == INVALID_SOCKET)
     {
-        printf("Error at socket(): %ld.\n", WSAGetLastError());
+        printf("Error at socket(): %ld.\n", _socket_error());
         return 0;
     }
 
@@ -53,16 +72,16 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
     service.sin_addr.s_addr = inet_addr(HOST);
     service.sin_port = htons(PORT);
     
-    if (bind(sock, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
+    if (bind(sock, (struct sockaddr*)&service, sizeof(service)) == SOCKET_ERROR)
     {
-        printf("bind() failed: %ld.\n", WSAGetLastError());
-        closesocket(sock);
+        printf("bind() failed: %ld.\n", _socket_error());
+        _close_socket(sock);
         return 0;
     }
 
     if (listen(sock, 1) == SOCKET_ERROR)
     {
-        printf("listen(): Error listening on socket %ld.\n", WSAGetLastError());
+        printf("listen(): Error listening on socket %ld.\n", _socket_error());
         return 0;
     }
 
@@ -91,7 +110,7 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
         }
         else
         {
-            printf("recv(): Error on socket %ld.\n", WSAGetLastError());
+            printf("recv(): Error on socket %ld.\n", _socket_error());
             return 0;
         }
     }
@@ -107,7 +126,7 @@ int xpsocket_send(xpsocket_handle conn, char* buffer, int size)
 
     if (bytes_sent == SOCKET_ERROR)
     {
-        printf("send() error %ld.\n", WSAGetLastError());
+        printf("send() error %ld.\n", _socket_error());
         return 0;
     }
 
@@ -130,7 +149,7 @@ int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* r
     }
     else
     {
-        printf("recv(): Error on socket %ld.\n", WSAGetLastError());
+        printf("recv(): Error on socket %ld.\n", _socket_error());
         return 0;
     }
 
@@ -148,7 +167,7 @@ xpsocket_handle xpsocket_init_client()
 
     if (xpsock->sock == INVALID_SOCKET)
     {
-        printf("Error at socket(): %ld.\n", WSAGetLastError());
+        printf("Error at socket(): %ld.\n", _socket_error());
         goto cleanup;
     }
 
@@ -156,10 +175,10 @@ xpsocket_handle xpsocket_init_client()
     service.sin_addr.s_addr = inet_addr(HOST);
     service.sin_port = htons(PORT);
     
-    if (connect(xpsock->sock, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR)
+    if (connect(xpsock->sock, (struct sockaddr*)&service, sizeof(service)) == SOCKET_ERROR)
     {
-        printf("connect() failed: %ld.\n", WSAGetLastError());
-        closesocket(xpsock->sock);
+        printf("connect() failed: %ld.\n", _socket_error());
+        _close_socket(xpsock->sock);
         goto cleanup;
     }
 
@@ -177,9 +196,9 @@ void xpsocket_free_client(xpsocket_handle conn)
 {
     if (shutdown(conn->sock, SD_BOTH) == SOCKET_ERROR)
     {
-        printf("shutdown() failed with error: %d\n", WSAGetLastError());
+        printf("shutdown() failed with error: %ld\n", _socket_error());
     }
 
-    closesocket(conn->sock);
+    _close_socket(conn->sock);
     free(conn);
 }

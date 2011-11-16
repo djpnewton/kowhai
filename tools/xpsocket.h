@@ -11,7 +11,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #define SOCKET int
+#define SOCKET_ERROR -1
+#define INVALID_SOCKET 0
+#define SD_BOTH 2
 
 #endif // WIN32
 

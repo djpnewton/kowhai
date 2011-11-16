@@ -1,10 +1,16 @@
 CC 	   = gcc
 CFLAGS = -g -UKOWHAI_DBG
 
+SOCKET_LIB = 
+ifeq ($(OS),Windows_NT)
+	# on windows we need the winsock library
+	SOCKET_LIB = -lws2_32
+endif
+
 all: kowhai test
 
 test: tools/test.o src/kowhai.o src/kowhai_protocol.o tools/xpsocket.o
-	$(CC) $(LDFLAGS) -o $@ $^ -lws2_32
+	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB)
 
 kowhai: src/kowhai.o src/kowhai_protocol.o
 
