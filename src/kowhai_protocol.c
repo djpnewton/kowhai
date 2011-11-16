@@ -31,7 +31,7 @@ int _parse_payload(void* payload_packet, int packet_size, struct kowhai_protocol
 
 int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol)
 {
-    int packet_to_syms_size;
+    int required_size = 0;
 
     memset(protocol, 0, sizeof(struct kowhai_protocol_t));
 
@@ -40,7 +40,8 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         return 0;
 
     // check packet is large enough for command byte
-    if (packet_size < TREE_ID_SIZE + CMD_SIZE)
+    required_size = TREE_ID_SIZE + CMD_SIZE;
+    if (packet_size < required_size)
         return 0;
 
     // establish protocol command
@@ -50,20 +51,29 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
     if (protocol->header.command == CMD_READ_DESCRIPTOR)
         return 1;
 
-    // check packet is large enough for symbol count byte
-    if (packet_size < TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE)
-        return 0;
+    switch (protocol->header.command)
+    {
+        case CMD_WRITE_DATA:
+        case CMD_WRITE_DATA_ACK:
+        case CMD_READ_DATA:
+        case CMD_READ_DATA_ACK:
+        case CMD_READ_DATA_ACK_END:
+            // check packet is large enough for symbol count byte
+            required_size += SYM_COUNT_SIZE;
+            if (packet_size < required_size)
+                return 0;
 
-    // get symbol count
-    protocol->header.symbol_count = *((uint8_t*)proto_packet + 2);
-    packet_to_syms_size = TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE + sizeof(union kowhai_symbol_t) * protocol->header.symbol_count;
+            // get symbol count
+            protocol->header.symbol_count = *((uint8_t*)proto_packet + 2);
+            required_size += sizeof(union kowhai_symbol_t) * protocol->header.symbol_count;
 
-    // check packet is large enough for symbols array
-    if (packet_size < packet_to_syms_size)
-        return 0;
+            // check packet is large enough for symbols array
+            if (packet_size < required_size)
+                return 0;
 
-    // get symbol array
-    protocol->header.symbols = (union kowhai_symbol_t*)((uint8_t*)proto_packet + TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE);
+            // get symbol array
+            protocol->header.symbols = (union kowhai_symbol_t*)((uint8_t*)proto_packet + TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE);
+    }
     
     switch (protocol->header.command)
     {
@@ -71,8 +81,10 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:
         case CMD_READ_DATA_ACK_END:
+        case CMD_READ_DESCRIPTOR_ACK:
+        case CMD_READ_DESCRIPTOR_ACK_END:
         {
-            if (!_parse_payload((void*)((uint8_t*)proto_packet + packet_to_syms_size), packet_size - packet_to_syms_size, &protocol->payload))
+            if (!_parse_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload))
                 return 0;
             return 1;
         }
@@ -99,41 +111,52 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     *pkt = protocol->header.command;
     pkt += CMD_SIZE;
 
+    // read descriptor command requires no more parameters
+    if (protocol->header.command == CMD_READ_DESCRIPTOR)
+        return 1;
+
     // check protocol command
     switch (protocol->header.command)
     {
-        case CMD_READ_DESCRIPTOR:
-        case CMD_READ_DESCRIPTOR_ACK:
-        case CMD_READ_DESCRIPTOR_ACK_END:
-            //TODO, figure this out
-            return 0;
         case CMD_WRITE_DATA:
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:
         case CMD_READ_DATA:
         case CMD_READ_DATA_ACK_END:
+            // write symbol count
+            *bytes_required += SYM_COUNT_SIZE;
+            if (packet_size < *bytes_required)
+                return 0;
+            *pkt = protocol->header.symbol_count;
+            pkt += SYM_COUNT_SIZE;
+
+            // write symbols
+            *bytes_required += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);
+            if (packet_size < *bytes_required)
+                return 0;
+            memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(union kowhai_symbol_t));
+            pkt += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);;
+
+            break;
+    }
+
+    // read data command requires no more parameters
+    if (protocol->header.command == CMD_READ_DATA)
+        return 1;
+
+    // check protocol command
+    switch (protocol->header.command)
+    {
+        case CMD_READ_DESCRIPTOR_ACK:
+        case CMD_READ_DESCRIPTOR_ACK_END:
+        case CMD_WRITE_DATA:
+        case CMD_WRITE_DATA_ACK:
+        case CMD_READ_DATA_ACK:
+        case CMD_READ_DATA_ACK_END:
             break;
         default:
             return 0;
     }
-
-    // write symbol count
-    *bytes_required += SYM_COUNT_SIZE;
-    if (packet_size < *bytes_required)
-        return 0;
-    *pkt = protocol->header.symbol_count;
-    pkt += SYM_COUNT_SIZE;
-
-    // write symbols
-    *bytes_required += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);
-    if (packet_size < *bytes_required)
-        return 0;
-    memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(union kowhai_symbol_t));
-    pkt += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);;
-
-    // check protocol command
-    if (protocol->header.command == CMD_READ_DATA)
-        return 1;
 
     // write payload spec
     *bytes_required += sizeof(struct kowhai_protocol_payload_spec_t);
@@ -161,8 +184,8 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
             return 1;
         case CMD_READ_DESCRIPTOR_ACK:
         case CMD_READ_DESCRIPTOR_ACK_END:
-            //TODO, figure this out
-            return 0;
+            *overhead = TREE_ID_SIZE + CMD_SIZE + sizeof(struct kowhai_protocol_payload_spec_t);
+            return 1;
         case CMD_WRITE_DATA:
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:

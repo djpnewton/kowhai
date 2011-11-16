@@ -59,6 +59,12 @@ struct kowhai_protocol_t
 
 #pragma pack()
 
+#define POPULATE_PROTOCOL_CMD(protocol, tree_id_, cmd)  \
+    {                                                   \
+        protocol.header.tree_id = tree_id_;             \
+        protocol.header.command = cmd;                  \
+    }
+
 #define POPULATE_PROTOCOL_READ(protocol, tree_id_, cmd, symbol_count_, symbols_) \
     {                                                   \
         protocol.header.tree_id = tree_id_;             \

@@ -195,6 +195,44 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
                 free(prot.payload.data);
                 break;
             }
+            case CMD_READ_DESCRIPTOR:
+            {
+                int descriptor_offset;
+                int size, overhead, max_payload_size;
+                printf("    CMD read descriptor\n");
+                // get descriptor size
+                size = sizeof(settings_descriptor);
+                // get protocol overhead
+                prot.header.command = CMD_READ_DESCRIPTOR_ACK;
+                kowhai_protocol_get_overhead(&prot, &overhead);
+                // setup max payload size and payload offset
+                max_payload_size = MAX_PACKET_SIZE - overhead;
+                prot.payload.spec.offset = 0;
+                prot.payload.spec.type = sizeof(settings_descriptor) / sizeof(settings_descriptor[0]); // TODO: ok we are futzing node-count into spec.type for now
+                // allocate payload buffer
+                prot.payload.data = malloc(MAX_PACKET_SIZE - overhead);
+
+                // send packets
+                while (size > max_payload_size)
+                {
+                    prot.payload.spec.size = max_payload_size;
+                    memcpy(prot.payload.data, (char*)settings_descriptor + prot.payload.spec.offset, prot.payload.spec.size);
+                    kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                    xpsocket_send(conn, buffer2, bytes_required);
+                    // increment payload offset and decrement remaining payload size
+                    prot.payload.spec.offset += max_payload_size;
+                    size -= max_payload_size;
+                }
+                // send final packet
+                prot.header.command = CMD_READ_DESCRIPTOR_ACK_END;
+                prot.payload.spec.size = size;
+                memcpy(prot.payload.data, (char*)settings_descriptor + prot.payload.spec.offset, prot.payload.spec.size);
+                kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                xpsocket_send(conn, buffer2, bytes_required);
+                // free payload buffer
+                free(prot.payload.data);
+                break;
+            }
             default:
                 printf("unsupported command\n");
                 break;
@@ -473,6 +511,7 @@ int main(int argc, char* argv[])
             assert(prot.payload.spec.type == 0);
             assert(prot.payload.spec.offset == 0);
             kowhai_protocol_get_overhead(&prot, &overhead);
+            assert(overhead == 17);
             assert(prot.payload.spec.size == MAX_PACKET_SIZE - overhead);
             assert(memcmp(prot.payload.data, flux_cap, prot.payload.spec.size) == 0);
             memset(buffer, 0, BUF_SIZE);
@@ -486,6 +525,29 @@ int main(int argc, char* argv[])
             assert(prot.payload.spec.offset == MAX_PACKET_SIZE - overhead);
             assert(prot.payload.spec.size == sizeof(struct flux_capacitor_t) * 2 - prot.payload.spec.offset);
             assert(memcmp(prot.payload.data, (char*)flux_cap + prot.payload.spec.offset, prot.payload.spec.size) == 0);
+            // read settings tree descriptor
+            POPULATE_PROTOCOL_CMD(prot, TREE_ID_SETTINGS, CMD_READ_DESCRIPTOR);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_READ_DESCRIPTOR_ACK);
+            assert(prot.payload.spec.type == sizeof(settings_descriptor) / sizeof(settings_descriptor[0])); //TODO: yes we are fuzting the node-count param into spec.type for now
+            assert(prot.payload.spec.offset == 0);
+            kowhai_protocol_get_overhead(&prot, &overhead);
+            assert(overhead == 8);
+            assert(prot.payload.spec.size == MAX_PACKET_SIZE - overhead);
+            assert(memcmp(prot.payload.data, settings_descriptor, prot.payload.spec.size) == 0);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_READ_DESCRIPTOR_ACK_END);
+            assert(prot.payload.spec.type == sizeof(settings_descriptor) / sizeof(settings_descriptor[0])); //TODO: yes we are fuzting the node-count param into spec.type for now
+            assert(prot.payload.spec.offset == MAX_PACKET_SIZE - overhead);
+            assert(prot.payload.spec.size == sizeof(settings_descriptor) - prot.payload.spec.offset);
+            assert(memcmp(prot.payload.data, (char*)settings_descriptor + prot.payload.spec.offset, prot.payload.spec.size) == 0);
 
             xpsocket_free_client(conn);
         }
