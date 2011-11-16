@@ -76,7 +76,7 @@ int _get_branch_size(struct kowhai_node_t* tree_descriptor, int* steps)
     while (1);
 }
 
-int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int symbols_matched, int* finished)
+int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int symbols_matched, int* finished, int root)
 {
     int offset = 0;
     do
@@ -136,7 +136,7 @@ int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbol
                 struct kowhai_node_t* branch = *tree_descriptor;
                 int temp;
                 (*tree_descriptor)++;
-                temp = _get_node_data_offset(tree_descriptor, num_symbols, symbols, symbols_matched, finished);
+                temp = _get_node_data_offset(tree_descriptor, num_symbols, symbols, symbols_matched, finished, 0);
                 if (temp == -1)
                 {
 #ifdef KOWHAI_DBG
@@ -169,6 +169,10 @@ int _get_node_data_offset(struct kowhai_node_t** tree_descriptor, int num_symbol
                 if (*finished)
                     return offset;
 
+                // if this was the root branch then quit out
+                if (root)
+                    return -1;
+
                 break;
             }
             case NODE_TYPE_END:
@@ -199,7 +203,7 @@ int kowhai_get_node(struct kowhai_node_t* tree_descriptor, int num_symbols, unio
 {
     struct kowhai_node_t* node = tree_descriptor;
     int finished = 0;
-    int _offset = _get_node_data_offset(&node, num_symbols, symbols, 0, &finished);
+    int _offset = _get_node_data_offset(&node, num_symbols, symbols, 0, &finished, 1);
     if (_offset > -1)
     {
         *offset = _offset;
