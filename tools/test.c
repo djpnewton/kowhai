@@ -466,7 +466,7 @@ int main(int argc, char* argv[])
             // write oven.temp
             temp = 25;
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
             // write low byte of oven.temp
             value = 255;
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 1, 1, &value);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -497,7 +497,7 @@ int main(int argc, char* argv[])
             assert(*((char*)prot.payload.data) == value);
             // double check oven.temp
             POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 3, symbols1);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -505,7 +505,7 @@ int main(int argc, char* argv[])
             assert(*((uint16_t*)prot.payload.data) >> 8 == (uint8_t)value);
             // write oven
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols11, 0, 0, sizeof(oven), &oven);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -520,7 +520,7 @@ int main(int argc, char* argv[])
             assert(memcmp(prot.payload.data, &oven, sizeof(oven)) == 0);
             // write flux capacitor array
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols3, 0, 0, sizeof(struct flux_capacitor_t) * 2, flux_cap);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -535,7 +535,7 @@ int main(int argc, char* argv[])
             assert(memcmp(prot.payload.data, flux_cap, sizeof(struct flux_capacitor_t) * 2) == 0);
             // write flux capacitor[1]
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols12, 0, 0, sizeof(struct flux_capacitor_t), &flux_cap[1]);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -550,7 +550,7 @@ int main(int argc, char* argv[])
             assert(memcmp(prot.payload.data, &flux_cap[1], sizeof(struct flux_capacitor_t)) == 0);
             // read oven.temp
             POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 3, symbols1);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -565,7 +565,7 @@ int main(int argc, char* argv[])
             assert(*((int16_t*)prot.payload.data) == 0x0102);
             // read flux capacitor array
             POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 2, symbols3);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -593,7 +593,7 @@ int main(int argc, char* argv[])
             assert(memcmp(prot.payload.data, (char*)flux_cap + prot.payload.spec.offset, prot.payload.spec.size) == 0);
             // read settings tree descriptor
             POPULATE_PROTOCOL_CMD(prot, TREE_ID_SETTINGS, CMD_READ_DESCRIPTOR);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -616,7 +616,7 @@ int main(int argc, char* argv[])
             assert(memcmp(prot.payload.data, (char*)settings_descriptor + prot.payload.spec.offset, prot.payload.spec.size) == 0);
             // test invalid tree id
             POPULATE_PROTOCOL_CMD(prot, 255, CMD_READ_DESCRIPTOR);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -625,7 +625,7 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_ERROR_INVALID_TREE_ID);
             // test invalid command
             POPULATE_PROTOCOL_CMD(prot, TREE_ID_SETTINGS, CMD_READ_DESCRIPTOR);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             buffer[1] = 255;
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
@@ -635,7 +635,7 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_ERROR_INVALID_COMMAND);
             // test invalid symbol path
             POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 2, symbols4);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
@@ -643,7 +643,7 @@ int main(int argc, char* argv[])
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
             assert(prot.header.command == CMD_ERROR_INVALID_SYMBOL_PATH);
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols4, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
-            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, BUF_SIZE);
             xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
