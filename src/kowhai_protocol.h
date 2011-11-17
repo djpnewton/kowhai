@@ -8,21 +8,27 @@
 //
 
 // Write tree data
-#define CMD_WRITE_DATA              0x00
+#define CMD_WRITE_DATA                   0x00
 // Acknowledge write tree data command
-#define CMD_WRITE_DATA_ACK          0x0F
+#define CMD_WRITE_DATA_ACK               0x0F
 // Read tree data
-#define CMD_READ_DATA               0x10
+#define CMD_READ_DATA                    0x10
 // Acknowledge read tree data command (and return the data)
-#define CMD_READ_DATA_ACK           0x1F
+#define CMD_READ_DATA_ACK                0x1F
 // Acknowledge read tree data command (this is the final packet)
-#define CMD_READ_DATA_ACK_END       0x1E
+#define CMD_READ_DATA_ACK_END            0x1E
 // Read the tree descriptor
-#define CMD_READ_DESCRIPTOR         0xF0
+#define CMD_READ_DESCRIPTOR              0x20
 // Acknowledge read tree command (and return tree contents)
-#define CMD_READ_DESCRIPTOR_ACK     0xFF
+#define CMD_READ_DESCRIPTOR_ACK          0x2F
 // Acknowledge read tree command (this is the final packet)
-#define CMD_READ_DESCRIPTOR_ACK_END 0xFE
+#define CMD_READ_DESCRIPTOR_ACK_END      0x2E
+// Error codes
+#define CMD_ERROR_INVALID_TREE_ID        0xF0
+#define CMD_ERROR_INVALID_COMMAND        0xF1
+#define CMD_ERROR_INVALID_SYMBOL_PATH    0xF2
+#define CMD_ERROR_INVALID_PAYLOAD_OFFSET 0xF3
+#define CMD_ERROR_INVALID_PAYLOAD_SIZE   0xF4
 
 //
 // Protocol structures

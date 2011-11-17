@@ -148,6 +148,9 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
         switch (prot.header.command)
         {
             case CMD_WRITE_DATA:
+                // TODO: return symbol path error if neccesary
+                // TODO: return write size error if neccesary
+
                 printf("    CMD write data\n");
                 kowhai_write(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
                 prot.header.command = CMD_WRITE_DATA_ACK;
@@ -157,47 +160,57 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
                 break;
             case CMD_READ_DATA:
             {
+                // TODO: return read size error if neccesary
+
                 int node_offset;
                 int size, overhead, max_payload_size;
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
                 // get node information
-                kowhai_get_node(settings_descriptor, prot.header.symbol_count, prot.header.symbols, &node_offset, &node);
-                kowhai_get_node_size(node, &size);
-                // get protocol overhead
-                prot.header.command = CMD_READ_DATA_ACK;
-                kowhai_protocol_get_overhead(&prot, &overhead);
-                // setup max payload size and payload offset
-                max_payload_size = MAX_PACKET_SIZE - overhead;
-                prot.payload.spec.offset = 0;
-                prot.payload.spec.type = node->data_type;
-                // allocate payload buffer
-                prot.payload.data = malloc(MAX_PACKET_SIZE - overhead);
-
-                // send packets
-                while (size > max_payload_size)
+                if (kowhai_get_node(settings_descriptor, prot.header.symbol_count, prot.header.symbols, &node_offset, &node))
                 {
-                    prot.payload.spec.size = max_payload_size;
+                    kowhai_get_node_size(node, &size);
+                    // get protocol overhead
+                    prot.header.command = CMD_READ_DATA_ACK;
+                    kowhai_protocol_get_overhead(&prot, &overhead);
+                    // setup max payload size and payload offset
+                    max_payload_size = MAX_PACKET_SIZE - overhead;
+                    prot.payload.spec.offset = 0;
+                    prot.payload.spec.type = node->data_type;
+                    // allocate payload buffer
+                    prot.payload.data = malloc(MAX_PACKET_SIZE - overhead);
+
+                    // send packets
+                    while (size > max_payload_size)
+                    {
+                        prot.payload.spec.size = max_payload_size;
+                        kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
+                        kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                        xpsocket_send(conn, buffer2, bytes_required);
+                        // increment payload offset and decrement remaining payload size
+                        prot.payload.spec.offset += max_payload_size;
+                        size -= max_payload_size;
+                    }
+                    // send final packet
+                    prot.header.command = CMD_READ_DATA_ACK_END;
+                    prot.payload.spec.size = size;
                     kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
                     kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
                     xpsocket_send(conn, buffer2, bytes_required);
-                    // increment payload offset and decrement remaining payload size
-                    prot.payload.spec.offset += max_payload_size;
-                    size -= max_payload_size;
+                    // free payload buffer
+                    free(prot.payload.data);
                 }
-                // send final packet
-                prot.header.command = CMD_READ_DATA_ACK_END;
-                prot.payload.spec.size = size;
-                kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
-                kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
-                xpsocket_send(conn, buffer2, bytes_required);
-                // free payload buffer
-                free(prot.payload.data);
+                else
+                {
+                    printf("    invalid symbol path\n");
+                    POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_SYMBOL_PATH);
+                    kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                    xpsocket_send(conn, buffer2, bytes_required);
+                }
                 break;
             }
             case CMD_READ_DESCRIPTOR:
             {
-                int descriptor_offset;
                 int size, overhead, max_payload_size;
                 printf("    CMD read descriptor\n");
                 // get descriptor size
@@ -234,12 +247,20 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
                 break;
             }
             default:
-                printf("unsupported command\n");
+                printf("    invalid command (%d)\n", prot.header.command);
+                POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_COMMAND);
+                kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                xpsocket_send(conn, buffer2, bytes_required);
                 break;
         }
     }
     else
-        printf("unsupported tree id\n");
+    {
+        printf("    invalid tree id (%d)\n", prot.header.tree_id);
+        POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_TREE_ID);
+        kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+        xpsocket_send(conn, buffer2, bytes_required);
+    }
 }
 
 int main(int argc, char* argv[])
@@ -548,6 +569,42 @@ int main(int argc, char* argv[])
             assert(prot.payload.spec.offset == MAX_PACKET_SIZE - overhead);
             assert(prot.payload.spec.size == sizeof(settings_descriptor) - prot.payload.spec.offset);
             assert(memcmp(prot.payload.data, (char*)settings_descriptor + prot.payload.spec.offset, prot.payload.spec.size) == 0);
+            // test invalid tree id
+            POPULATE_PROTOCOL_CMD(prot, 255, CMD_READ_DESCRIPTOR);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == 255);
+            assert(prot.header.command == CMD_ERROR_INVALID_TREE_ID);
+            // test invalid command
+            POPULATE_PROTOCOL_CMD(prot, TREE_ID_SETTINGS, CMD_READ_DESCRIPTOR);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            buffer[1] = 255;
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_ERROR_INVALID_COMMAND);
+            // test invalid symbol path
+            POPULATE_PROTOCOL_READ(prot, TREE_ID_SETTINGS, CMD_READ_DATA, 2, symbols4);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_ERROR_INVALID_SYMBOL_PATH);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols4, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
+            assert(kowhai_protocol_create(buffer, BUF_SIZE, &prot, &bytes_required));
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, BUF_SIZE);
+            xpsocket_receive(conn, buffer, BUF_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SETTINGS);
+            assert(prot.header.command == CMD_ERROR_INVALID_SYMBOL_PATH);
 
             xpsocket_free_client(conn);
         }
