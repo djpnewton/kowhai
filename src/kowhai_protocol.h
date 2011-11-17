@@ -29,6 +29,7 @@
 #define CMD_ERROR_INVALID_SYMBOL_PATH    0xF2
 #define CMD_ERROR_INVALID_PAYLOAD_OFFSET 0xF3
 #define CMD_ERROR_INVALID_PAYLOAD_SIZE   0xF4
+#define CMD_ERROR_UNKNOWN                0xFF
 
 //
 // Protocol structures

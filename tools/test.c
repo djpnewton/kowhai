@@ -141,7 +141,7 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
 {
     char buffer2[BUF_SIZE];
     struct kowhai_protocol_t prot;
-    int bytes_required;
+    int bytes_required, status;
     kowhai_protocol_parse(buffer, buffer_size, &prot);
     if (prot.header.tree_id == TREE_ID_SETTINGS)
     {
@@ -152,11 +152,38 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
                 // TODO: return write size error if neccesary
 
                 printf("    CMD write data\n");
-                kowhai_write(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
-                prot.header.command = CMD_WRITE_DATA_ACK;
-                kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
-                kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
-                xpsocket_send(conn, buffer2, bytes_required);
+                status = kowhai_write(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
+                if (status == STATUS_OK)
+                {
+                    prot.header.command = CMD_WRITE_DATA_ACK;
+                    kowhai_read(settings_descriptor, &settings, prot.header.symbol_count, prot.header.symbols, prot.payload.spec.offset, prot.payload.data, prot.payload.spec.size);
+                    kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                    xpsocket_send(conn, buffer2, bytes_required);
+                }
+                else
+                {
+                    switch (status)
+                    {
+                        case STATUS_INVALID_SYMBOL_PATH:
+                            printf("    invalid symbol path\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_SYMBOL_PATH);
+                            break;
+                        case STATUS_INVALID_OFFSET:
+                            printf("    invalid payload offset\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_OFFSET);
+                            break;
+                        case STATUS_NODE_DATA_TOO_SMALL:
+                            printf("    invalid payload size\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_SIZE);
+                            break;
+                        default:
+                            printf("    unkown error\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_UNKNOWN);
+                            break;
+                    }
+                    kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
+                    xpsocket_send(conn, buffer2, bytes_required);
+                }
                 break;
             case CMD_READ_DATA:
             {
@@ -167,7 +194,8 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
                 // get node information
-                if (kowhai_get_node(settings_descriptor, prot.header.symbol_count, prot.header.symbols, &node_offset, &node))
+                status = kowhai_get_node(settings_descriptor, prot.header.symbol_count, prot.header.symbols, &node_offset, &node);
+                if (status == STATUS_OK)
                 {
                     kowhai_get_node_size(node, &size);
                     // get protocol overhead
@@ -202,8 +230,25 @@ void server_buffer_received(xpsocket_handle conn, char* buffer, int buffer_size)
                 }
                 else
                 {
-                    printf("    invalid symbol path\n");
-                    POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_SYMBOL_PATH);
+                    switch (status)
+                    {
+                        case STATUS_INVALID_SYMBOL_PATH:
+                            printf("    invalid symbol path\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_SYMBOL_PATH);
+                            break;
+                        case STATUS_INVALID_OFFSET:
+                            printf("    invalid payload offset\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_OFFSET);
+                            break;
+                        case STATUS_NODE_DATA_TOO_SMALL:
+                            printf("    invalid payload size\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_SIZE);
+                            break;
+                        default:
+                            printf("    unkown error\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_UNKNOWN);
+                            break;
+                    }
                     kowhai_protocol_create(buffer2, BUF_SIZE, &prot, &bytes_required);
                     xpsocket_send(conn, buffer2, bytes_required);
                 }
@@ -306,28 +351,28 @@ int main(int argc, char* argv[])
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
-    assert(kowhai_get_node(settings_descriptor, 3, symbols1, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 3, symbols1, &offset, &node) == STATUS_OK);
     assert(offset == 64);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols2, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 3, symbols2, &offset, &node) == STATUS_OK);
     assert(offset == 66);
-    assert(kowhai_get_node(settings_descriptor, 2, symbols3, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 2, symbols3, &offset, &node) == STATUS_OK);
     assert(offset == 0);
-    assert(!kowhai_get_node(settings_descriptor, 2, symbols4, &offset, &node));
-    assert(kowhai_get_node(settings_descriptor, 3, symbols6, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 2, symbols4, &offset, &node) == STATUS_INVALID_SYMBOL_PATH);
+    assert(kowhai_get_node(settings_descriptor, 3, symbols6, &offset, &node) == STATUS_OK);
     assert(offset == 4);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols8, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 3, symbols8, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 4);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols9, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 3, symbols9, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols10, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 3, symbols10, &offset, &node) == STATUS_OK);
     assert(offset == 8 + 3 * 4);
-    assert(kowhai_get_node(settings_descriptor, 2, symbols12, &offset, &node));
+    assert(kowhai_get_node(settings_descriptor, 2, symbols12, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t));
     printf(" passed!\n");
 
     // test get node size
     printf("test kowhai_get_node_size...\t\t");
-    assert(kowhai_get_node_size(settings_descriptor, &size));
+    assert(kowhai_get_node_size(settings_descriptor, &size) == STATUS_OK);
     assert(size == sizeof(struct settings_data_t));
     printf(" passed!\n");
 
@@ -335,60 +380,60 @@ int main(int argc, char* argv[])
     printf("test kowhai_read/kowhai_write...\t");
     status = 1;
     shadow.status = 0;
-    assert(kowhai_write(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1));
+    assert(kowhai_write(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1) == STATUS_OK);
     assert(shadow.status == 1);
     status = 0;
-    assert(kowhai_read(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1));
+    assert(kowhai_read(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1) == STATUS_OK);
     assert(status == 1);
     timeout = 999;
     settings.oven.timeout = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)));
+    assert(kowhai_write(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)) == STATUS_OK);
     assert(settings.oven.timeout == 999);
     timeout = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)));
+    assert(kowhai_read(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)) == STATUS_OK);
     assert(timeout == 999);
     flux_capacitor.frequency = 100; flux_capacitor.gain = 200;
     settings.flux_capacitor[0].frequency = 0; settings.flux_capacitor[0].gain = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)));
+    assert(kowhai_write(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)) == STATUS_OK);
     assert(settings.flux_capacitor[0].frequency == 100 && settings.flux_capacitor[0].gain == 200);
     flux_capacitor.frequency = 0; flux_capacitor.gain = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)));
+    assert(kowhai_read(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)) == STATUS_OK);
     assert(flux_capacitor.frequency == 100 && flux_capacitor.gain == 200);
     coeff = 999.9f;
     settings.flux_capacitor[1].coefficient[3] = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)));
+    assert(kowhai_write(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)) == STATUS_OK);
     assert(settings.flux_capacitor[1].coefficient[3] == 999.9f);
     coeff = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)));
+    assert(kowhai_read(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)) == STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
 
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
     shadow.status = 0;
-    assert(kowhai_set_char(shadow_descriptor, &shadow, 2, symbols5, 255));
+    assert(kowhai_set_char(shadow_descriptor, &shadow, 2, symbols5, 255) == STATUS_OK);
     assert(shadow.status == 255);
-    assert(kowhai_get_char(shadow_descriptor, &shadow, 2, symbols5, &status));
+    assert(kowhai_get_char(shadow_descriptor, &shadow, 2, symbols5, &status) == STATUS_OK);
     assert(status == 255);
     settings.oven.temp = 0;
-    assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols1, 999));
+    assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols1, 999) == STATUS_OK);
     assert(settings.oven.temp == 999);
-    assert(kowhai_get_int16(settings_descriptor, &settings, 3, symbols1, &temp));
+    assert(kowhai_get_int16(settings_descriptor, &settings, 3, symbols1, &temp) == STATUS_OK);
     assert(temp == 999);
     settings.oven.timeout = 0;
-    assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols2, 999));
+    assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols2, 999) == STATUS_OK);
     assert(settings.oven.timeout == 999);
-    assert(kowhai_get_int16(settings_descriptor, &settings, 3, symbols2, &timeout));
+    assert(kowhai_get_int16(settings_descriptor, &settings, 3, symbols2, &timeout) == STATUS_OK);
     assert(timeout == 999);
     settings.flux_capacitor[0].gain = 0;
-    assert(kowhai_set_int32(settings_descriptor, &settings, 3, symbols6, 999));
+    assert(kowhai_set_int32(settings_descriptor, &settings, 3, symbols6, 999) == STATUS_OK);
     assert(settings.flux_capacitor[0].gain == 999);
-    assert(kowhai_get_int32(settings_descriptor, &settings, 3, symbols6, &gain));
+    assert(kowhai_get_int32(settings_descriptor, &settings, 3, symbols6, &gain) == STATUS_OK);
     assert(gain == 999);
     settings.flux_capacitor[0].coefficient[0] = 0;
-    assert(kowhai_set_float(settings_descriptor, &settings, 3, symbols7, 999.9f));
+    assert(kowhai_set_float(settings_descriptor, &settings, 3, symbols7, 999.9f) == STATUS_OK);
     assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
-    assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff));
+    assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff) == STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
 

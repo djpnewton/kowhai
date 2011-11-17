@@ -46,6 +46,13 @@ struct kowhai_node_t
 #define DATA_TYPE_FLOAT    6
 #define DATA_TYPE_READONLY 0x8000
 
+#define STATUS_OK                       0
+#define STATUS_INVALID_SYMBOL_PATH      1
+#define STATUS_INVALID_DESCRIPTOR       2
+#define STATUS_INVALID_OFFSET           3
+#define STATUS_NODE_DATA_TOO_SMALL      4
+#define STATUS_INVALID_NODE_TYPE        5
+
 /* 
  * Return the size of a data type
  */
