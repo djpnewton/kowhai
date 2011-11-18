@@ -41,21 +41,44 @@ struct kowhai_protocol_header_t
 {
     uint8_t tree_id;
     uint8_t command;
-    uint8_t symbol_count;
-    union kowhai_symbol_t* symbols;
 };
 
-struct kowhai_protocol_payload_spec_t
+struct kowhai_protocol_symbol_spec_t
+{
+    uint8_t count;
+    union kowhai_symbol_t* array_;
+};
+
+struct kowhai_protocol_data_payload_memory_spec_t
 {
     uint16_t type;
     uint16_t offset;
     uint16_t size;
 };
 
+struct kowhai_protocol_data_payload_spec_t
+{
+    struct kowhai_protocol_symbol_spec_t symbols;
+    struct kowhai_protocol_data_payload_memory_spec_t memory;
+};
+
+struct kowhai_protocol_descriptor_payload_spec_t
+{
+    uint16_t node_count;
+    uint16_t offset;
+    uint16_t size;
+};
+
+union kowhai_protocol_payload_spec_t
+{
+    struct kowhai_protocol_data_payload_spec_t data;
+    struct kowhai_protocol_descriptor_payload_spec_t descriptor;
+};
+
 struct kowhai_protocol_payload_t
 {
-    struct kowhai_protocol_payload_spec_t spec;
-    void* data;
+    union kowhai_protocol_payload_spec_t spec;
+    void* buffer;
 };
 
 struct kowhai_protocol_t
@@ -66,30 +89,26 @@ struct kowhai_protocol_t
 
 #pragma pack()
 
-#define POPULATE_PROTOCOL_CMD(protocol, tree_id_, cmd)  \
-    {                                                   \
-        protocol.header.tree_id = tree_id_;             \
-        protocol.header.command = cmd;                  \
+#define POPULATE_PROTOCOL_CMD(protocol, tree_id_, cmd)           \
+    {                                                            \
+        protocol.header.tree_id = tree_id_;                      \
+        protocol.header.command = cmd;                           \
     }
 
 #define POPULATE_PROTOCOL_READ(protocol, tree_id_, cmd, symbol_count_, symbols_) \
-    {                                                   \
-        protocol.header.tree_id = tree_id_;             \
-        protocol.header.command = cmd;                  \
-        protocol.header.symbol_count = symbol_count_;   \
-        protocol.header.symbols = symbols_;             \
+    {                                                            \
+        POPULATE_PROTOCOL_CMD(protocol, tree_id_, cmd);          \
+        protocol.payload.spec.data.symbols.count = symbol_count_;\
+        protocol.payload.spec.data.symbols.array_ = symbols_;    \
     }
 
-#define POPULATE_PROTOCOL_WRITE(protocol, tree_id_, cmd, symbol_count_, symbols_, data_type, data_offset, data_size, data_) \
-    {                                                   \
-        protocol.header.tree_id = tree_id_;             \
-        protocol.header.command = cmd;                  \
-        protocol.header.symbol_count = symbol_count_;   \
-        protocol.header.symbols = symbols_;             \
-        protocol.payload.spec.type = data_type;         \
-        protocol.payload.spec.offset = data_offset;     \
-        protocol.payload.spec.size = data_size;         \
-        protocol.payload.data = data_;                  \
+#define POPULATE_PROTOCOL_WRITE(protocol, tree_id_, cmd, symbol_count_, symbols_, data_type, data_offset, data_size, buffer_) \
+    {                                                            \
+        POPULATE_PROTOCOL_READ(protocol, tree_id_, cmd, symbol_count_, symbols_);\
+        protocol.payload.spec.data.memory.type = data_type;      \
+        protocol.payload.spec.data.memory.offset = data_offset;  \
+        protocol.payload.spec.data.memory.size = data_size;      \
+        protocol.payload.buffer = buffer_;                       \
     }
 
 //

@@ -18,76 +18,94 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
     return STATUS_OK;
 }
 
-int _parse_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+int _parse_symbols(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload, int* symbols_size)
 {
-    if (packet_size < sizeof(struct kowhai_protocol_payload_spec_t))
+    // check packet is large enough for symbol count byte
+    int required_size = sizeof(payload->spec.data.symbols.count);
+    if (packet_size < required_size)
         return STATUS_PACKET_BUFFER_TOO_SMALL;
-    memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_payload_spec_t));
-    if (payload->spec.size > packet_size - sizeof(struct kowhai_protocol_payload_spec_t))
+
+    // get symbol count
+    payload->spec.data.symbols.count = *((uint8_t*)payload_packet);
+    required_size += sizeof(union kowhai_symbol_t) * payload->spec.data.symbols.count;
+
+    // check packet is large enough for symbols array
+    if (packet_size < required_size)
         return STATUS_PACKET_BUFFER_TOO_SMALL;
-    payload->data = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_payload_spec_t));
+
+    // get symbol array
+    payload->spec.data.symbols.array_ = (union kowhai_symbol_t*)((uint8_t*)payload_packet + sizeof(payload->spec.data.symbols.count));
+
+    // return OK
+    *symbols_size = required_size;
+    return STATUS_OK;
+}
+
+int _parse_data_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+{
+    // parse symbols
+    int required_size;
+    int status = _parse_symbols(payload_packet, packet_size, payload, &required_size);
+    if (status != STATUS_OK)
+        return status;
+
+    // check packet is large enough for the rest of the payload spec
+    required_size += sizeof(struct kowhai_protocol_data_payload_memory_spec_t);
+    if (packet_size < required_size)
+        return STATUS_PACKET_BUFFER_TOO_SMALL;
+
+    // copy the rest of the payload spec
+    memcpy(&payload->spec.data.memory,
+        (uint8_t*)payload_packet + sizeof(payload->spec.data.symbols.count) + sizeof(union kowhai_symbol_t) * payload->spec.data.symbols.count,
+        sizeof(struct kowhai_protocol_data_payload_memory_spec_t));
+
+    // check the packet is large enough to hold the payload buffer
+    if (payload->spec.data.memory.size > packet_size - required_size)
+        return STATUS_PACKET_BUFFER_TOO_SMALL;
+
+    // set payload buffer pointer
+    payload->buffer = (void*)((char*)payload_packet + sizeof(payload->spec.data.symbols.count) + sizeof(union kowhai_symbol_t) * payload->spec.data.symbols.count + sizeof(struct kowhai_protocol_data_payload_memory_spec_t));
+
+    return STATUS_OK;
+}
+
+int _parse_descriptor_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+{
+    if (packet_size < sizeof(struct kowhai_protocol_descriptor_payload_spec_t))
+        return STATUS_PACKET_BUFFER_TOO_SMALL;
+    memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_descriptor_payload_spec_t));
+    if (payload->spec.descriptor.size > packet_size - sizeof(struct kowhai_protocol_descriptor_payload_spec_t))
+        return STATUS_PACKET_BUFFER_TOO_SMALL;
+    payload->buffer = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_descriptor_payload_spec_t));
     return STATUS_OK;
 }
 
 int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol)
 {
-    int required_size = 0, status;
+    int required_size = sizeof(struct kowhai_protocol_header_t);
 
     memset(protocol, 0, sizeof(struct kowhai_protocol_t));
 
-    // establish tree id
-    status = kowhai_protocol_get_tree_id(proto_packet, packet_size, &protocol->header.tree_id);
-    if (status != STATUS_OK)
-        return status;
-
-    // check packet is large enough for command byte
-    required_size = TREE_ID_SIZE + CMD_SIZE;
+    // check packet is large enough for header
     if (packet_size < required_size)
         return STATUS_PACKET_BUFFER_TOO_SMALL;
-
-    // establish protocol command
-    protocol->header.command = *((uint8_t*)proto_packet + 1);
-
-    // read descriptor command requires no more parameters
-    if (protocol->header.command == CMD_READ_DESCRIPTOR)
-        return STATUS_OK;
+    memcpy(&protocol->header, proto_packet, required_size);
 
     switch (protocol->header.command)
     {
-        case CMD_WRITE_DATA:
-        case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA:
-        case CMD_READ_DATA_ACK:
-        case CMD_READ_DATA_ACK_END:
-            // check packet is large enough for symbol count byte
-            required_size += SYM_COUNT_SIZE;
-            if (packet_size < required_size)
-                return STATUS_PACKET_BUFFER_TOO_SMALL;
-
-            // get symbol count
-            protocol->header.symbol_count = *((uint8_t*)proto_packet + 2);
-            required_size += sizeof(union kowhai_symbol_t) * protocol->header.symbol_count;
-
-            // check packet is large enough for symbols array
-            if (packet_size < required_size)
-                return STATUS_PACKET_BUFFER_TOO_SMALL;
-
-            // get symbol array
-            protocol->header.symbols = (union kowhai_symbol_t*)((uint8_t*)proto_packet + TREE_ID_SIZE + CMD_SIZE + SYM_COUNT_SIZE);
-    }
-    
-    switch (protocol->header.command)
-    {
+            return _parse_symbols((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload, &required_size);
         case CMD_WRITE_DATA:
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:
         case CMD_READ_DATA_ACK_END:
+            return _parse_data_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
+        case CMD_READ_DESCRIPTOR:
+            // read descriptor command requires no more parameters
+            return STATUS_OK;
         case CMD_READ_DESCRIPTOR_ACK:
         case CMD_READ_DESCRIPTOR_ACK_END:
-        {
-            status = _parse_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
-            return status;
-        }
+            return _parse_descriptor_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         default:
             return STATUS_INVALID_PROTOCOL_COMMAND;
     }
@@ -127,15 +145,15 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             *bytes_required += SYM_COUNT_SIZE;
             if (packet_size < *bytes_required)
                 return STATUS_PACKET_BUFFER_TOO_SMALL;
-            *pkt = protocol->header.symbol_count;
+            *pkt = protocol->payload.spec.data.symbols.count;
             pkt += SYM_COUNT_SIZE;
 
             // write symbols
-            *bytes_required += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);
+            *bytes_required += protocol->payload.spec.data.symbols.count * sizeof(union kowhai_symbol_t);
             if (packet_size < *bytes_required)
                 return STATUS_PACKET_BUFFER_TOO_SMALL;
-            memcpy(pkt, protocol->header.symbols, protocol->header.symbol_count * sizeof(union kowhai_symbol_t));
-            pkt += protocol->header.symbol_count * sizeof(union kowhai_symbol_t);;
+            memcpy(pkt, protocol->payload.spec.data.symbols.array_, protocol->payload.spec.data.symbols.count * sizeof(union kowhai_symbol_t));
+            pkt += protocol->payload.spec.data.symbols.count * sizeof(union kowhai_symbol_t);;
 
             break;
     }
@@ -149,27 +167,42 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     {
         case CMD_READ_DESCRIPTOR_ACK:
         case CMD_READ_DESCRIPTOR_ACK_END:
+            // write payload spec
+            *bytes_required += sizeof(struct kowhai_protocol_descriptor_payload_spec_t);
+            if (packet_size < *bytes_required)
+                return STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, &protocol->payload.spec.descriptor, sizeof(struct kowhai_protocol_descriptor_payload_spec_t));
+            pkt += sizeof(struct kowhai_protocol_descriptor_payload_spec_t);
+
+            // write payload
+            *bytes_required += protocol->payload.spec.descriptor.size;
+            if (packet_size < *bytes_required)
+                return STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.descriptor.size);
+
+            break;
+
         case CMD_WRITE_DATA:
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:
         case CMD_READ_DATA_ACK_END:
+            // write payload spec
+            *bytes_required += sizeof(struct kowhai_protocol_data_payload_memory_spec_t);
+            if (packet_size < *bytes_required)
+                return STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, &protocol->payload.spec.data.memory, sizeof(struct kowhai_protocol_data_payload_memory_spec_t));
+            pkt += sizeof(struct kowhai_protocol_data_payload_memory_spec_t);
+
+            // write payload
+            *bytes_required += protocol->payload.spec.data.memory.size;
+            if (packet_size < *bytes_required)
+                return STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.data.memory.size);
             break;
+
         default:
             return STATUS_INVALID_PROTOCOL_COMMAND;
     }
-
-    // write payload spec
-    *bytes_required += sizeof(struct kowhai_protocol_payload_spec_t);
-    if (packet_size < *bytes_required)
-        return STATUS_PACKET_BUFFER_TOO_SMALL;
-    memcpy(pkt, &protocol->payload.spec, sizeof(struct kowhai_protocol_payload_spec_t));
-    pkt += sizeof(struct kowhai_protocol_payload_spec_t);
-
-    // write payload
-    *bytes_required += protocol->payload.spec.size;
-    if (packet_size < *bytes_required)
-        return STATUS_PACKET_BUFFER_TOO_SMALL;
-    memcpy(pkt, protocol->payload.data, protocol->payload.spec.size);
 
     return STATUS_OK;
 }
@@ -180,23 +213,23 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
     switch (protocol->header.command)
     {
         case CMD_READ_DESCRIPTOR:
-            *overhead = TREE_ID_SIZE + CMD_SIZE;
+            *overhead = sizeof(struct kowhai_protocol_header_t);
             return STATUS_OK;
         case CMD_READ_DESCRIPTOR_ACK:
         case CMD_READ_DESCRIPTOR_ACK_END:
-            *overhead = TREE_ID_SIZE + CMD_SIZE + sizeof(struct kowhai_protocol_payload_spec_t);
+            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_descriptor_payload_spec_t);
             return STATUS_OK;
         case CMD_WRITE_DATA:
         case CMD_WRITE_DATA_ACK:
         case CMD_READ_DATA_ACK:
         case CMD_READ_DATA_ACK_END:
-            *overhead = sizeof(struct kowhai_protocol_t) - sizeof(protocol->header.symbols) +
-                sizeof(union kowhai_symbol_t) * protocol->header.symbol_count -
-                sizeof(protocol->payload.data);
+            *overhead = sizeof(struct kowhai_protocol_t) - sizeof(protocol->payload.spec.data.symbols.array_) +
+                sizeof(union kowhai_symbol_t) * protocol->payload.spec.data.symbols.count -
+                sizeof(protocol->payload.buffer);
             return STATUS_OK;
         case CMD_READ_DATA:
-            *overhead = sizeof(struct kowhai_protocol_header_t) - sizeof(protocol->header.symbols) +
-                sizeof(union kowhai_symbol_t) * protocol->header.symbol_count;
+            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(protocol->payload.spec.data.symbols.count) +
+                sizeof(union kowhai_symbol_t) * protocol->payload.spec.data.symbols.count;
             return STATUS_OK;
         default:
             return STATUS_INVALID_PROTOCOL_COMMAND;
