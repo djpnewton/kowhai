@@ -19,6 +19,6 @@ struct kowhai_protocol_server_t
     void** tree_data_buffers;
 };
 
-void kowhai_protocol_handle_packet(struct kowhai_protocol_server_t* server, char* packet, size_t packet_size);
+int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* packet, size_t packet_size);
 
 #endif

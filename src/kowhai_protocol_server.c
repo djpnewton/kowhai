@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void kowhai_protocol_handle_packet(struct kowhai_protocol_server_t* server, char* packet, size_t packet_size)
+int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* packet, size_t packet_size)
 {
     struct kowhai_protocol_t prot;
     int bytes_required, status;
@@ -12,10 +12,12 @@ void kowhai_protocol_handle_packet(struct kowhai_protocol_server_t* server, char
     if (packet_size > server->max_packet_size)
     {
         printf("    error: packet size too large\n");
-        return;
+        return STATUS_PACKET_BUFFER_TOO_BIG;
     }
 
-    kowhai_protocol_parse(packet, packet_size, &prot);
+    status = kowhai_protocol_parse(packet, packet_size, &prot);
+    if (status != STATUS_OK && status != STATUS_INVALID_PROTOCOL_COMMAND)
+        return status;
 
     if (prot.header.tree_id >= 0 && prot.header.tree_id < server->tree_count)
     {
@@ -177,4 +179,6 @@ void kowhai_protocol_handle_packet(struct kowhai_protocol_server_t* server, char
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
         server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
     }
+
+    return STATUS_OK;
 }

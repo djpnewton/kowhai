@@ -54,6 +54,7 @@ struct kowhai_node_t
 #define STATUS_INVALID_NODE_TYPE        5
 #define STATUS_PACKET_BUFFER_TOO_SMALL  6
 #define STATUS_INVALID_PROTOCOL_COMMAND 7
+#define STATUS_PACKET_BUFFER_TOO_BIG    8
 
 /* 
  * Return the size of a data type

@@ -147,7 +147,7 @@ void server_buffer_received(xpsocket_handle conn, void* param, char* buffer, int
 {
     struct kowhai_protocol_server_t* server = (struct kowhai_protocol_server_t*)param;
     server->send_packet_param = conn;
-    kowhai_protocol_handle_packet(server, buffer, buffer_size);
+    kowhai_server_process_packet(server, buffer, buffer_size);
 }
 
 int main(int argc, char* argv[])
