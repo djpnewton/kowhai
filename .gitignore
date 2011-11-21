@@ -3,3 +3,8 @@
 *.a
 *.swp
 *~
+msvc/Debug
+*.user
+*.sdf
+*.opensdf
+*.suo
