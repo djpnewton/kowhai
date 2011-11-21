@@ -53,7 +53,7 @@ void xpsocket_cleanup()
 #endif
 }
 
-int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
+int xpsocket_serve(xpsocket_receive_callback buffer_received, void* buffer_received_param, int buffer_size)
 {
     struct xpsocket_t conn;
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -101,7 +101,7 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, int buffer_size)
         {
             printf("  received %d bytes\n", bytes_received);
             conn.sock = sock;
-            buffer_received(&conn, recv_buffer, bytes_received);
+            buffer_received(&conn, buffer_received_param, recv_buffer, bytes_received);
         }
         else if (bytes_received == 0)
         {
