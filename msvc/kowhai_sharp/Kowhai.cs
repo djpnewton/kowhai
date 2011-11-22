@@ -31,24 +31,29 @@ namespace kowhai_sharp
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_node_t
         {
-            uint16_t type;
-            uint16_t symbol;
-            uint16_t count;
-            uint16_t data_type;
+            public uint16_t type;
+            public uint16_t symbol;
+            public uint16_t count;
+            public uint16_t data_type;
         }
 
-        const int NODE_TYPE_BRANCH = 0;
-        const int NODE_TYPE_LEAF = 1;
-        const int NODE_TYPE_END = 2;
+        public const int NODE_TYPE_BRANCH = 0;
+        public const int NODE_TYPE_LEAF = 1;
+        public const int NODE_TYPE_END = 2;
 
-        const int DATA_TYPE_CHAR = 0;
-        const int DATA_TYPE_UCHAR = 1;
-        const int DATA_TYPE_INT16 = 2;
-        const int DATA_TYPE_UINT16 = 3;
-        const int DATA_TYPE_INT32 = 4;
-        const int DATA_TYPE_UINT32 = 5;
-        const int DATA_TYPE_FLOAT = 6;
-        const int DATA_TYPE_READONLY = 0x8000;
+        public const int DATA_TYPE_CHAR = 0;
+        public const int DATA_TYPE_UCHAR = 1;
+        public const int DATA_TYPE_INT16 = 2;
+        public const int DATA_TYPE_UINT16 = 3;
+        public const int DATA_TYPE_INT32 = 4;
+        public const int DATA_TYPE_UINT32 = 5;
+        public const int DATA_TYPE_FLOAT = 6;
+        public const int DATA_TYPE_READONLY = 0x8000;
+
+        public static int RawDataType(int dataType)
+        {
+            return dataType = dataType & (~DATA_TYPE_READONLY);
+        }
 
         public const int STATUS_OK = 0;
         public const int STATUS_INVALID_SYMBOL_PATH = 1;

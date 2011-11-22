@@ -45,7 +45,7 @@ namespace kowhai_test
                                     if (prot.header.command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
                                     {
                                         KowhaiProtocol.CopyDescriptor(descriptor, prot.payload);
-                                        MessageBox.Show("Hurrah!");
+                                        kowhaiTree1.Update(descriptor);
                                     }
                                 }
                             }
