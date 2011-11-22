@@ -26,5 +26,8 @@
     <ClInclude Include="..\tools\xpsocket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\tools\symbols.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

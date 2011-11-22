@@ -11,6 +11,8 @@ namespace kowhai_sharp
 {
     public partial class KowhaiTree : UserControl
     {
+        string[] symbols;
+
         public KowhaiTree()
         {
             InitializeComponent();
@@ -44,14 +46,14 @@ namespace kowhai_sharp
             if (node.type == Kowhai.NODE_TYPE_BRANCH)
             {
                 if (node.count > 1)
-                    return string.Format("{0}[{1}]", node.symbol, node.count);
+                    return string.Format("{0}[{1}]", symbols[node.symbol], node.count);
                 else
-                    return node.symbol.ToString();
+                    return symbols[node.symbol];
             }
             if (node.count > 1)
-                return string.Format("{0}[{1}], {2}", node.symbol, node.count, GetDataTypeString(node.data_type));
+                return string.Format("{0}[{1}]: {2}", symbols[node.symbol], node.count, GetDataTypeString(node.data_type));
             else
-                return string.Format("{0}, {1}", node.symbol, GetDataTypeString(node.data_type));
+                return string.Format("{0}, {1}", symbols[node.symbol], GetDataTypeString(node.data_type));
         }
 
         void _Update(Kowhai.kowhai_node_t[] descriptor, ref int index, TreeNode node)
@@ -94,8 +96,9 @@ namespace kowhai_sharp
             }
         }
 
-        public void Update(Kowhai.kowhai_node_t[] descriptor)
+        public void Update(Kowhai.kowhai_node_t[] descriptor, string[] symbols)
         {
+            this.symbols = symbols;
             treeView1.Nodes.Clear();
             int index = 0;
             _Update(descriptor, ref index, null);

@@ -15,6 +15,7 @@
     <ClCompile Include="..\tools\xpsocket.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\tools\symbols.h" />
     <ClInclude Include="..\tools\xpsocket.h" />
   </ItemGroup>
   <ItemGroup>

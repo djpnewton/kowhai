@@ -1,0 +1,13 @@
+General
+Start
+Stop
+Running
+FluxCapacitor
+Frequency
+Coefficient
+Gain
+Oven
+Temp
+Timeout
+Delay
+Status
