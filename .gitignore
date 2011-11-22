@@ -3,7 +3,9 @@
 *.a
 *.swp
 *~
-msvc/Debug
+Debug/
+Release/
+msvc/ipch
 *.user
 *.sdf
 *.opensdf
