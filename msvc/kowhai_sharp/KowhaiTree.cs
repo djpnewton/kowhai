@@ -54,30 +54,53 @@ namespace kowhai_sharp
                 return string.Format("{0}, {1}", node.symbol, GetDataTypeString(node.data_type));
         }
 
+        void _Update(Kowhai.kowhai_node_t[] descriptor, ref int index, TreeNode node)
+        {
+            while (index < descriptor.Length)
+            {
+                Kowhai.kowhai_node_t descNode = descriptor[index];
+                switch (descNode.type)
+                {
+                    case Kowhai.NODE_TYPE_BRANCH:
+                        if (node == null)
+                            node = treeView1.Nodes.Add(GetNodeName(descNode));
+                        else
+                            node = node.Nodes.Add(GetNodeName(descNode));
+                        index++;
+                        if (descNode.count > 1)
+                        {
+                            int prevIndex = index;
+                            for (int i = 0; i < descNode.count; i++)
+                            {
+                                index = prevIndex;
+                                TreeNode arrayNode = node.Nodes.Add("#" + i.ToString());
+                                _Update(descriptor, ref index, arrayNode);
+                            }
+                        }
+                        else
+                            _Update(descriptor, ref index, node);
+                        node = node.Parent;
+                        break;
+                    case Kowhai.NODE_TYPE_LEAF:
+                        TreeNode leaf = node.Nodes.Add(GetNodeName(descNode));
+                        if (descNode.count > 1)
+                            for (int i = 0; i < descNode.count; i++)
+                                leaf.Nodes.Add("#" + i.ToString());
+                        break;
+                    case Kowhai.NODE_TYPE_END:
+                        return;
+                }
+                index++;
+            }
+        }
+
         public void Update(Kowhai.kowhai_node_t[] descriptor)
         {
             treeView1.Nodes.Clear();
-            TreeNode current = null;
-            TreeNodeCollection col = treeView1.Nodes;
-            foreach (Kowhai.kowhai_node_t node in descriptor)
-            {
-                switch (node.type)
-                {
-                    case Kowhai.NODE_TYPE_BRANCH:
-                        if (current == null)
-                            current = treeView1.Nodes.Add(GetNodeName(node));
-                        else
-                            current = current.Nodes.Add(GetNodeName(node));
-                        break;
-                    case Kowhai.NODE_TYPE_LEAF:
-                        current.Nodes.Add(GetNodeName(node));
-                        break;
-                    case Kowhai.NODE_TYPE_END:
-                        current = current.Parent;
-                        break;
-                }
-            }
+            int index = 0;
+            _Update(descriptor, ref index, null);
             treeView1.ExpandAll();
+            return;
         }
     }
 }
