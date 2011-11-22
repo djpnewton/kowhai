@@ -10,7 +10,7 @@ namespace kowhai_sharp
 
     public class Kowhai
     {
-        const string dllname = "kowhai_dll.dll";
+        public const string dllname = "kowhai_dll.dll";
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_symbol_parts_t
@@ -50,53 +50,53 @@ namespace kowhai_sharp
         const int DATA_TYPE_FLOAT = 6;
         const int DATA_TYPE_READONLY = 0x8000;
 
-        const int STATUS_OK = 0;
-        const int STATUS_INVALID_SYMBOL_PATH = 1;
-        const int STATUS_INVALID_DESCRIPTOR = 2;
-        const int STATUS_INVALID_OFFSET = 3;
-        const int STATUS_NODE_DATA_TOO_SMALL = 4;
-        const int STATUS_INVALID_NODE_TYPE = 5;
-        const int STATUS_PACKET_BUFFER_TOO_SMALL = 6;
-        const int STATUS_INVALID_PROTOCOL_COMMAND = 7;
-        const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
+        public const int STATUS_OK = 0;
+        public const int STATUS_INVALID_SYMBOL_PATH = 1;
+        public const int STATUS_INVALID_DESCRIPTOR = 2;
+        public const int STATUS_INVALID_OFFSET = 3;
+        public const int STATUS_NODE_DATA_TOO_SMALL = 4;
+        public const int STATUS_INVALID_NODE_TYPE = 5;
+        public const int STATUS_PACKET_BUFFER_TOO_SMALL = 6;
+        public const int STATUS_INVALID_PROTOCOL_COMMAND = 7;
+        public const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_data_size();
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node(IntPtr tree_descriptor, int num_symbols, IntPtr symbols, out int offset, IntPtr target_node);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node_size(IntPtr tree_descriptor, out int size);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_read(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int read_offset, IntPtr result, int read_size);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_write(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int write_offset, IntPtr value, int write_size);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out byte result);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out int16_t result);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_int32(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out int32_t result);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_float(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out float result);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, char value);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int16_t value);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_int32(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int32_t value);
 
-        [DllImport(dllname)]
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_float(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, float value);
     }
 }

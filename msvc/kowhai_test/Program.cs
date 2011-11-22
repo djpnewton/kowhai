@@ -2,15 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using kowhai_sharp;
+using System.Windows.Forms;
 
 namespace kowhai_test
 {
     class Program
     {
-        static void Main(string[] args)
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
         {
-            //TODO...
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new MainForm());
         }
     }
 }
