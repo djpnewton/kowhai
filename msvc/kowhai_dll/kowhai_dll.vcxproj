@@ -46,6 +46,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>kowhai_dll.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(OutDir)$(TargetName)$(TargetExt) $(SolutionDir)kowhai_test\bin\$(IntDir)$(TargetName)$(TargetExt)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -60,6 +63,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>kowhai_dll.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(OutDir)$(TargetName)$(TargetExt) $(SolutionDir)kowhai_test\bin\$(IntDir)$(TargetName)$(TargetExt)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="kowhai_dll.c" />
