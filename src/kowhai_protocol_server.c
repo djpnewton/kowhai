@@ -30,6 +30,12 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 status = kowhai_write(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                 if (status == STATUS_OK)
                 {
+                    // call node_written callback
+                    struct kowhai_node_t* node;
+                    int offset;
+                    kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
+                    server->node_written(server->node_written_param, node);
+                    // send response
                     prot.header.command = CMD_WRITE_DATA_ACK;
                     kowhai_read(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);

@@ -12,9 +12,13 @@ namespace kowhai_test
 {
     public partial class MainForm : Form
     {
+        const int TREE_ID_SETTINGS = 0;
+        const int TREE_ID_SHADOW = 1;
+        const int TREE_ID_ACTIONS = 2;
+
         Sock sock;
         const int PACKET_SIZE = 64;
-        Kowhai.kowhai_node_t[] descriptor;
+        List<Kowhai.kowhai_node_t[]> descriptors = new List<Kowhai.kowhai_node_t[]>();
 
         public MainForm()
         {
@@ -29,7 +33,9 @@ namespace kowhai_test
                 button1.Enabled = true;
                 sock.SockBufferReceived += new SockReceiveEventHandler(sock_SockBufferReceived);
                 sock.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
-                kowhaiTree1.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree1_DataChange);
+                kowhaiTreeSettings.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
+                kowhaiTreeShadow.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
+                kowhaiTreeActions.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
             }
             else
                 button1.Enabled = false;
@@ -47,6 +53,10 @@ namespace kowhai_test
             Kowhai.kowhai_symbol_t[] symbols;
             if (KowhaiProtocol.Parse(e.Buffer, e.Size, out prot, out symbols) == Kowhai.STATUS_OK)
             {
+                while (prot.header.tree_id > descriptors.Count - 1)
+                    descriptors.Add(null);
+                Kowhai.kowhai_node_t[] descriptor = descriptors[prot.header.tree_id];
+
                 switch (prot.header.command)
                 {
                     case KowhaiProtocol.CMD_READ_DATA_ACK:
@@ -56,29 +66,35 @@ namespace kowhai_test
                         int nodeOffset;
                         Kowhai.kowhai_node_t node;
                         if (Kowhai.GetNode(descriptor, symbols, out nodeOffset, out node) == Kowhai.STATUS_OK)
-                            this.Invoke((MethodInvoker)delegate { kowhaiTree1.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset); });
+                            this.Invoke((MethodInvoker)delegate { GetKowhaiTree(prot.header.tree_id).UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset); });
                         break;
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK:
-                        descriptor = new Kowhai.kowhai_node_t[prot.payload.spec.descriptor.node_count];
-                        KowhaiProtocol.CopyDescriptor(descriptor, prot.payload);
-                        break;
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END:
+                        if (descriptor == null || descriptor.Length < prot.payload.spec.descriptor.node_count)
+                        {
+                            Array.Resize<Kowhai.kowhai_node_t>(ref descriptor, prot.payload.spec.descriptor.node_count);
+                            descriptors[prot.header.tree_id] = descriptor;
+                        }
                         KowhaiProtocol.CopyDescriptor(descriptor, prot.payload);
-                        this.Invoke((MethodInvoker)delegate{ kowhaiTree1.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings); });
 
-                        byte[] buffer = new byte[PACKET_SIZE];
-                        int bytesRequired;
-                        prot.header.command = KowhaiProtocol.CMD_READ_DATA;
-                        if (KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot,
-                            new Kowhai.kowhai_symbol_t[] {new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.General)},
-                            out bytesRequired) == Kowhai.STATUS_OK)
-                            sock.Send(buffer, bytesRequired);
+                        if (prot.header.command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
+                        {
+                            this.Invoke((MethodInvoker)delegate { GetKowhaiTree(prot.header.tree_id).UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings); });
+
+                            byte[] buffer = new byte[PACKET_SIZE];
+                            int bytesRequired;
+                            prot.header.command = KowhaiProtocol.CMD_READ_DATA;
+                            if (KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot,
+                                GetRootSymbolPath(prot.header.tree_id),
+                                out bytesRequired) == Kowhai.STATUS_OK)
+                                sock.Send(buffer, bytesRequired);
+                        }
                         break;
                 }
             }
         }
 
-        void kowhaiTree1_DataChange(object sender, KowhaiTree.DataChangeEventArgs e)
+        void kowhaiTree_DataChange(object sender, KowhaiTree.DataChangeEventArgs e)
         {
             byte[] buffer = new byte[PACKET_SIZE];
             List<ushort> arrayIndexes = new List<ushort>();
@@ -89,9 +105,9 @@ namespace kowhai_test
                 info = info.Parent;
             }
             arrayIndexes.Reverse();
-            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(descriptor, e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
+            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetDescriptor(sender), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
             KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
-            prot.header.tree_id = 0;
+            prot.header.tree_id = GetTreeId(sender);
             prot.header.command = KowhaiProtocol.CMD_WRITE_DATA;
             int bytesRequired;
             KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, e.Buffer, 0, out bytesRequired);
@@ -101,9 +117,55 @@ namespace kowhai_test
         private void button1_Click(object sender, EventArgs e)
         {
             byte[] buffer = new byte[2];
-            buffer[0] = 0;
+            buffer[0] = TREE_ID_SETTINGS;
             buffer[1] = KowhaiProtocol.CMD_READ_DESCRIPTOR;
             sock.Send(buffer, 2);
+            System.Threading.Thread.Sleep(100);
+            Application.DoEvents();
+            buffer[0] = TREE_ID_SHADOW;
+            sock.Send(buffer, 2);
+            System.Threading.Thread.Sleep(100);
+            Application.DoEvents();
+            buffer[0] = TREE_ID_ACTIONS;
+            sock.Send(buffer, 2);
+        }
+
+        private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
+        {
+            if (treeId == TREE_ID_SETTINGS)
+                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Settings) };
+            if (treeId == TREE_ID_SHADOW)
+                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Shadow) };
+            if (treeId == TREE_ID_ACTIONS)
+                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Actions) };
+            return null;
+        }
+
+        private KowhaiTree GetKowhaiTree(byte treeId)
+        {
+            if (treeId == TREE_ID_SETTINGS)
+                return kowhaiTreeSettings;
+            if (treeId == TREE_ID_SHADOW)
+                return kowhaiTreeShadow;
+            if (treeId == TREE_ID_ACTIONS)
+                return kowhaiTreeActions;
+            return null;
+        }
+
+        private byte GetTreeId(object sender)
+        {
+            if (sender == kowhaiTreeSettings)
+                return TREE_ID_SETTINGS;
+            if (sender == kowhaiTreeShadow)
+                return TREE_ID_SHADOW;
+            if (sender == kowhaiTreeActions)
+                return TREE_ID_ACTIONS;
+            return 255;
+        }
+
+        private Kowhai.kowhai_node_t[] GetDescriptor(object sender)
+        {
+            return descriptors[GetTreeId(sender)];
         }
     }
 }

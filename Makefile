@@ -9,7 +9,7 @@ endif
 
 all: kowhai test
 
-test: tools/test.o tools/xpsocket.o
+test: tools/test.o tools/xpsocket.o tools/beep.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -lkowhai
 
 kowhai: src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
@@ -30,7 +30,10 @@ src/test.o: tools/test.c
 src/xpsocket.o: tools/xpsocket.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+src/beep.o: tools/beep.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 clean: 
-	rm -f test.exe libkowhai.a tools/test.o tools/xpsocket.o src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
+	rm -f test.exe libkowhai.a tools/test.o tools/xpsocket.o tools/beep.o src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
 
 .PHONY: clean

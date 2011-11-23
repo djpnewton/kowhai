@@ -27,6 +27,7 @@ struct kowhai_node_t
     uint16_t symbol;
     uint16_t count;
     uint16_t data_type;
+    uint16_t tag;
 };
 
 #pragma pack()

@@ -86,9 +86,9 @@ namespace kowhai_sharp
                 switch (info.KowhaiNode.data_type)
                 {
                     case Kowhai.DATA_TYPE_CHAR:
-                        return BitConverter.ToChar(data, info.Offset);
+                        return (sbyte)data[info.Offset];
                     case Kowhai.DATA_TYPE_UCHAR:
-                        return (byte)BitConverter.ToChar(data, info.Offset);
+                        return data[info.Offset];
                     case Kowhai.DATA_TYPE_INT16:
                         return BitConverter.ToInt16(data, info.Offset);
                     case Kowhai.DATA_TYPE_UINT16:
@@ -109,9 +109,9 @@ namespace kowhai_sharp
             switch (dataType)
             {
                 case Kowhai.DATA_TYPE_CHAR:
-                    return BitConverter.GetBytes(Convert.ToSByte(text));
+                    return new byte[] { (byte)Convert.ToSByte(text) };
                 case Kowhai.DATA_TYPE_UCHAR:
-                    return BitConverter.GetBytes(Convert.ToByte(text));
+                    return new byte[] { Convert.ToByte(text) };
                 case Kowhai.DATA_TYPE_INT16:
                     return BitConverter.GetBytes(Convert.ToInt16(text));
                 case Kowhai.DATA_TYPE_UINT16:
@@ -126,21 +126,30 @@ namespace kowhai_sharp
             return null;
         }
 
+        string GetNodeTagString(Kowhai.kowhai_node_t node)
+        {
+            if (node.tag > 0)
+                return string.Format("({0})", node.tag);
+            return "";
+        }
+
+        string GetNodeArrayString(Kowhai.kowhai_node_t node)
+        {
+            if (node.count > 1)
+                return string.Format("[{0}]", node.count);
+            return "";
+        }
+
         string GetNodeName(Kowhai.kowhai_node_t node, KowhaiNodeInfo info)
         {
             if (node.type == Kowhai.NODE_TYPE_BRANCH)
-            {
-                if (node.count > 1)
-                    return string.Format("{0}[{1}]", symbols[node.symbol], node.count);
-                else
-                    return symbols[node.symbol];
-            }
+                return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
             if (info != null && info.IsArrayItem)
-                return string.Format("#{0} = {1}", info.ArrayIndex, GetDataValue(info));
+                return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
             else if (node.count > 1)
-                return string.Format("{0}[{1}]: {2}", symbols[node.symbol], node.count, GetDataTypeString(node.data_type));
+                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.data_type));
             else
-                return string.Format("{0}: {1} = {2}", symbols[node.symbol], GetDataTypeString(node.data_type), GetDataValue(info));
+                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.data_type), GetDataValue(info));
         }
 
         void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node)
@@ -155,7 +164,6 @@ namespace kowhai_sharp
                             node = treeView1.Nodes.Add(GetNodeName(descNode, null));
                         else
                             node = node.Nodes.Add(GetNodeName(descNode, null));
-                        index++;
                         KowhaiNodeInfo parentInfo = null;
                         if (node.Parent != null)
                             parentInfo = (KowhaiNodeInfo)node.Parent.Tag;
@@ -167,12 +175,14 @@ namespace kowhai_sharp
                                 index = prevIndex;
                                 TreeNode arrayNode = node.Nodes.Add("#" + i.ToString());
                                 arrayNode.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentInfo);
+                                index++;
                                 _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode);
                             }
                         }
                         else
                         {
                             node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
+                            index++;
                             _UpdateDescriptor(descriptor, ref index, ref offset, node);
                         }
                         node = node.Parent;
@@ -271,6 +281,10 @@ namespace kowhai_sharp
                             node.BeginEdit();
                         }
                     }
+                    else if (info.KowhaiNode.tag > 0)
+                    {
+                        DataChange(this, new DataChangeEventArgs(info, new byte[0]));
+                    }
                 }
             }
         }
@@ -287,16 +301,18 @@ namespace kowhai_sharp
             KowhaiNodeInfo info = (KowhaiNodeInfo)e.Node.Tag;
             if (e.Label != null)
             {
+                byte[] data;
                 try
                 {
-                    byte[] data = TextToData(e.Label, info.KowhaiNode.data_type);
+                    data = TextToData(e.Label, info.KowhaiNode.data_type);
                     e.Node.Text = "updating...";
-                    DataChange(this, new DataChangeEventArgs(info, data));
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
+                DataChange(this, new DataChangeEventArgs(info, data));
             }
             else
                 e.Node.Text = GetNodeName(info.KowhaiNode, info);

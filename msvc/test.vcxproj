@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\tools\beep.c" />
     <ClCompile Include="..\tools\test.c" />
     <ClCompile Include="..\tools\xpsocket.c" />
   </ItemGroup>

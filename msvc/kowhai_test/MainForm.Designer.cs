@@ -29,39 +29,56 @@
         private void InitializeComponent()
         {
             this.button1 = new System.Windows.Forms.Button();
-            this.kowhaiTree1 = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeSettings = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeActions = new kowhai_sharp.KowhaiTree();
             this.SuspendLayout();
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(12, 12);
-            this.button1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.button1.Location = new System.Drawing.Point(9, 10);
+            this.button1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 34);
+            this.button1.Size = new System.Drawing.Size(56, 28);
             this.button1.TabIndex = 0;
             this.button1.Text = "button1";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // kowhaiTree1
+            // kowhaiTreeShadow
             // 
-            this.kowhaiTree1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.kowhaiTree1.Location = new System.Drawing.Point(12, 52);
-            this.kowhaiTree1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTree1.Name = "kowhaiTree1";
-            this.kowhaiTree1.Size = new System.Drawing.Size(344, 511);
-            this.kowhaiTree1.TabIndex = 1;
+            this.kowhaiTreeShadow.Location = new System.Drawing.Point(270, 42);
+            this.kowhaiTreeShadow.Margin = new System.Windows.Forms.Padding(2);
+            this.kowhaiTreeShadow.Name = "kowhaiTreeShadow";
+            this.kowhaiTreeShadow.Size = new System.Drawing.Size(274, 415);
+            this.kowhaiTreeShadow.TabIndex = 2;
+            // 
+            // kowhaiTreeSettings
+            // 
+            this.kowhaiTreeSettings.Location = new System.Drawing.Point(9, 42);
+            this.kowhaiTreeSettings.Margin = new System.Windows.Forms.Padding(2);
+            this.kowhaiTreeSettings.Name = "kowhaiTreeSettings";
+            this.kowhaiTreeSettings.Size = new System.Drawing.Size(257, 415);
+            this.kowhaiTreeSettings.TabIndex = 1;
+            // 
+            // kowhaiTreeActions
+            // 
+            this.kowhaiTreeActions.Location = new System.Drawing.Point(548, 42);
+            this.kowhaiTreeActions.Margin = new System.Windows.Forms.Padding(2);
+            this.kowhaiTreeActions.Name = "kowhaiTreeActions";
+            this.kowhaiTreeActions.Size = new System.Drawing.Size(274, 415);
+            this.kowhaiTreeActions.TabIndex = 3;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(368, 576);
-            this.Controls.Add(this.kowhaiTree1);
+            this.ClientSize = new System.Drawing.Size(830, 465);
+            this.Controls.Add(this.kowhaiTreeActions);
+            this.Controls.Add(this.kowhaiTreeShadow);
+            this.Controls.Add(this.kowhaiTreeSettings);
             this.Controls.Add(this.button1);
-            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "MainForm";
             this.Text = "MainForm";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
@@ -73,6 +90,8 @@
         #endregion
 
         private System.Windows.Forms.Button button1;
-        private kowhai_sharp.KowhaiTree kowhaiTree1;
+        private kowhai_sharp.KowhaiTree kowhaiTreeSettings;
+        private kowhai_sharp.KowhaiTree kowhaiTreeShadow;
+        private kowhai_sharp.KowhaiTree kowhaiTreeActions;
     }
 }

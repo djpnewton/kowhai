@@ -1,4 +1,6 @@
-General
+Settings
+Shadow
+Actions
 Start
 Stop
 Running
@@ -11,3 +13,5 @@ Temp
 Timeout
 Delay
 Status
+Beep
+Duration

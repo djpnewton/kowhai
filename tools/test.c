@@ -2,6 +2,7 @@
 #include "../src/kowhai_protocol.h"
 #include "../src/kowhai_protocol_server.h"
 #include "xpsocket.h"
+#include "beep.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +24,7 @@
 
 struct kowhai_node_t settings_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0 },
+    { NODE_TYPE_BRANCH, SYM_SETTINGS,      1, 0 },
     { NODE_TYPE_BRANCH, SYM_FLUXCAPACITOR, FLUX_CAP_COUNT, 0 },
     { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, DATA_TYPE_UINT32 },
     { NODE_TYPE_LEAF,   SYM_GAIN,          1, DATA_TYPE_UINT32 },
@@ -33,7 +34,7 @@ struct kowhai_node_t settings_descriptor[] =
     { NODE_TYPE_LEAF,   SYM_TEMP,          1, DATA_TYPE_INT16 },
     { NODE_TYPE_LEAF,   SYM_TIMEOUT,       1, DATA_TYPE_UINT16 },
     { NODE_TYPE_END,    SYM_OVEN,          0, 0 },
-    { NODE_TYPE_END,    SYM_GENERAL,       0, 0 },
+    { NODE_TYPE_END,    SYM_SETTINGS,      0, 0 },
 };
 
 //
@@ -42,25 +43,33 @@ struct kowhai_node_t settings_descriptor[] =
 
 struct kowhai_node_t shadow_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0 },
+    { NODE_TYPE_BRANCH, SYM_SHADOW,        1, 0 },
     { NODE_TYPE_LEAF,   SYM_RUNNING,       1, DATA_TYPE_UCHAR },
     { NODE_TYPE_LEAF,   SYM_STATUS,        1, DATA_TYPE_UCHAR },
-    { NODE_TYPE_END,    SYM_GENERAL,       0, 0 },
+    { NODE_TYPE_END,    SYM_SHADOW,        0, 0 },
 };
 
 //
 // action tree descriptor
 //
 
+#define ACTION_START 1
+#define ACTION_STOP  2
+#define ACTION_BEEP  3
+
 struct kowhai_node_t action_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_GENERAL,       1, 0 },
-    { NODE_TYPE_BRANCH, SYM_START,         1, 0 },
+    { NODE_TYPE_BRANCH, SYM_ACTIONS,       1, 0 },
+    { NODE_TYPE_BRANCH, SYM_START,         1, 0, ACTION_START},
     { NODE_TYPE_LEAF,   SYM_DELAY,         1, DATA_TYPE_UINT32 },
     { NODE_TYPE_END,    SYM_START,         0, 0 },
-    { NODE_TYPE_BRANCH, SYM_STOP,          1, 0 },
-    { NODE_TYPE_END,    SYM_STOP,          0, 0 },
-    { NODE_TYPE_END,    SYM_GENERAL,       0, 0 },
+    { NODE_TYPE_BRANCH, SYM_STOP,          1, 0, ACTION_STOP },
+    { NODE_TYPE_END,    SYM_STOP,          0, 0},
+    { NODE_TYPE_BRANCH, SYM_BEEP,          1, 0, ACTION_BEEP},
+    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, DATA_TYPE_INT32 },
+    { NODE_TYPE_LEAF,   SYM_DURATION,      1, DATA_TYPE_INT32 },
+    { NODE_TYPE_END,    SYM_BEEP,          0, 0 },
+    { NODE_TYPE_END,    SYM_ACTIONS,       0, 0 },
 };
 
 //
@@ -98,6 +107,27 @@ struct shadow_tree_t
     uint8_t status;
 };
 
+//
+// action tree stucts
+//
+
+struct start_t
+{
+    uint32_t delay;
+};
+
+struct beep_t
+{
+    int32_t freq;
+    int32_t duration;
+};
+
+struct action_tree_t
+{
+    struct start_t start;
+    struct beep_t beep;
+};
+
 #pragma pack()
 
 //
@@ -122,8 +152,15 @@ struct shadow_tree_t
 
 struct settings_data_t settings;
 struct shadow_tree_t shadow;
+struct action_tree_t action = { 100, 500, 100 };
 
 #define MAX_PACKET_SIZE 0x40
+
+void node_written(void* param, struct kowhai_node_t* node)
+{
+    if (node->tag == ACTION_BEEP)
+        beep(action.beep.freq, action.beep.duration);
+}
 
 void server_buffer_send(void* param, void* buffer, size_t buffer_size)
 {
@@ -142,18 +179,18 @@ int main(int argc, char* argv[])
 {
     int test_command = TEST_BASIC;
 
-    union kowhai_symbol_t symbols1[] = {SYM_GENERAL, SYM_OVEN, SYM_TEMP};
-    union kowhai_symbol_t symbols2[] = {SYM_GENERAL, SYM_OVEN, SYM_TIMEOUT};
-    union kowhai_symbol_t symbols3[] = {SYM_GENERAL, SYM_FLUXCAPACITOR};
+    union kowhai_symbol_t symbols1[] = {SYM_SETTINGS, SYM_OVEN, SYM_TEMP};
+    union kowhai_symbol_t symbols2[] = {SYM_SETTINGS, SYM_OVEN, SYM_TIMEOUT};
+    union kowhai_symbol_t symbols3[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR};
     union kowhai_symbol_t symbols4[] = {431, 12343};
-    union kowhai_symbol_t symbols5[] = {SYM_GENERAL, SYM_STATUS};
-    union kowhai_symbol_t symbols6[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_GAIN};
-    union kowhai_symbol_t symbols7[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
-    union kowhai_symbol_t symbols8[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), SYM_GAIN};
-    union kowhai_symbol_t symbols9[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
-    union kowhai_symbol_t symbols10[] = {SYM_GENERAL, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
-    union kowhai_symbol_t symbols11[] = {SYM_GENERAL, SYM_OVEN};
-    union kowhai_symbol_t symbols12[] = {SYM_GENERAL, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1)};
+    union kowhai_symbol_t symbols5[] = {SYM_SHADOW, SYM_STATUS};
+    union kowhai_symbol_t symbols6[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, SYM_GAIN};
+    union kowhai_symbol_t symbols7[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, SYM_COEFFICIENT};
+    union kowhai_symbol_t symbols8[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), SYM_GAIN};
+    union kowhai_symbol_t symbols9[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1), KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
+    union kowhai_symbol_t symbols10[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
+    union kowhai_symbol_t symbols11[] = {SYM_SETTINGS, SYM_OVEN};
+    union kowhai_symbol_t symbols12[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1)};
 
     int offset;
     int size;
@@ -271,10 +308,10 @@ int main(int argc, char* argv[])
     if (test_command == TEST_PROTOCOL_SERVER)
     {
         char packet_buffer[MAX_PACKET_SIZE];
-        struct kowhai_node_t* tree_descriptors[] = {settings_descriptor};
-        size_t tree_descriptor_sizes[] = {sizeof(settings_descriptor)};
-        void* tree_data_buffers[] = {&settings};
-        struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE, packet_buffer, server_buffer_send, NULL, 1, tree_descriptors, tree_descriptor_sizes, tree_data_buffers};
+        struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, action_descriptor};
+        size_t tree_descriptor_sizes[] = {sizeof(settings_descriptor), sizeof(shadow_descriptor), sizeof(action_descriptor)};
+        void* tree_data_buffers[] = {&settings, &shadow, &action};
+        struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE, packet_buffer, node_written, NULL, server_buffer_send, NULL, 3, tree_descriptors, tree_descriptor_sizes, tree_data_buffers};
         printf("test server protocol...\n");
         xpsocket_init();
         xpsocket_serve(server_buffer_received, &server, MAX_PACKET_SIZE);

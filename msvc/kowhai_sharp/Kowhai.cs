@@ -48,6 +48,7 @@ namespace kowhai_sharp
             public uint16_t symbol;
             public uint16_t count;
             public uint16_t data_type;
+            public uint16_t tag;
         }
 
         public const int NODE_TYPE_BRANCH = 0;

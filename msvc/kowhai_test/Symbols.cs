@@ -4,7 +4,9 @@ namespace KowhaiSymbols
     {
         public static string[] Strings =
         {
-            "General",
+            "Settings",
+            "Shadow",
+            "Actions",
             "Start",
             "Stop",
             "Running",
@@ -17,10 +19,14 @@ namespace KowhaiSymbols
             "Timeout",
             "Delay",
             "Status",
+            "Beep",
+            "Duration",
         };
         public enum Constants
         {
-            General,
+            Settings,
+            Shadow,
+            Actions,
             Start,
             Stop,
             Running,
@@ -33,6 +39,8 @@ namespace KowhaiSymbols
             Timeout,
             Delay,
             Status,
+            Beep,
+            Duration,
         };
     }
 }
