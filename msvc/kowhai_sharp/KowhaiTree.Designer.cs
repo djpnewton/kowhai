@@ -35,19 +35,23 @@
             // 
             this.treeView1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView1.Location = new System.Drawing.Point(0, 0);
+            this.treeView1.Margin = new System.Windows.Forms.Padding(2);
             this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(150, 150);
+            this.treeView1.Size = new System.Drawing.Size(112, 122);
             this.treeView1.TabIndex = 0;
             this.treeView1.AfterLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.treeView1_AfterLabelEdit);
             this.treeView1.DoubleClick += new System.EventHandler(this.treeView1_DoubleClick);
+            this.treeView1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.treeView1_KeyDown);
             this.treeView1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.treeView1_MouseDown);
             // 
             // KowhaiTree
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.treeView1);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "KowhaiTree";
+            this.Size = new System.Drawing.Size(112, 122);
             this.ResumeLayout(false);
 
         }

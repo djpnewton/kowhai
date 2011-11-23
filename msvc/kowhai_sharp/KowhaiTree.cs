@@ -250,21 +250,35 @@ namespace kowhai_sharp
             if (selectedNode != null)
             {
                 treeView1.SelectedNode = selectedNode;
-                if (!selectedNode.IsEditing)
+                BeginEdit(selectedNode);
+            }
+        }
+
+        private void BeginEdit(TreeNode node)
+        {
+            if (node!= null && !node.IsEditing)
+            {
+                if (node.Tag != null)
                 {
-                    if (selectedNode.Tag != null)
+                    KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
+                    if (info.KowhaiNode.type == Kowhai.NODE_TYPE_LEAF)
                     {
-                        KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
                         object dataValue = GetDataValue(info);
                         if (dataValue != null)
                         {
                             treeView1.LabelEdit = true;
-                            selectedNode.Text = dataValue.ToString();
-                            selectedNode.BeginEdit();
+                            node.Text = dataValue.ToString();
+                            node.BeginEdit();
                         }
                     }
                 }
             }
+        }
+
+        private void treeView1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Return || e.KeyCode == Keys.Enter)
+                BeginEdit(treeView1.SelectedNode);
         }
 
         private void treeView1_AfterLabelEdit(object sender, NodeLabelEditEventArgs e)
@@ -273,9 +287,16 @@ namespace kowhai_sharp
             KowhaiNodeInfo info = (KowhaiNodeInfo)e.Node.Tag;
             if (e.Label != null)
             {
-                e.Node.Text = "updating...";
-                byte[] data = TextToData(e.Label, info.KowhaiNode.data_type);
-                DataChange(this, new DataChangeEventArgs(info, data));
+                try
+                {
+                    byte[] data = TextToData(e.Label, info.KowhaiNode.data_type);
+                    e.Node.Text = "updating...";
+                    DataChange(this, new DataChangeEventArgs(info, data));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             else
                 e.Node.Text = GetNodeName(info.KowhaiNode, info);
