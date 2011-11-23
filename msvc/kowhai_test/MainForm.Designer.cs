@@ -34,10 +34,10 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(9, 10);
-            this.button1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.button1.Location = new System.Drawing.Point(12, 12);
+            this.button1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(56, 28);
+            this.button1.Size = new System.Drawing.Size(75, 34);
             this.button1.TabIndex = 0;
             this.button1.Text = "button1";
             this.button1.UseVisualStyleBackColor = true;
@@ -45,22 +45,27 @@
             // 
             // kowhaiTree1
             // 
-            this.kowhaiTree1.Location = new System.Drawing.Point(9, 42);
-            this.kowhaiTree1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.kowhaiTree1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.kowhaiTree1.Location = new System.Drawing.Point(12, 52);
+            this.kowhaiTree1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTree1.Name = "kowhaiTree1";
-            this.kowhaiTree1.Size = new System.Drawing.Size(194, 415);
+            this.kowhaiTree1.Size = new System.Drawing.Size(344, 511);
             this.kowhaiTree1.TabIndex = 1;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(212, 468);
+            this.ClientSize = new System.Drawing.Size(368, 576);
             this.Controls.Add(this.kowhaiTree1);
             this.Controls.Add(this.button1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "MainForm";
             this.Text = "MainForm";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.ResumeLayout(false);
 
         }

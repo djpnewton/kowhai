@@ -18,5 +18,21 @@ namespace KowhaiSymbols
             "Delay",
             "Status",
         };
+        public enum Constants
+        {
+            General,
+            Start,
+            Stop,
+            Running,
+            FluxCapacitor,
+            Frequency,
+            Coefficient,
+            Gain,
+            Oven,
+            Temp,
+            Timeout,
+            Delay,
+            Status,
+        };
     }
 }

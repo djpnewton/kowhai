@@ -18,5 +18,9 @@ f.write("    public static class Symbols\n    {\n")
 f.write("        public static string[] Strings =\n        {\n")
 for sym in syms:
     f.write("            \"%s\",\n" % sym)
+f.write("        };\n");
+f.write("        public enum Constants\n        {\n")
+for sym in syms:
+    f.write("            %s,\n" % sym)
 f.write("        };\n    }\n}\n");
 

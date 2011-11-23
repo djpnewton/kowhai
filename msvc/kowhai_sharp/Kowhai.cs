@@ -15,17 +15,23 @@ namespace kowhai_sharp
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_symbol_parts_t
         {
-            uint16_t name;
-            uint16_t array_index;
+            public uint16_t name;
+            public uint16_t array_index;
         }
 
         [StructLayout(LayoutKind.Explicit)]
         public struct kowhai_symbol_t
         {
             [FieldOffset(0)]
-            uint32_t symbol;
+            public uint32_t symbol;
             [FieldOffset(0)]
-            kowhai_symbol_parts_t parts;
+            public kowhai_symbol_parts_t parts;
+            public kowhai_symbol_t(uint32_t symbol)
+            {
+                this.parts.name = 0;
+                this.parts.array_index = 0;
+                this.symbol = symbol;
+            }
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -66,7 +72,7 @@ namespace kowhai_sharp
         public const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_data_size();
+        public static extern int kowhai_get_data_size(int data_type);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node(IntPtr tree_descriptor, int num_symbols, IntPtr symbols, out int offset, IntPtr target_node);

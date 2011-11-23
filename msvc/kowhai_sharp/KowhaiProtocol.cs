@@ -43,9 +43,9 @@ namespace kowhai_sharp
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_protocol_data_payload_memory_spec_t
         {
-            uint16_t type;
-            uint16_t offset;
-            uint16_t size;
+            public uint16_t type;
+            public uint16_t offset;
+            public uint16_t size;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -98,12 +98,48 @@ namespace kowhai_sharp
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_protocol_get_overhead(ref kowhai_protocol_t protocol, out int overhead);
 
+        static void CopyIntPtrs(IntPtr dest, IntPtr source, int size)
+        {
+            // have to copy twice as Marshal.Copy has no IntPtr->IntPtr overload :((((
+            char[] c = new char[size];
+            Marshal.Copy(source, c, 0, size);
+            Marshal.Copy(c, 0, dest, size);
+        }
+
         public static int Parse(byte[] protoPacket, int packetSize, out kowhai_protocol_t protocol)
         {
             GCHandle h = GCHandle.Alloc(protoPacket, GCHandleType.Pinned);
             int result = kowhai_protocol_parse(h.AddrOfPinnedObject(), packetSize, out protocol);
             h.Free();
             return result;
+        }
+
+        public static int Parse(byte[] protoPacket, int packetSize, out kowhai_protocol_t protocol, out Kowhai.kowhai_symbol_t[] symbols)
+        {
+            GCHandle h = GCHandle.Alloc(protoPacket, GCHandleType.Pinned);
+            int result = kowhai_protocol_parse(h.AddrOfPinnedObject(), packetSize, out protocol);
+            h.Free();
+            if (result == Kowhai.STATUS_OK && !IsDescriptorCommand(protocol.header.command))
+            {
+                symbols = new Kowhai.kowhai_symbol_t[protocol.payload.spec.data.symbols.count];
+                h = GCHandle.Alloc(symbols, GCHandleType.Pinned);
+                CopyIntPtrs(h.AddrOfPinnedObject(), protocol.payload.spec.data.symbols.array_, Marshal.SizeOf(typeof(Kowhai.kowhai_symbol_t)) * symbols.Length);
+                h.Free();
+            }
+            else
+                symbols = null;
+            return result;
+        }
+
+        private static bool IsDescriptorCommand(uint8_t command)
+        {
+            if (command == KowhaiProtocol.CMD_READ_DESCRIPTOR)
+                return true;
+            if (command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK)
+                return true;
+            if (command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
+                return true;
+            return false;
         }
 
         public static int Create(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, out int bytesRequired)
@@ -114,14 +150,33 @@ namespace kowhai_sharp
             return result;
         }
 
+        public static int Create(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, Kowhai.kowhai_symbol_t[] symbols, out int bytesRequired)
+        {
+            protocol.payload.spec.data.symbols.count = (uint8_t)symbols.Length;
+            GCHandle h = GCHandle.Alloc(symbols, GCHandleType.Pinned);
+            protocol.payload.spec.data.symbols.array_ = h.AddrOfPinnedObject();
+            int result = Create(protoPacket, packetSize, ref protocol, out bytesRequired);
+            h.Free();
+            return result;
+        }
+
+
         public static void CopyDescriptor(Kowhai.kowhai_node_t[] target, kowhai_protocol_payload_t payload)
         {
-            // have to copy twice as Marshal.Copy has no IntPtr->IntPtr overload :((((
-            char[] c = new char[payload.spec.descriptor.size];
-            Marshal.Copy(payload.buffer, c, 0, c.Length);
             GCHandle h = GCHandle.Alloc(target, GCHandleType.Pinned);
-            Marshal.Copy(c, 0, new IntPtr(h.AddrOfPinnedObject().ToInt64() + payload.spec.descriptor.offset), c.Length);
+            CopyIntPtrs(new IntPtr(h.AddrOfPinnedObject().ToInt64() + payload.spec.descriptor.offset), payload.buffer, payload.spec.descriptor.size);
             h.Free();
+        }
+
+        public static uint8_t[] GetBuffer(kowhai_protocol_t prot)
+        {
+            byte[] buffer;
+            if (IsDescriptorCommand(prot.header.command))
+                buffer = new byte[prot.payload.spec.descriptor.size];
+            else
+                buffer = new byte[prot.payload.spec.data.memory.size];
+            Marshal.Copy(prot.payload.buffer, buffer, 0, buffer.Length);
+            return buffer;
         }
     }
 }
