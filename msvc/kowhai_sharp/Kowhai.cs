@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace kowhai_sharp
 {
@@ -31,6 +32,12 @@ namespace kowhai_sharp
                 this.parts.name = 0;
                 this.parts.array_index = 0;
                 this.symbol = symbol;
+            }
+            public kowhai_symbol_t(uint16_t name, uint16_t array_index)
+            {
+                this.symbol = 0;
+                this.parts.name = name;
+                this.parts.array_index = array_index;
             }
         }
 
@@ -109,5 +116,36 @@ namespace kowhai_sharp
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_float(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, float value);
+
+        public static int GetNode(kowhai_node_t[] descriptor, kowhai_symbol_t[] symbols, out int offset, out kowhai_node_t node)
+        {
+            GCHandle hDesc = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
+            GCHandle hSyms = GCHandle.Alloc(symbols, GCHandleType.Pinned);
+            node = new kowhai_node_t();
+            GCHandle hNode = GCHandle.Alloc(node, GCHandleType.Pinned);
+            int result = kowhai_get_node(hDesc.AddrOfPinnedObject(), symbols.Length, hSyms.AddrOfPinnedObject(), out offset, hNode.AddrOfPinnedObject());
+            hNode.Free();
+            hSyms.Free();
+            hDesc.Free();
+            return result;
+        }
+
+        public static kowhai_symbol_t[] GetSymbolPath(kowhai_node_t[] descriptor, kowhai_node_t node, int32_t nodeIndex,  uint16_t[] arrayIndexes)
+        {
+            Stack<kowhai_symbol_t> syms = new Stack<kowhai_symbol_t>();
+            for (int i = 0; i <= nodeIndex; i++)
+            {
+                kowhai_node_t newNode = descriptor[i];
+                if (i == nodeIndex)
+                    syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
+                else if (newNode.type == NODE_TYPE_BRANCH)
+                    syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
+                else if (newNode.type == NODE_TYPE_END)
+                    syms.Pop();
+            }
+            kowhai_symbol_t[] result = syms.ToArray();
+            Array.Reverse(result);
+            return result;
+        }
     }
 }

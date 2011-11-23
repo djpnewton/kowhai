@@ -160,6 +160,16 @@ namespace kowhai_sharp
             return result;
         }
 
+        public static int Create(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, Kowhai.kowhai_symbol_t[] symbols, byte[] buffer, uint16_t offset, out int bytesRequired)
+        {
+            protocol.payload.spec.data.memory.size = (uint16_t)buffer.Length;
+            protocol.payload.spec.data.memory.offset = offset;
+            GCHandle h = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+            protocol.payload.buffer = h.AddrOfPinnedObject();
+            int result = Create(protoPacket, packetSize, ref protocol, symbols, out bytesRequired);
+            h.Free();
+            return result;
+        }
 
         public static void CopyDescriptor(Kowhai.kowhai_node_t[] target, kowhai_protocol_payload_t payload)
         {

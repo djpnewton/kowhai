@@ -38,6 +38,9 @@
             this.treeView1.Name = "treeView1";
             this.treeView1.Size = new System.Drawing.Size(150, 150);
             this.treeView1.TabIndex = 0;
+            this.treeView1.AfterLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.treeView1_AfterLabelEdit);
+            this.treeView1.DoubleClick += new System.EventHandler(this.treeView1_DoubleClick);
+            this.treeView1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.treeView1_MouseDown);
             // 
             // KowhaiTree
             // 
