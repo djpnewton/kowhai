@@ -316,6 +316,7 @@ namespace kowhai_sharp
             }
             else
                 e.Node.Text = GetNodeName(info.KowhaiNode, info);
+            treeView1.LabelEdit = false;
         }
     }
 }
