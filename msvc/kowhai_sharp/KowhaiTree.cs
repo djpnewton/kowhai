@@ -266,7 +266,7 @@ namespace kowhai_sharp
 
         private void BeginEdit(TreeNode node)
         {
-            if (node!= null && !node.IsEditing)
+            if (data != null && node != null && !node.IsEditing)
             {
                 if (node.Tag != null)
                 {

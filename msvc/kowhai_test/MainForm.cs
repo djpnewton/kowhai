@@ -51,9 +51,19 @@ namespace kowhai_test
 
         void sock_SockBufferReceived(object sender, SockReceiveEventArgs e)
         {
+            byte[] buffer = new byte[e.Size];
+            Array.Copy(e.Buffer, buffer, e.Size);
+            this.BeginInvoke((MethodInvoker)delegate
+            {
+                ProcessPacket(buffer);
+            });
+        }
+
+        private void ProcessPacket(byte[] buffer)
+        {
             KowhaiProtocol.kowhai_protocol_t prot;
             Kowhai.kowhai_symbol_t[] symbols;
-            if (KowhaiProtocol.Parse(e.Buffer, e.Size, out prot, out symbols) == Kowhai.STATUS_OK)
+            if (KowhaiProtocol.Parse(buffer, buffer.Length, out prot, out symbols) == Kowhai.STATUS_OK)
             {
                 while (prot.header.tree_id > descriptors.Count - 1)
                     descriptors.Add(null);
@@ -68,21 +78,28 @@ namespace kowhai_test
                         int nodeOffset;
                         Kowhai.kowhai_node_t node;
                         if (Kowhai.GetNode(descriptor, symbols, out nodeOffset, out node) == Kowhai.STATUS_OK)
-                            this.Invoke((MethodInvoker)delegate {
-                                KowhaiTree tree = GetKowhaiTree(prot.header.tree_id);
-                                tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
-                                if (tree == kowhaiTreeScope)
+                        {
+                            KowhaiTree tree = GetKowhaiTree(prot.header.tree_id);
+                            tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
+                            if (tree == kowhaiTreeScope)
+                            {
+                                for (int i = 0; i < data.Length / 2; i++)
                                 {
-                                    for (int i = 0; i < data.Length / 2; i++)
-                                    {
-                                        UInt16 value = BitConverter.ToUInt16(data, i * 2);
-                                        int x = prot.payload.spec.data.memory.offset / 2 + i;
-                                        if (x == 0)
-                                            chart1.Series[0].Points.Clear();
+                                    UInt16 value = BitConverter.ToUInt16(data, i * 2);
+                                    int arrayIndex = 0;
+                                    if (symbols.Length == 2)
+                                        arrayIndex = symbols[1].parts.array_index;
+                                    int x = (arrayIndex * 2 + prot.payload.spec.data.memory.offset) / 2 + i;
+                                    if (chart1.Series[0].Points.Count > x)
+                                        chart1.Series[0].Points[x].SetValueY(value);
+                                    else
                                         chart1.Series[0].Points.AddXY(x, value);
-                                    }
                                 }
-                            });
+                                // force repaint
+                                chart1.Series[0] = chart1.Series[0];
+                                chart1.ChartAreas[0].RecalculateAxesScale();
+                            }
+                        }
                         break;
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK:
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END:
@@ -95,9 +112,9 @@ namespace kowhai_test
 
                         if (prot.header.command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
                         {
-                            this.Invoke((MethodInvoker)delegate { GetKowhaiTree(prot.header.tree_id).UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings); });
+                            GetKowhaiTree(prot.header.tree_id).UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings); ;
 
-                            byte[] buffer = new byte[PACKET_SIZE];
+                            buffer = new byte[PACKET_SIZE];
                             int bytesRequired;
                             prot.header.command = KowhaiProtocol.CMD_READ_DATA;
                             if (KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot,
