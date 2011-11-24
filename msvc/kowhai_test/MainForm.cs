@@ -31,7 +31,7 @@ namespace kowhai_test
             sock = new Sock();
             if (sock.Connect())
             {
-                button1.Enabled = true;
+                btnRefreshTrees.Enabled = true;
                 sock.SockBufferReceived += new SockReceiveEventHandler(sock_SockBufferReceived);
                 sock.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
                 kowhaiTreeSettings.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
@@ -40,12 +40,12 @@ namespace kowhai_test
                 kowhaiTreeScope.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
             }
             else
-                button1.Enabled = false;
+                btnRefreshTrees.Enabled = false;
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            if (button1.Enabled)
+            if (btnRefreshTrees.Enabled)
                 sock.Disconnect();
         }
 
@@ -130,7 +130,7 @@ namespace kowhai_test
             sock.Send(buffer, bytesRequired);
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void btnRefreshTrees_Click(object sender, EventArgs e)
         {
             byte[] buffer = new byte[2];
             buffer[0] = TREE_ID_SETTINGS;

@@ -30,7 +30,7 @@
         {
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnRefreshTrees = new System.Windows.Forms.Button();
             this.kowhaiTreeScope = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeActions = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
@@ -39,16 +39,16 @@
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
-            // button1
+            // btnRefreshTrees
             // 
-            this.button1.Location = new System.Drawing.Point(12, 12);
-            this.button1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 34);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.btnRefreshTrees.Location = new System.Drawing.Point(12, 12);
+            this.btnRefreshTrees.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.btnRefreshTrees.Name = "btnRefreshTrees";
+            this.btnRefreshTrees.Size = new System.Drawing.Size(116, 34);
+            this.btnRefreshTrees.TabIndex = 0;
+            this.btnRefreshTrees.Text = "Refresh Trees";
+            this.btnRefreshTrees.UseVisualStyleBackColor = true;
+            this.btnRefreshTrees.Click += new System.EventHandler(this.btnRefreshTrees_Click);
             // 
             // kowhaiTreeScope
             // 
@@ -108,7 +108,7 @@
             this.Controls.Add(this.kowhaiTreeActions);
             this.Controls.Add(this.kowhaiTreeShadow);
             this.Controls.Add(this.kowhaiTreeSettings);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.btnRefreshTrees);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "MainForm";
             this.Text = "MainForm";
@@ -121,7 +121,7 @@
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnRefreshTrees;
         private kowhai_sharp.KowhaiTree kowhaiTreeSettings;
         private kowhai_sharp.KowhaiTree kowhaiTreeShadow;
         private kowhai_sharp.KowhaiTree kowhaiTreeActions;
