@@ -1,6 +1,7 @@
 Settings
 Shadow
 Actions
+Scope
 Start
 Stop
 Running
@@ -15,3 +16,4 @@ Delay
 Status
 Beep
 Duration
+Pixels

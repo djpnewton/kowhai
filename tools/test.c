@@ -73,6 +73,19 @@ struct kowhai_node_t action_descriptor[] =
 };
 
 //
+// scope tree descriptor
+//
+
+#define NUM_PIXELS 20
+
+struct kowhai_node_t scope_descriptor[] =
+{
+    { NODE_TYPE_BRANCH, SYM_SCOPE,         1, 0 },
+    { NODE_TYPE_LEAF,   SYM_PIXELS,        NUM_PIXELS, DATA_TYPE_UINT16 },
+    { NODE_TYPE_END,    SYM_SCOPE,         0, 0 },
+};
+
+//
 // settings tree structs
 //
 
@@ -101,7 +114,7 @@ struct settings_data_t
 // shadow tree stucts
 //
 
-struct shadow_tree_t
+struct shadow_data_t
 {
     uint8_t running;
     uint8_t status;
@@ -122,10 +135,19 @@ struct beep_t
     int32_t duration;
 };
 
-struct action_tree_t
+struct action_data_t
 {
     struct start_t start;
     struct beep_t beep;
+};
+
+//
+// scope tree stucts
+//
+
+struct scope_data_t
+{
+    uint16_t pixels[NUM_PIXELS];
 };
 
 #pragma pack()
@@ -145,14 +167,16 @@ struct action_tree_t
 #define TREE_ID_SETTINGS 0
 #define TREE_ID_SHADOW   1
 #define TREE_ID_ACTIONS  2
+#define TREE_ID_SCOPE    3
 
 //
 // main
 //
 
 struct settings_data_t settings;
-struct shadow_tree_t shadow;
-struct action_tree_t action = { 100, 500, 100 };
+struct shadow_data_t shadow;
+struct action_data_t action = { 100, 500, 100 };
+struct scope_data_t scope;
 
 #define MAX_PACKET_SIZE 0x40
 
@@ -170,8 +194,14 @@ void server_buffer_send(void* param, void* buffer, size_t buffer_size)
 
 void server_buffer_received(xpsocket_handle conn, void* param, char* buffer, int buffer_size)
 {
+    int i;
     struct kowhai_protocol_server_t* server = (struct kowhai_protocol_server_t*)param;
     server->send_packet_param = conn;
+
+    // randomize the scope buffer for funzies
+    for (i = 0; i < NUM_PIXELS; i++)
+        scope.pixels[i] = rand();
+
     kowhai_server_process_packet(server, buffer, buffer_size);
 }
 
@@ -308,10 +338,10 @@ int main(int argc, char* argv[])
     if (test_command == TEST_PROTOCOL_SERVER)
     {
         char packet_buffer[MAX_PACKET_SIZE];
-        struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, action_descriptor};
-        size_t tree_descriptor_sizes[] = {sizeof(settings_descriptor), sizeof(shadow_descriptor), sizeof(action_descriptor)};
-        void* tree_data_buffers[] = {&settings, &shadow, &action};
-        struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE, packet_buffer, node_written, NULL, server_buffer_send, NULL, 3, tree_descriptors, tree_descriptor_sizes, tree_data_buffers};
+        struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, action_descriptor, scope_descriptor};
+        size_t tree_descriptor_sizes[] = {sizeof(settings_descriptor), sizeof(shadow_descriptor), sizeof(action_descriptor), sizeof(scope_descriptor)};
+        void* tree_data_buffers[] = {&settings, &shadow, &action, &scope};
+        struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE, packet_buffer, node_written, NULL, server_buffer_send, NULL, 4, tree_descriptors, tree_descriptor_sizes, tree_data_buffers};
         printf("test server protocol...\n");
         xpsocket_init();
         xpsocket_serve(server_buffer_received, &server, MAX_PACKET_SIZE);

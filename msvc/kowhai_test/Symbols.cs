@@ -7,6 +7,7 @@ namespace KowhaiSymbols
             "Settings",
             "Shadow",
             "Actions",
+            "Scope",
             "Start",
             "Stop",
             "Running",
@@ -21,12 +22,14 @@ namespace KowhaiSymbols
             "Status",
             "Beep",
             "Duration",
+            "Pixels",
         };
         public enum Constants
         {
             Settings,
             Shadow,
             Actions,
+            Scope,
             Start,
             Stop,
             Running,
@@ -41,6 +44,7 @@ namespace KowhaiSymbols
             Status,
             Beep,
             Duration,
+            Pixels,
         };
     }
 }

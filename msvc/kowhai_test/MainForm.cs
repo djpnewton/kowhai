@@ -15,6 +15,7 @@ namespace kowhai_test
         const int TREE_ID_SETTINGS = 0;
         const int TREE_ID_SHADOW = 1;
         const int TREE_ID_ACTIONS = 2;
+        const int TREE_ID_SCOPE = 3;
 
         Sock sock;
         const int PACKET_SIZE = 64;
@@ -36,6 +37,7 @@ namespace kowhai_test
                 kowhaiTreeSettings.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
                 kowhaiTreeShadow.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
                 kowhaiTreeActions.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
+                kowhaiTreeScope.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
             }
             else
                 button1.Enabled = false;
@@ -66,7 +68,21 @@ namespace kowhai_test
                         int nodeOffset;
                         Kowhai.kowhai_node_t node;
                         if (Kowhai.GetNode(descriptor, symbols, out nodeOffset, out node) == Kowhai.STATUS_OK)
-                            this.Invoke((MethodInvoker)delegate { GetKowhaiTree(prot.header.tree_id).UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset); });
+                            this.Invoke((MethodInvoker)delegate {
+                                KowhaiTree tree = GetKowhaiTree(prot.header.tree_id);
+                                tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
+                                if (tree == kowhaiTreeScope)
+                                {
+                                    for (int i = 0; i < data.Length / 2; i++)
+                                    {
+                                        UInt16 value = BitConverter.ToUInt16(data, i * 2);
+                                        int x = prot.payload.spec.data.memory.offset / 2 + i;
+                                        if (x == 0)
+                                            chart1.Series[0].Points.Clear();
+                                        chart1.Series[0].Points.AddXY(x, value);
+                                    }
+                                }
+                            });
                         break;
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK:
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END:
@@ -128,6 +144,10 @@ namespace kowhai_test
             Application.DoEvents();
             buffer[0] = TREE_ID_ACTIONS;
             sock.Send(buffer, 2);
+            System.Threading.Thread.Sleep(100);
+            Application.DoEvents();
+            buffer[0] = TREE_ID_SCOPE;
+            sock.Send(buffer, 2);
         }
 
         private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
@@ -138,6 +158,8 @@ namespace kowhai_test
                 return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Shadow) };
             if (treeId == TREE_ID_ACTIONS)
                 return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Actions) };
+            if (treeId == TREE_ID_SCOPE)
+                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Scope) };
             return null;
         }
 
@@ -149,6 +171,8 @@ namespace kowhai_test
                 return kowhaiTreeShadow;
             if (treeId == TREE_ID_ACTIONS)
                 return kowhaiTreeActions;
+            if (treeId == TREE_ID_SCOPE)
+                return kowhaiTreeScope;
             return null;
         }
 
@@ -160,6 +184,8 @@ namespace kowhai_test
                 return TREE_ID_SHADOW;
             if (sender == kowhaiTreeActions)
                 return TREE_ID_ACTIONS;
+            if (sender == kowhaiTreeScope)
+                return TREE_ID_SCOPE;
             return 255;
         }
 
