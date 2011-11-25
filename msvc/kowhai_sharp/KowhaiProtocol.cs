@@ -101,9 +101,9 @@ namespace kowhai_sharp
         static void CopyIntPtrs(IntPtr dest, IntPtr source, int size)
         {
             // have to copy twice as Marshal.Copy has no IntPtr->IntPtr overload :((((
-            char[] c = new char[size];
-            Marshal.Copy(source, c, 0, size);
-            Marshal.Copy(c, 0, dest, size);
+            uint8_t[] b = new uint8_t[size];
+            Marshal.Copy(source, b, 0, size);
+            Marshal.Copy(b, 0, dest, size);
         }
 
         public static int Parse(byte[] protoPacket, int packetSize, out kowhai_protocol_t protocol)
