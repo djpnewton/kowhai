@@ -43,10 +43,22 @@ namespace kowhai_sharp
 
         public delegate void DataChangeEventHandler(object sender, DataChangeEventArgs e);
 
+        public class NodeReadEventArgs : EventArgs
+        {
+            public KowhaiNodeInfo Info;
+            public NodeReadEventArgs(KowhaiNodeInfo info)
+            {
+                Info = info;
+            }
+        }
+
+        public delegate void NodeReadEventHandler(object sender, NodeReadEventArgs e);
+
         string[] symbols;
         byte[] data;
 
         public event DataChangeEventHandler DataChange;
+        public event NodeReadEventHandler NodeRead;
 
         public KowhaiTree()
         {
@@ -259,6 +271,16 @@ namespace kowhai_sharp
             selectedNode = treeView1.GetNodeAt(e.X, e.Y);
         }
 
+
+        private void treeView1_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Right && selectedNode != null)
+            {
+                treeView1.SelectedNode = selectedNode;
+                contextMenuStrip1.Show(this, new Point(e.X, e.Y));
+            }
+        }
+
         private void treeView1_DoubleClick(object sender, EventArgs e)
         {
             if (selectedNode != null)
@@ -284,10 +306,6 @@ namespace kowhai_sharp
                             node.Text = dataValue.ToString();
                             node.BeginEdit();
                         }
-                    }
-                    else if (info.KowhaiNode.tag > 0)
-                    {
-                        DataChange(this, new DataChangeEventArgs(info, new byte[0]));
                     }
                 }
             }
@@ -321,6 +339,24 @@ namespace kowhai_sharp
             else
                 e.Node.Text = GetNodeName(info.KowhaiNode, info);
             treeView1.LabelEdit = false;
+        }
+
+        private void refreshNodeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (selectedNode != null && selectedNode.Tag != null)
+            {
+                KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
+                NodeRead(this, new NodeReadEventArgs(info));
+            }
+        }
+
+        private void writeNodeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (selectedNode != null && selectedNode.Tag != null)
+            {
+                KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
+                DataChange(this, new DataChangeEventArgs(info, new byte[0]));
+            }
         }
     }
 }
