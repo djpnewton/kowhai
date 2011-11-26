@@ -183,7 +183,6 @@ struct scope_data_t scope;
 
 #define MAX_PACKET_SIZE 0x40
 
-#if 0
 void node_written(void* param, struct kowhai_node_t* node)
 {
     if (node->tag == ACTION_BEEP)
@@ -208,7 +207,6 @@ void server_buffer_received(xpsocket_handle conn, void* param, char* buffer, int
 
     kowhai_server_process_packet(server, buffer, buffer_size);
 }
-#endif
 
 int main(int argc, char* argv[])
 {
@@ -338,7 +336,7 @@ int main(int argc, char* argv[])
     assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff) == STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
-#if 0
+
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)
     {
@@ -372,7 +370,7 @@ int main(int argc, char* argv[])
             struct flux_capacitor_t flux_cap[2] = {{100, 200, {1, 2, 3, 4, 5, 6}}, {110, 210, {11, 12, 13, 14, 15, 16}}};
             // write oven.temp
             temp = 25;
-            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, INT16_T, 0, sizeof(uint16_t), &temp);
             assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, MAX_PACKET_SIZE);
@@ -382,13 +380,13 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.payload.spec.data.symbols.count == 3);
             assert(memcmp(prot.payload.spec.data.symbols.array_, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.data.memory.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.data.memory.type == INT16_T);
             assert(prot.payload.spec.data.memory.offset == 0);
             assert(prot.payload.spec.data.memory.size == sizeof(uint16_t));
             assert(*((uint16_t*)prot.payload.buffer) == temp);
             // write low byte of oven.temp
             value = 255;
-            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 1, 1, &value);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, INT16_T, 1, 1, &value);
             assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, MAX_PACKET_SIZE);
@@ -398,7 +396,7 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.payload.spec.data.symbols.count == 3);
             assert(memcmp(prot.payload.spec.data.symbols.array_, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.data.memory.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.data.memory.type == INT16_T);
             assert(prot.payload.spec.data.memory.offset == 1);
             assert(prot.payload.spec.data.memory.size == 1);
             assert(*((char*)prot.payload.buffer) == value);
@@ -480,7 +478,7 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_READ_DATA_ACK_END);
             assert(prot.payload.spec.data.symbols.count == 3);
             assert(memcmp(prot.payload.spec.data.symbols.array_, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.data.memory.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.data.memory.type == INT16_T);
             assert(prot.payload.spec.data.memory.offset == 0);
             assert(prot.payload.spec.data.memory.size == sizeof(int16_t));
             assert(*((int16_t*)prot.payload.buffer) == 0x0102);
@@ -563,7 +561,7 @@ int main(int argc, char* argv[])
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
             assert(prot.header.command == CMD_ERROR_INVALID_SYMBOL_PATH);
-            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols4, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols4, INT16_T, 0, sizeof(uint16_t), &temp);
             assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, MAX_PACKET_SIZE);
@@ -577,7 +575,6 @@ int main(int argc, char* argv[])
         xpsocket_cleanup();
         printf("\t\t\t\t\t passed!\n");
     }
-#endif
 
     return 0;
 }

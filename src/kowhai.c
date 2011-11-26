@@ -239,11 +239,10 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
 	int size;
 
 	// find this node
-    status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
     if (read_offset < 0)
@@ -266,11 +265,10 @@ int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
 	int size;
 	
 	// find this node
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
     if (write_offset < 0)
@@ -293,8 +291,7 @@ int kowhai_get_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == INT8_T || node->type == UINT8_T)
@@ -310,8 +307,7 @@ int kowhai_get_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == INT16_T || node->type == UINT16_T)
@@ -327,8 +323,7 @@ int kowhai_get_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == INT32_T || node->type == UINT32_T)
@@ -344,8 +339,7 @@ int kowhai_get_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == FLOAT_T)
@@ -361,8 +355,7 @@ int kowhai_set_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == INT8_T || node->type == UINT8_T)
@@ -379,8 +372,7 @@ int kowhai_set_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == INT16_T || node->type == UINT16_T)
@@ -397,8 +389,7 @@ int kowhai_set_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == INT32_T || node->type == UINT32_T)
@@ -415,8 +406,7 @@ int kowhai_set_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int
     struct kowhai_node_t* node;
     uint16_t offset;
 	int status;
-	int node_count = 0xFFFF;	///@todo get this from a param
-	status = kowhai_get_node(tree_descriptor, &node_count, num_symbols, symbols, &offset, &node);
+	status = kowhai_get_node(tree_descriptor, NULL, num_symbols, symbols, &offset, &node);
     if (status != STATUS_OK)
         return status;
 	if (node->type == FLOAT_T)

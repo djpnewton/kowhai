@@ -67,11 +67,6 @@ union kowhai_symbol_t
 #define STATUS_INVALID_PROTOCOL_COMMAND 7
 #define STATUS_PACKET_BUFFER_TOO_BIG    8
 
-/* 
- * Get the memory offset (in the tree data) and the node of the tree descriptor specified by
- * a symbol path (ie, array of symbols).
- */
-//int kowhai_get_node(struct kowhai_node_t* tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int* offset, struct kowhai_node_t** target_node);
 /** 
  * Get the memory offset (and node) of a node item in the tree specified by
  * a symbol path (array of symbols).

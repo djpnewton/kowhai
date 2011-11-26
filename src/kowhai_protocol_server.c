@@ -32,8 +32,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 {
                     // call node_written callback
                     struct kowhai_node_t* node;
-                    int offset;
-                    kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
+                    uint16_t offset;
+                    kowhai_get_node(tree_descriptor, NULL, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
                     server->node_written(server->node_written_param, node);
                     // send response
                     prot.header.command = CMD_WRITE_DATA_ACK;
@@ -68,22 +68,22 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 break;
             case CMD_READ_DATA:
             {
-                int node_offset;
+                uint16_t node_offset;
                 int size, overhead, max_payload_size;
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
                 // get node information
-                status = kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
+                status = kowhai_get_node(tree_descriptor, NULL, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
                 if (status == STATUS_OK)
                 {
-                    kowhai_get_node_size(node, &size);
+                    kowhai_get_node_size(node, NULL, &size);
                     // get protocol overhead
                     prot.header.command = CMD_READ_DATA_ACK;
                     kowhai_protocol_get_overhead(&prot, &overhead);
                     // setup max payload size and payload offset
                     max_payload_size = server->max_packet_size - overhead;
                     prot.payload.spec.data.memory.offset = 0;
-                    prot.payload.spec.data.memory.type = node->data_type;
+                    prot.payload.spec.data.memory.type = node->type;
                     // allocate payload buffer
                     prot.payload.buffer = malloc(server->max_packet_size - overhead);
 
