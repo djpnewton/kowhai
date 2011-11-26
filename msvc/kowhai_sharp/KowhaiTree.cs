@@ -231,7 +231,9 @@ namespace kowhai_sharp
                 else if (node.Tag != null)
                 {
                     KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-                    node.Text = GetNodeName(info.KowhaiNode, info);
+                    string newName = GetNodeName(info.KowhaiNode, info);
+                    if (newName != node.Text)
+                        node.Text = newName;
                 }
             }
         }
@@ -245,7 +247,9 @@ namespace kowhai_sharp
                 Array.Resize<byte>(ref data, maxSize);
             Array.Copy(newData, 0, data, offset, newData.Length);
 
+            treeView1.BeginUpdate();
             UpdateTreeNodeData(treeView1.Nodes);
+            treeView1.EndUpdate();
         }
 
         TreeNode selectedNode;
