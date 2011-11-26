@@ -31,7 +31,7 @@ struct kowhai_node_t
     uint16_t type;          ///< what is this node
     uint16_t symbol;        ///< index to a name for this node
     uint16_t count;         ///< if this is an array number of elements in the array (otherwise 1)
-	uint16_t tag;			///< user defined tag
+    uint16_t tag;           ///< user defined tag
 };
 
 ///@brief standard tree

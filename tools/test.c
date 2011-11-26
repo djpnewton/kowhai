@@ -24,20 +24,20 @@
 
 struct kowhai_node_t settings_descriptor[] =
 {
-    { BRANCH_START, 	SYM_SETTINGS,      1,				0 },
+    { BRANCH_START,     SYM_SETTINGS,       1,                0 },
 
-    { BRANCH_START, 	SYM_FLUXCAPACITOR, FLUX_CAP_COUNT,	0 },
-    { UINT32_T,  		SYM_FREQUENCY,     1,				0 },
-    { UINT32_T,   		SYM_GAIN,          1,				0 },
-    { FLOAT_T,   		SYM_COEFFICIENT,   COEFF_COUNT,		0 },
-    { BRANCH_END,    	SYM_FLUXCAPACITOR, 0,				0 },
+    { BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+    { UINT32_T,         SYM_FREQUENCY,      1,                0 },
+    { UINT32_T,         SYM_GAIN,           1,                0 },
+    { FLOAT_T,          SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+    { BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
 
-    { BRANCH_START, 	SYM_OVEN,          1,				0 },
-    { INT16_T,   		SYM_TEMP,          1,				0 },
-    { UINT16_T,   		SYM_TIMEOUT,       1,				0 },
-    { BRANCH_END,    	SYM_OVEN,          0,				0 },
+    { BRANCH_START,     SYM_OVEN,           1,                0 },
+    { INT16_T,          SYM_TEMP,           1,                0 },
+    { UINT16_T,         SYM_TIMEOUT,        1,                0 },
+    { BRANCH_END,       SYM_OVEN,           0,                0 },
 
-    { BRANCH_END, 		SYM_SETTINGS,      1,				0 },
+    { BRANCH_END,       SYM_SETTINGS,       1,                0 },
 };
 
 //
@@ -46,10 +46,10 @@ struct kowhai_node_t settings_descriptor[] =
 
 struct kowhai_node_t shadow_descriptor[] =
 {
-    { BRANCH_START, 	SYM_SHADOW,        1,				0 },
-    { UINT8_T,   		SYM_RUNNING,       1,				0 },
-    { UINT8_T,   		SYM_STATUS,        1,				0 },
-    { BRANCH_END,    	SYM_SHADOW,        0,				0 },
+    { BRANCH_START,     SYM_SHADOW,         1,                0 },
+    { UINT8_T,          SYM_RUNNING,        1,                0 },
+    { UINT8_T,          SYM_STATUS,         1,                0 },
+    { BRANCH_END,       SYM_SHADOW,         0,                0 },
 };
 
 //
@@ -62,17 +62,17 @@ struct kowhai_node_t shadow_descriptor[] =
 
 struct kowhai_node_t action_descriptor[] =
 {
-    { BRANCH_START, 	SYM_ACTIONS,       1, 				0 },
-    { BRANCH_START, 	SYM_START,         1, 				ACTION_START },
-    { UINT32_T,   		SYM_DELAY,         1, 				0 },
-    { BRANCH_END,    	SYM_START,         0, 				0 },
-    { BRANCH_START, 	SYM_STOP,          1, 				ACTION_STOP },
-    { BRANCH_END,    	SYM_STOP,          0, 				0 },
-    { BRANCH_START, 	SYM_BEEP,          1, 				ACTION_BEEP},
-    { INT32_T,   		SYM_FREQUENCY,     1, 				0 },
-    { INT32_T,   		SYM_DURATION,      1, 				0 },
-    { BRANCH_END,    	SYM_BEEP,          0, 				0 },
-    { BRANCH_END,    	SYM_ACTIONS,       0, 				0 },
+    { BRANCH_START,     SYM_ACTIONS,        1,                 0 },
+    { BRANCH_START,     SYM_START,          1,                 ACTION_START },
+    { UINT32_T,         SYM_DELAY,          1,                 0 },
+    { BRANCH_END,       SYM_START,          0,                 0 },
+    { BRANCH_START,     SYM_STOP,           1,                 ACTION_STOP },
+    { BRANCH_END,       SYM_STOP,           0,                 0 },
+    { BRANCH_START,     SYM_BEEP,           1,                 ACTION_BEEP},
+    { INT32_T,          SYM_FREQUENCY,      1,                 0 },
+    { INT32_T,          SYM_DURATION,       1,                 0 },
+    { BRANCH_END,       SYM_BEEP,           0,                 0 },
+    { BRANCH_END,       SYM_ACTIONS,        0,                 0 },
 };
 
 //
@@ -83,9 +83,9 @@ struct kowhai_node_t action_descriptor[] =
 
 struct kowhai_node_t scope_descriptor[] =
 {
-    { BRANCH_START, 	SYM_SCOPE,         1, 				0 },
-    { UINT16_T,  		SYM_PIXELS,        NUM_PIXELS, 		0 },
-    { BRANCH_END,    	SYM_SCOPE,         0, 				0 },
+    { BRANCH_START,     SYM_SCOPE,          1,                 0 },
+    { UINT16_T,         SYM_PIXELS,         NUM_PIXELS,        0 },
+    { BRANCH_END,       SYM_SCOPE,          0,                 0 },
 };
 
 //
