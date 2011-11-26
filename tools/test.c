@@ -253,21 +253,29 @@ int main(int argc, char* argv[])
     printf("test kowhai_get_node...\t\t\t");
     assert(kowhai_get_node(settings_descriptor, NULL, 3, symbols1, &offset, &node) == STATUS_OK);
     assert(offset == 64);
+    assert(node == &settings_descriptor[7]);
     assert(kowhai_get_node(settings_descriptor, NULL, 3, symbols2, &offset, &node) == STATUS_OK);
     assert(offset == 66);
+    assert(node == &settings_descriptor[8]);
     assert(kowhai_get_node(settings_descriptor, NULL, 2, symbols3, &offset, &node) == STATUS_OK);
     assert(offset == 0);
+    assert(node == &settings_descriptor[1]);
     assert(kowhai_get_node(settings_descriptor, NULL, 2, symbols4, &offset, &node) == STATUS_INVALID_SYMBOL_PATH);
     assert(kowhai_get_node(settings_descriptor, NULL, 3, symbols6, &offset, &node) == STATUS_OK);
     assert(offset == 4);
+    assert(node == &settings_descriptor[3]);
     assert(kowhai_get_node(settings_descriptor, NULL, 3, symbols8, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 4);
+    assert(node == &settings_descriptor[3]);
     assert(kowhai_get_node(settings_descriptor, NULL, 3, symbols9, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
+    assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_descriptor, NULL, 3, symbols10, &offset, &node) == STATUS_OK);
     assert(offset == 8 + 3 * 4);
+    assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_descriptor, NULL, 2, symbols12, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t));
+    assert(node == &settings_descriptor[1]);
     printf(" passed!\n");
 
     // test get node size
