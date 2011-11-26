@@ -28,7 +28,12 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.treeView1 = new System.Windows.Forms.TreeView();
+            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.refreshNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.writeNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // treeView1
@@ -43,6 +48,29 @@
             this.treeView1.DoubleClick += new System.EventHandler(this.treeView1_DoubleClick);
             this.treeView1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.treeView1_KeyDown);
             this.treeView1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.treeView1_MouseDown);
+            this.treeView1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.treeView1_MouseUp);
+            // 
+            // contextMenuStrip1
+            // 
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.refreshNodeToolStripMenuItem,
+            this.writeNodeToolStripMenuItem});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(153, 70);
+            // 
+            // refreshNodeToolStripMenuItem
+            // 
+            this.refreshNodeToolStripMenuItem.Name = "refreshNodeToolStripMenuItem";
+            this.refreshNodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.refreshNodeToolStripMenuItem.Text = "Refresh Node";
+            this.refreshNodeToolStripMenuItem.Click += new System.EventHandler(this.refreshNodeToolStripMenuItem_Click);
+            // 
+            // writeNodeToolStripMenuItem
+            // 
+            this.writeNodeToolStripMenuItem.Name = "writeNodeToolStripMenuItem";
+            this.writeNodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.writeNodeToolStripMenuItem.Text = "Write Node";
+            this.writeNodeToolStripMenuItem.Click += new System.EventHandler(this.writeNodeToolStripMenuItem_Click);
             // 
             // KowhaiTree
             // 
@@ -52,6 +80,7 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "KowhaiTree";
             this.Size = new System.Drawing.Size(112, 122);
+            this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -59,5 +88,8 @@
         #endregion
 
         private System.Windows.Forms.TreeView treeView1;
+        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem refreshNodeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem writeNodeToolStripMenuItem;
     }
 }

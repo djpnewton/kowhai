@@ -79,7 +79,7 @@ struct kowhai_node_t action_descriptor[] =
 // scope tree descriptor
 //
 
-#define NUM_PIXELS 100
+#define NUM_PIXELS 512
 
 struct kowhai_node_t scope_descriptor[] =
 {
