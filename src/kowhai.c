@@ -69,13 +69,13 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count, int 
             case BRANCH_START:
             {
                 int new_branch_size = 0;
-                int new_branch_items = _node_count - i;        // remaining items
+                int new_branch_items = _node_count - i;         // remaining items
                 int ret;
                 ret = kowhai_get_node_size(&node[i], &new_branch_items, &new_branch_size);
                 if (ret != STATUS_OK)
-                    return ret;                                // propagate this down the stack
-                _size += new_branch_size;                    // accumulate the branches size
-                i += new_branch_items - 1;                    // skip the already processed branch items
+                    return ret;                                 // propagate this down the stack
+                _size += new_branch_size;                       // accumulate the branches size
+                i += new_branch_items - 1;                      // skip the already processed branch items
                 break;
             }
             case BRANCH_END:
@@ -152,15 +152,15 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, i
                     if ((enum kowhai_node_type)node[i].type == BRANCH_START)
                     {
                         // this is not the item but it maybe in this branch so drill baby drill
-                        branch_offset = 0;                         // offset into this branch for the item
-                        branch_node_count = _node_count - i;    // max nodes to search from here
+                        branch_offset = 0;                          // offset into this branch for the item
+                        branch_node_count = _node_count - i;        // max nodes to search from here
                         ret = _kowhai_get_node(&node[i+1], &branch_node_count, num_symbols - 1, &symbols[1], &branch_offset, NULL);
                         if (ret == STATUS_INVALID_SYMBOL_PATH)
                             // branch ended without finding our item so goto next item
                             break;
                         // found or another error occurred so propagate it out
-                        branch_node_count += 1;        // since we passed in the next node here we should add 1 to result (note dont add it to i yet as we want to still point at the branch start to get the count etc, it will be added later, see below)
-                        _offset += branch_offset;   // accumulate the bytes offset into the branch where the result was found
+                        branch_node_count += 1;         // since we passed in the next node here we should add 1 to result (note dont add it to i yet as we want to still point at the branch start to get the count etc, it will be added later, see below)
+                        _offset += branch_offset;       // accumulate the bytes offset into the branch where the result was found
                         goto done;
                     }
                 }
