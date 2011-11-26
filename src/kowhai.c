@@ -92,7 +92,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count, int 
 
     // did we get too many items to check
     if (i >= _node_count)
-        return -STATUS_INVALID_OFFSET;
+        return STATUS_INVALID_OFFSET;
 
 done:
     if (node_count != NULL)
@@ -112,7 +112,7 @@ done:
 ///@todo find the correct index (always 0 atm)
 static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node)
 {
-    int i;
+    int i = 0;
     uint16_t _offset = 0;
     uint16_t _node_count = 0xFFFF;
     int found_item_size;
@@ -127,7 +127,7 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, i
         _node_count = *node_count;
 
     // look through all the items in the node list
-    for (i = 0; i < _node_count; i++)
+	while (i < _node_count)
     {
         int skip_size;
         int skip_nodes;
@@ -136,7 +136,7 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, i
         {
             case BRANCH_END:
                 // if we got a branch end then we didn't find it on this path
-				return -STATUS_INVALID_OFFSET;
+				return STATUS_INVALID_OFFSET;
             case BRANCH_START:
             default:
                 // if the path symbols match and the item array is large enough to contain our index this could be it ...
@@ -155,12 +155,12 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, i
                         branch_offset = 0;                 		// offset into this branch for the item
                         branch_node_count = _node_count - i;    // max nodes to search from here
                         ret = _kowhai_get_node(&node[i+1], &branch_node_count, num_symbols - 1, &symbols[1], &branch_offset, NULL);
-                        if (ret == -STATUS_INVALID_SYMBOL_PATH)
-                            // branch ended without finding our item so continue to next item
+                        if (ret == STATUS_INVALID_SYMBOL_PATH)
+                            // branch ended without finding our item so goto next item
                             break;
-                        branch_node_count += 1;
-						_offset += branch_offset;   // accumulate the bytes offset
 						// found or another error occurred so propagate it out
+                        branch_node_count += 1;		// since we passed in the next node here we should add 1 to result (note dont add it to i yet as we want to still point at the branch start to get the count etc, it will be added later, see below)
+						_offset += branch_offset;   // accumulate the bytes offset into the branch where the result was found
 						goto done;
                     }
                 }
@@ -174,7 +174,7 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, i
             // propagate the error
             return ret;
         _offset += skip_size;
-        i += skip_nodes - 1;
+        i += skip_nodes;
     }
 
 done:
@@ -189,7 +189,7 @@ done:
 	// Index into the array element
     remaining_nodes = _node_count - i; // max nodes left
     r = kowhai_get_node_size(&node[i], &remaining_nodes, &found_item_size);
-    if (r < 0)
+    if (r != STATUS_OK)
         return r;
     if (node[i].type == BRANCH_END)
     	items = 1;
@@ -198,7 +198,7 @@ done:
     _offset += (found_item_size / items) * symbols->full.index;
 
 	// update return values
-	i += branch_node_count;	// in case we came form a branch update the node to the branch end we need the start for the count
+	i += branch_node_count;	// if we came from a branch update the node count now we have the brnach start info (see above)
     if (node_count != NULL)
         *node_count = i;
     if (offset != NULL)
