@@ -15,25 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\kowhai.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\kowhai_protocol.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\kowhai_protocol_server.c">
+    <ClCompile Include="kowhai_dll.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\kowhai.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\kowhai_protocol.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\kowhai_protocol_server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <None Include="kowhai_dll.def">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

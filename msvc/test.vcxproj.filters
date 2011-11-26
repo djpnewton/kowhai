@@ -15,24 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\kowhai.c">
+    <ClCompile Include="..\tools\test.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\kowhai_protocol.c">
+    <ClCompile Include="..\tools\xpsocket.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\kowhai_protocol_server.c">
+    <ClCompile Include="..\tools\beep.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\kowhai.h">
+    <ClInclude Include="..\tools\xpsocket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\kowhai_protocol.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\kowhai_protocol_server.h">
+    <ClInclude Include="..\tools\symbols.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

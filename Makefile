@@ -1,15 +1,21 @@
 CC 	   = gcc
 CFLAGS = -g -DKOWHAI_DBG
 
+SOCKET_LIB = 
+ifeq ($(OS),Windows_NT)
+	# on windows we need the winsock library
+	SOCKET_LIB = -lws2_32
+endif
+
 all: kowhai test
 
-test: src/test.o src/kowhai.o
-	$(CC) $(LDFLAGS) -o $@ $^
+test: tools/test.o 
+#tools/xpsocket.o tools/beep.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -lkowhai
 
-src/test.o: src/test.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-kowhai: src/kowhai.o
+kowhai: src/kowhai.o 
+#src/kowhai_protocol.o src/kowhai_protocol_server.o
+	ar rs lib$@.a $?
 
 src/kowhai.o: src/kowhai.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -17,7 +23,20 @@ src/kowhai.o: src/kowhai.c
 src/kowhai_protocol.o: src/kowhai_protocol.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+src/kowhai_protocol_server.o: src/kowhai_protocol_server.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/test.o: tools/test.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/xpsocket.o: tools/xpsocket.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/beep.o: tools/beep.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 clean: 
-	rm -f test.exe src/test.o src/kowhai.o
+	rm -f test.exe libkowhai.a tools/test.o tools/xpsocket.o tools/beep.o src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
+	-rm ./test
 
 .PHONY: clean

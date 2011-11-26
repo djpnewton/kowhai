@@ -1,4 +1,12 @@
 *.exe
 *.o
+*.a
 *.swp
 *~
+Debug/
+Release/
+msvc/ipch
+*.user
+*.sdf
+*.opensdf
+*.suo
