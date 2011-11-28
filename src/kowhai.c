@@ -116,11 +116,7 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, c
 {
     int i = 0;
     uint16_t _offset = 0;
-    int found_item_size;
     int ret;
-    int items;
-    uint16_t branch_offset = 0;
-    int branch_node_count = 0;
 
     // look through all the items in the node list
     while (1)
@@ -135,12 +131,12 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, c
                 return STATUS_INVALID_SYMBOL_PATH;
             case BRANCH_START:
             default:
-                // if the path symbols match and the item array is large enough to contain our index this could be it ...
+                // if the path symbols match and the node array count is large enough to contain our index this could be the target node
                 if ((symbols->parts.name == node[i].symbol) && (node[i].count > symbols->parts.array_index))
                 {
                     if (num_symbols == 1)
                     {
-                        // the path fully match in values and length so this is the item we are looking for
+                        // the symbol paths fully match in values and length so this is the node we are looking for
                         ret = STATUS_OK;
                         if (target_node != NULL)
                             *target_node = (struct kowhai_node_t*)node + i;
@@ -149,14 +145,14 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, c
                     
                     if ((enum kowhai_node_type)node[i].type == BRANCH_START)
                     {
-                        // this is not the item but it maybe in this branch so drill baby drill
-                        branch_offset = 0;                          // offset into this branch for the item
+                        uint16_t branch_offset = 0;
+                        // this is not the target node but it is possibly in this branch so drill baby drill
                         ret = _kowhai_get_node(node + i + 1, num_symbols - 1, symbols + 1, &branch_offset, target_node, 0);
                         if (ret == STATUS_INVALID_SYMBOL_PATH)
-                            // branch ended without finding our item so goto next item
+                            // branch ended without finding our target node so goto next
                             break;
-                        // found or another error occurred so propagate it out
-                        _offset += branch_offset;       // accumulate the bytes offset into the branch where the result was found
+                        // add the branch offset to current total
+                        _offset += branch_offset;
                         goto done;
                     }
                 }
@@ -178,24 +174,20 @@ static int _kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, c
 
 done:
 
-    // we are pointing at the root of this setting but now we need to move to the correct array index
-    // all we need is (the size of this node / its count) * index bytes offset
-
-    // Index into the array element
-    ret = kowhai_get_node_size(node + i, &found_item_size);
-    if (ret != STATUS_OK)
-        return ret;
-    if (node[i].type == BRANCH_END)
-        items = 1;
-    else
-        items = node[i].count;
-    _offset += (found_item_size / items) * symbols->parts.array_index;
-
-    // update return values
-    i += branch_node_count;    // if we came from a branch update the node count now we have the brnach start info (see above)
+    // update offset return parameter
     if (offset != NULL)
+    {
+        // we have the index of the target node
+        // the offset is: (the size of this node / its count) * symbol array index
+        int size;
+        ret = kowhai_get_node_size(node + i, &size);
+        if (ret != STATUS_OK)
+            return ret;
+        _offset += (size / node[i].count) * symbols->parts.array_index;
         *offset = _offset;
-    return ret;    // success
+    }
+
+    return ret;
 }
 
 int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node)
