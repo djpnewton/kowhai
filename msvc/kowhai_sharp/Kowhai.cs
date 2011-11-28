@@ -47,21 +47,19 @@ namespace kowhai_sharp
             public uint16_t type;
             public uint16_t symbol;
             public uint16_t count;
-            public uint16_t data_type;
             public uint16_t tag;
         }
 
         public const int NODE_TYPE_BRANCH = 0;
-        public const int NODE_TYPE_LEAF = 1;
-        public const int NODE_TYPE_END = 2;
+        public const int NODE_TYPE_END = 1;
 
-        public const int DATA_TYPE_CHAR = 0;
-        public const int DATA_TYPE_UCHAR = 1;
-        public const int DATA_TYPE_INT16 = 2;
-        public const int DATA_TYPE_UINT16 = 3;
-        public const int DATA_TYPE_INT32 = 4;
-        public const int DATA_TYPE_UINT32 = 5;
-        public const int DATA_TYPE_FLOAT = 6;
+        public const int DATA_TYPE_CHAR = 0x0070;
+        public const int DATA_TYPE_UCHAR = 0x0071;
+        public const int DATA_TYPE_INT16 = 0x0072;
+        public const int DATA_TYPE_UINT16 = 0x0073;
+        public const int DATA_TYPE_INT32 = 0x0074;
+        public const int DATA_TYPE_UINT32 = 0x0075;
+        public const int DATA_TYPE_FLOAT = 0x0076;
         public const int DATA_TYPE_READONLY = 0x8000;
 
         public static int RawDataType(int dataType)
@@ -78,6 +76,9 @@ namespace kowhai_sharp
         public const int STATUS_PACKET_BUFFER_TOO_SMALL = 6;
         public const int STATUS_INVALID_PROTOCOL_COMMAND = 7;
         public const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
+
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int kowhai_get_node_type_size(uint16_t type);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node(IntPtr tree_descriptor, int num_symbols, IntPtr symbols, out int offset, IntPtr target_node);
@@ -126,16 +127,6 @@ namespace kowhai_sharp
             hSyms.Free();
             hDesc.Free();
             return result;
-        }
-
-        public static int GetLeafNodeSize(kowhai_node_t node)
-        {
-            System.Diagnostics.Debug.Assert(node.type != NODE_TYPE_BRANCH && node.type != NODE_TYPE_END);
-            GCHandle h = GCHandle.Alloc(node, GCHandleType.Pinned);
-            int size;
-            kowhai_get_node_size(h.AddrOfPinnedObject(), out size);
-            h.Free();
-            return size;
         }
 
         public static kowhai_symbol_t[] GetSymbolPath(kowhai_node_t[] descriptor, kowhai_node_t node, int32_t nodeIndex,  uint16_t[] arrayIndexes)

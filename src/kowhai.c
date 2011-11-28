@@ -9,14 +9,9 @@
 #endif
 
 
-/**
- * @brief return the size for a given node type
- * @param type a node type to find the size of
- * @return the size in bytes
- */
-static int kowhai_get_node_type_size(enum kowhai_node_type type)
+int kowhai_get_node_type_size(uint16_t type)
 {
-    switch (type)
+    switch ((enum kowhai_node_type)type)
     {
         // meta tags only (no real size in the buffer)
         case BRANCH_START:

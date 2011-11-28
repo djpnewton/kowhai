@@ -64,6 +64,13 @@ union kowhai_symbol_t
 #define STATUS_PACKET_BUFFER_TOO_BIG    8
 
 /**
+ * @brief return the size for a given node type
+ * @param type a node type to find the size of
+ * @return the size in bytes
+ */
+int kowhai_get_node_type_size(uint16_t type);
+
+/**
  * @brief find a item in the tree given its path
  * @param node to start searching from for the given item
  * @param num_symbols number of items in the path (@todo should we just terminate the path instead)

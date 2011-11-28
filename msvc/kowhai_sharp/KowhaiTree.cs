@@ -92,10 +92,10 @@ namespace kowhai_sharp
         {
             if (info == null)
                 return null;
-            int size = Kowhai.GetLeafNodeSize(info.KowhaiNode);
+            int size = Kowhai.kowhai_get_node_type_size(info.KowhaiNode.type);
             if (info.Offset + size <= data.Length)
             {
-                switch (info.KowhaiNode.data_type)
+                switch (info.KowhaiNode.type)
                 {
                     case Kowhai.DATA_TYPE_CHAR:
                         return (sbyte)data[info.Offset];
@@ -159,9 +159,9 @@ namespace kowhai_sharp
             if (info != null && info.IsArrayItem)
                 return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
             else if (node.count > 1)
-                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.data_type));
+                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.type));
             else
-                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.data_type), GetDataValue(info));
+                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.type), GetDataValue(info));
         }
 
         void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node)
@@ -199,7 +199,9 @@ namespace kowhai_sharp
                         }
                         node = node.Parent;
                         break;
-                    case Kowhai.NODE_TYPE_LEAF:
+                    case Kowhai.NODE_TYPE_END:
+                        return;
+                    default:
                         TreeNode leaf = node.Nodes.Add(GetNodeName(descNode, null));
                         if (descNode.count > 1)
                         {
@@ -207,17 +209,15 @@ namespace kowhai_sharp
                             {
                                 TreeNode child = leaf.Nodes.Add("#" + i.ToString());
                                 child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                                offset += (ushort)Kowhai.GetLeafNodeSize(descNode);
+                                offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                             }
                         }
                         else
                         {
                             leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                            offset += (ushort)Kowhai.GetLeafNodeSize(descNode);
+                            offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                         }
                         break;
-                    case Kowhai.NODE_TYPE_END:
-                        return;
                 }
                 index++;
             }
@@ -297,7 +297,7 @@ namespace kowhai_sharp
                 if (node.Tag != null)
                 {
                     KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-                    if (info.KowhaiNode.type == Kowhai.NODE_TYPE_LEAF)
+                    if (info.KowhaiNode.type != Kowhai.NODE_TYPE_BRANCH)
                     {
                         object dataValue = GetDataValue(info);
                         if (dataValue != null)
@@ -326,7 +326,7 @@ namespace kowhai_sharp
                 byte[] data;
                 try
                 {
-                    data = TextToData(e.Label, info.KowhaiNode.data_type);
+                    data = TextToData(e.Label, info.KowhaiNode.type);
                     e.Node.Text = "updating...";
                 }
                 catch (Exception ex)
