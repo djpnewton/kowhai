@@ -92,7 +92,7 @@ namespace kowhai_sharp
         {
             if (info == null)
                 return null;
-            int size = Kowhai.kowhai_get_data_size(info.KowhaiNode.data_type);
+            int size = Kowhai.GetLeafNodeSize(info.KowhaiNode);
             if (info.Offset + size <= data.Length)
             {
                 switch (info.KowhaiNode.data_type)
@@ -207,13 +207,13 @@ namespace kowhai_sharp
                             {
                                 TreeNode child = leaf.Nodes.Add("#" + i.ToString());
                                 child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                                offset += (ushort)Kowhai.kowhai_get_data_size(descNode.data_type);
+                                offset += (ushort)Kowhai.GetLeafNodeSize(descNode);
                             }
                         }
                         else
                         {
                             leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                            offset += (ushort)Kowhai.kowhai_get_data_size(descNode.data_type);
+                            offset += (ushort)Kowhai.GetLeafNodeSize(descNode);
                         }
                         break;
                     case Kowhai.NODE_TYPE_END:
