@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#define KOWHAI_SYMBOL(name, array_index) ((array_index << 16) + name)
-
 #pragma pack(1)
 
 ///@brief basic types found in a tree descriptor
@@ -53,7 +51,7 @@ union kowhai_symbol_t
         uint16_t index;         ///< zero based array index of this node
     } full;
 };
-#define FULL_PATH(symbol, index) (((uint16_t)index << 16) + symbol) ///@todo this sucks because it is endian sensative !!
+#define KOWHAI_SYMBOL(name, array_index) ((array_index << 16) + name)
 
 #pragma pack()
 
@@ -66,19 +64,24 @@ union kowhai_symbol_t
 #define STATUS_PACKET_BUFFER_TOO_SMALL  6
 #define STATUS_INVALID_PROTOCOL_COMMAND 7
 #define STATUS_PACKET_BUFFER_TOO_BIG    8
+#define STATUS_PACKET_ 9
 
 /** 
- * Get the memory offset (and node) of a node item in the tree specified by
- * a symbol path (array of symbols).
+ * @brief find a item in the tree given its path
+ * @param node to start searching from for the given item
+ * @param node_count if not null the number of nodes to search, on return if not null will contain the actual number of nodes offset
+ * @param num_symbols number of items in the symbols path (@todo should we just terminate the path instead)
+ * @param symbols the path of the item to find
+ * @param offset set to number of bytes from the current branch to the item
+ * @param target_node if return is successful this is the node that matches the symbol path
  */
 int kowhai_get_node(const struct kowhai_node_t *node, int *node_count, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
 
 /**
- * @brief calculate the complete size of a node including all the sub-elements and array items.
- * @param node to find the size of
- * @param node_items do not drill beyond this many items and returns the actual number found if successful
- * @param size size of the node in bytes
- * @return kowhia status
+ * @brief calculate the complete size of the node (including all the sub elements and array items)
+ * @param node find the size of this node
+ * @param node_count optional max number of nodes to include or null, if non null and return is successful the value will contain the actual nodes searched
+ * @param size if return is successful and this is not null this will contain the size of node
  */
 int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count, int *size);
 

@@ -35,14 +35,13 @@ static int kowhai_get_node_type_size(enum kowhai_node_type type)
         case FLOAT_T:
             return 4;
         default:
-            #ifdef KOWHAI_DBG
+#ifdef KOWHAI_DBG
             printf(KOWHAI_ERR" unknown item type: %d\n", type);
-            #endif
+#endif
             return -1;
     }
 }
 
-// calculate the complete size of a node including all the sub-elements and array items.
 int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count, int *size)
 {
     int _size = 0;                                // size of the node 
@@ -79,7 +78,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count, int 
                 break;
             }
             case BRANCH_END:
-                // accumulate the hole array
+                // accumulate the whole array
                 _size *= node[0].count;
                 goto done;
             
@@ -92,7 +91,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *node_count, int 
 
     // did we get too many items to check
     if (i >= _node_count)
-        return STATUS_INVALID_OFFSET;
+        return STATUS_INVALID_SYMBOL_PATH;
 
 done:
     if (node_count != NULL)
@@ -103,13 +102,15 @@ done:
     
 }
 
-///@brief find a item in the tree given its path
-///@param node to start searching from for the given item
-///@param num_symbols number of items in the path (@todo should we just terminate the path instead)
-///@param symbols the path of the item to seek
-///@param offset set to number of bytes from the current branch to the item
-///@return < 0 on failure
-///@todo find the correct index (always 0 atm)
+/** 
+ * @brief find a item in the tree given its path
+ * @param node to start searching from for the given item
+ * @param node_count if not null the number of nodes to search, on return if not null will contain the actual number of nodes offset
+ * @param num_symbols number of items in the symbols path (@todo should we just terminate the path instead)
+ * @param symbols the path of the item to find
+ * @param offset set to number of bytes from the current branch to the item
+ * @param target_node if return is successful this is the node that matches the symbol path
+ */
 static int _kowhai_get_node(const struct kowhai_node_t *node, int *node_count, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node)
 {
     int i = 0;
@@ -208,16 +209,9 @@ done:
     return ret;    // success
 }
 
-///@brief find a item in the tree given its path
-///@param node to start searching from for the given item
-///@param num_symbols number of items in the path (@todo should we just terminate the path instead)
-///@param symbols the path of the item to seek
-///@param offset set to number of bytes from the current branch to the item
-///@return status 
-///@todo find the correct index (always 0 atm)
 int kowhai_get_node(const struct kowhai_node_t *node, int *node_count, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node)
 {
-    // saftey wrapper to stop us walking off the end of the tree by updating node_count
+    // safety wrapper to stop us walking off the end of the tree by updating node_count
     if (node_count == NULL && node->type == BRANCH_START)
     {
         int ret;
