@@ -32,7 +32,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 {
                     // call node_written callback
                     struct kowhai_node_t* node;
-                    int offset;
+                    uint16_t offset;
                     kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
                     server->node_written(server->node_written_param, node);
                     // send response
@@ -68,7 +68,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 break;
             case CMD_READ_DATA:
             {
-                int node_offset;
+                uint16_t node_offset;
                 int size, overhead, max_payload_size;
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
@@ -83,7 +83,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                     // setup max payload size and payload offset
                     max_payload_size = server->max_packet_size - overhead;
                     prot.payload.spec.data.memory.offset = 0;
-                    prot.payload.spec.data.memory.type = node->data_type;
+                    prot.payload.spec.data.memory.type = node->type;
                     // allocate payload buffer
                     prot.payload.buffer = malloc(server->max_packet_size - overhead);
 
