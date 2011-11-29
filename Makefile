@@ -2,9 +2,12 @@ CC 	   = gcc
 CFLAGS = -g -DKOWHAI_DBG
 
 SOCKET_LIB = 
+TEST_EXECUTABLE = test
 ifeq ($(OS),Windows_NT)
 	# on windows we need the winsock library
 	SOCKET_LIB = -lws2_32
+	# on windows we need the file extension
+	TEST_EXECUTABLE = test.exe
 endif
 
 all: kowhai test
@@ -34,7 +37,6 @@ src/beep.o: tools/beep.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean: 
-	rm -f test.exe libkowhai.a tools/test.o tools/xpsocket.o tools/beep.o src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
-	-rm ./test
+	rm -f ${TEST_EXECUTABLE} libkowhai.a tools/test.o tools/xpsocket.o tools/beep.o src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
 
 .PHONY: clean

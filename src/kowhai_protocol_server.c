@@ -33,7 +33,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                     // call node_written callback
                     struct kowhai_node_t* node;
                     uint16_t offset;
-                    kowhai_get_node(tree_descriptor, NULL, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
+                    kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
                     server->node_written(server->node_written_param, node);
                     // send response
                     prot.header.command = CMD_WRITE_DATA_ACK;
@@ -73,10 +73,10 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
                 // get node information
-                status = kowhai_get_node(tree_descriptor, NULL, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
+                status = kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
                 if (status == STATUS_OK)
                 {
-                    kowhai_get_node_size(node, NULL, &size);
+                    kowhai_get_node_size(node, &size);
                     // get protocol overhead
                     prot.header.command = CMD_READ_DATA_ACK;
                     kowhai_protocol_get_overhead(&prot, &overhead);
