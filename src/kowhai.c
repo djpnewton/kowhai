@@ -211,6 +211,8 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
     status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+        return KOW_STATUS_NODE_WRITE_ONLY;
     if (read_offset < 0)
         return KOW_STATUS_INVALID_OFFSET;
 
@@ -218,8 +220,6 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
     status = kowhai_get_node_size(node, &size);
     if (status != KOW_STATUS_OK)
         return status;
-    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
-        return KOW_STATUS_NODE_WRITE_ONLY;
     if (read_size + read_offset > size)
         return KOW_STATUS_NODE_DATA_TOO_SMALL;
 
