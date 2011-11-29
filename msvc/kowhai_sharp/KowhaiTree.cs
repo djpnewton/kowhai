@@ -67,7 +67,6 @@ namespace kowhai_sharp
 
         string GetDataTypeString(int dataType)
         {
-            dataType = Kowhai.RawDataType(dataType);
             switch (dataType)
             {
                 case Kowhai.INT8:
@@ -141,7 +140,7 @@ namespace kowhai_sharp
         string GetNodeTagString(Kowhai.kowhai_node_t node)
         {
             if (node.tag > 0)
-                return string.Format("({0})", node.tag);
+                return string.Format("{0}", node.tag);
             return "";
         }
 
@@ -152,16 +151,38 @@ namespace kowhai_sharp
             return "";
         }
 
+        string GetNodePermissionString(Kowhai.kowhai_node_t node)
+        {
+            if (node.permissions == Kowhai.READ_ONLY)
+                return "R";
+            if (node.permissions == Kowhai.WRITE_ONLY)
+                return "W";
+            return "";
+        }
+
+        string GetNodeAttributesString(Kowhai.kowhai_node_t node)
+        {
+            string perm = GetNodePermissionString(node);
+            string tag = GetNodeTagString(node);
+            if (perm != "" && tag != "")
+                return string.Format("({0}, {1})", perm, tag);
+            if (perm != "")
+                return string.Format("({0})", perm);
+            if (tag != "")
+                return string.Format("({0})", tag);
+            return "";
+        }
+
         string GetNodeName(Kowhai.kowhai_node_t node, KowhaiNodeInfo info)
         {
             if (node.type == Kowhai.BRANCH)
-                return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
+                return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeAttributesString(node));
             if (info != null && info.IsArrayItem)
-                return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
+                return string.Format("#{0} = {1}", info.ArrayIndex, GetDataValue(info));
             else if (node.count > 1)
-                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.type));
+                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeAttributesString(node), GetDataTypeString(node.type));
             else
-                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.type), GetDataValue(info));
+                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeAttributesString(node), GetDataTypeString(node.type), GetDataValue(info));
         }
 
         void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node)

@@ -57,8 +57,12 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                             printf("    invalid payload size\n");
                             POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE);
                             break;
+                        case KOW_STATUS_NODE_READ_ONLY:
+                            printf("    node read only\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_NODE_READ_ONLY);
+                            break;
                         default:
-                            printf("    unkown error\n");
+                            printf("    unknown error\n");
                             POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_UNKNOWN);
                             break;
                     }
@@ -69,11 +73,13 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
             case KOW_CMD_READ_DATA:
             {
                 uint16_t node_offset;
-                int size, overhead, max_payload_size;
+                int permissions, size, overhead, max_payload_size;
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
                 // get node information
-                status = kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
+                status = kowhai_get_node2(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node, &permissions);
+                if (status == KOW_STATUS_OK && (permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+                    status = KOW_STATUS_NODE_WRITE_ONLY;
                 if (status == KOW_STATUS_OK)
                 {
                     kowhai_get_node_size(node, &size);
@@ -123,8 +129,12 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                             printf("    invalid payload size\n");
                             POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE);
                             break;
+                        case KOW_STATUS_NODE_WRITE_ONLY:
+                            printf("    node write only\n");
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_NODE_WRITE_ONLY);
+                            break;
                         default:
-                            printf("    unkown error\n");
+                            printf("    unknown error\n");
                             POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_UNKNOWN);
                             break;
                     }

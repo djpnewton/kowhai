@@ -47,6 +47,7 @@ namespace kowhai_sharp
             public uint16_t type;
             public uint16_t symbol;
             public uint16_t count;
+            public uint16_t permissions;
             public uint16_t tag;
         }
 
@@ -60,12 +61,10 @@ namespace kowhai_sharp
         public const int INT32 = 0x0074;
         public const int UINT32 = 0x0075;
         public const int FLOAT = 0x0076;
-        public const int READONLY = 0x8000;
 
-        public static int RawDataType(int dataType)
-        {
-            return dataType = dataType & (~READONLY);
-        }
+        public const int READ_WRITE = 0;
+        public const int READ_ONLY = 1;
+        public const int WRITE_ONLY = 2;
 
         public const int STATUS_OK = 0;
         public const int STATUS_INVALID_SYMBOL_PATH = 1;

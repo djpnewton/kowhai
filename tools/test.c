@@ -63,12 +63,12 @@ struct kowhai_node_t shadow_descriptor[] =
 struct kowhai_node_t action_descriptor[] =
 {
     { KOW_BRANCH_START,     SYM_ACTIONS,        1,                 0 },
-    { KOW_BRANCH_START,     SYM_START,          1,                 ACTION_START },
+    { KOW_BRANCH_START,     SYM_START,          1,                 0, ACTION_START },
     { KOW_UINT32,           SYM_DELAY,          1,                 0 },
     { KOW_BRANCH_END,       SYM_START,          0,                 0 },
-    { KOW_BRANCH_START,     SYM_STOP,           1,                 ACTION_STOP },
+    { KOW_BRANCH_START,     SYM_STOP,           1,                 0, ACTION_STOP },
     { KOW_BRANCH_END,       SYM_STOP,           0,                 0 },
-    { KOW_BRANCH_START,     SYM_BEEP,           1,                 ACTION_BEEP},
+    { KOW_BRANCH_START,     SYM_BEEP,           1,                 KOW_WRITE_ONLY, ACTION_BEEP},
     { KOW_INT32,            SYM_FREQUENCY,      1,                 0 },
     { KOW_INT32,            SYM_DURATION,       1,                 0 },
     { KOW_BRANCH_END,       SYM_BEEP,           0,                 0 },
@@ -83,7 +83,7 @@ struct kowhai_node_t action_descriptor[] =
 
 struct kowhai_node_t scope_descriptor[] =
 {
-    { KOW_BRANCH_START,     SYM_SCOPE,          1,                 0 },
+    { KOW_BRANCH_START,     SYM_SCOPE,          1,                 KOW_READ_ONLY },
     { KOW_UINT16,           SYM_PIXELS,         NUM_PIXELS,        0 },
     { KOW_BRANCH_END,       SYM_SCOPE,          0,                 0 },
 };
@@ -224,9 +224,13 @@ int main(int argc, char* argv[])
     union kowhai_symbol_t symbols10[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
     union kowhai_symbol_t symbols11[] = {SYM_SETTINGS, SYM_OVEN};
     union kowhai_symbol_t symbols12[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1)};
+    union kowhai_symbol_t symbols13[] = {SYM_ACTIONS, SYM_BEEP};
+    union kowhai_symbol_t symbols14[] = {SYM_ACTIONS, SYM_BEEP, SYM_DURATION};
+    union kowhai_symbol_t symbols15[] = {SYM_SCOPE};
+    union kowhai_symbol_t symbols16[] = {SYM_SCOPE, KOWHAI_SYMBOL(SYM_PIXELS, 5)};
 
     uint16_t offset;
-    int size;
+    int size, permissions;
     struct kowhai_node_t* node;
 
     uint8_t status;
@@ -276,6 +280,22 @@ int main(int argc, char* argv[])
     assert(kowhai_get_node(settings_descriptor, 2, symbols12, &offset, &node) == KOW_STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t));
     assert(node == &settings_descriptor[1]);
+    assert(kowhai_get_node2(action_descriptor, 2, symbols13, &offset, &node, &permissions) == KOW_STATUS_OK);
+    assert(offset == 4);
+    assert(node == &action_descriptor[6]);
+    assert(permissions == KOW_WRITE_ONLY);
+    assert(kowhai_get_node2(action_descriptor, 3, symbols14, &offset, &node, &permissions) == KOW_STATUS_OK);
+    assert(offset == 8);
+    assert(node == &action_descriptor[8]);
+    assert(permissions == KOW_WRITE_ONLY);
+    assert(kowhai_get_node2(scope_descriptor, 1, symbols15, &offset, &node, &permissions) == KOW_STATUS_OK);
+    assert(offset == 0);
+    assert(node == &scope_descriptor[0]);
+    assert(permissions == KOW_READ_ONLY);
+    assert(kowhai_get_node2(scope_descriptor, 2, symbols16, &offset, &node, &permissions) == KOW_STATUS_OK);
+    assert(offset == 10);
+    assert(node == &scope_descriptor[1]);
+    assert(permissions == KOW_READ_ONLY);
     printf(" passed!\n");
 
     // test get node size
@@ -577,6 +597,23 @@ int main(int argc, char* argv[])
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
             assert(prot.header.command == KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
+            // test read write permissions
+            POPULATE_PROTOCOL_READ(prot, TREE_ID_ACTIONS, KOW_CMD_READ_DATA, 3, symbols14);
+            assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_ACTIONS);
+            assert(prot.header.command == KOW_CMD_ERROR_NODE_WRITE_ONLY);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SCOPE, KOW_CMD_WRITE_DATA, 2, symbols16, KOW_INT16, 0, sizeof(uint16_t), &temp);
+            assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.tree_id == TREE_ID_SCOPE);
+            assert(prot.header.command == KOW_CMD_ERROR_NODE_READ_ONLY);
 
             xpsocket_free_client(conn);
         }

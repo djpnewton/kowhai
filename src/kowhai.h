@@ -5,11 +5,10 @@
 
 #pragma pack(1)
 
-/*
+/**
  * @brief basic types found in a tree descriptor
- * @todo should we namespace these
  */
-enum kowhai_node_type
+enum kowhai_node_type_t
 {
     // meta tags to denote structure
     KOW_BRANCH_START = 0x0000,
@@ -25,6 +24,16 @@ enum kowhai_node_type
     KOW_FLOAT,
 };
 
+/**
+ * @brief basic types found in a tree descriptor
+ */
+enum kowhai_node_permissions_t
+{
+    KOW_READ_WRITE = 0,
+    KOW_READ_ONLY = 1,
+    KOW_WRITE_ONLY = 2,
+};
+
 /*
  * @brief base tree descriptor node entry
  */
@@ -33,6 +42,7 @@ struct kowhai_node_t
     uint16_t type;          ///< what is this node
     uint16_t symbol;        ///< index to a name for this node
     uint16_t count;         ///< if this is an array number of elements in the array (otherwise 1)
+    uint16_t permissions;   ///< read/write, readonly etc
     uint16_t tag;           ///< user defined tag
 };
 
@@ -61,6 +71,8 @@ union kowhai_symbol_t
 #define KOW_STATUS_PACKET_BUFFER_TOO_SMALL  6
 #define KOW_STATUS_INVALID_PROTOCOL_COMMAND 7
 #define KOW_STATUS_PACKET_BUFFER_TOO_BIG    8
+#define KOW_STATUS_NODE_READ_ONLY           9
+#define KOW_STATUS_NODE_WRITE_ONLY          10
 
 /**
  * @brief return the size for a given node type
@@ -69,7 +81,7 @@ union kowhai_symbol_t
  */
 int kowhai_get_node_type_size(uint16_t type);
 
-/** 
+/**
  * @brief find a item in the tree given its path
  * @param node to start searching from for the given item
  * @param num_symbols number of items in the symbols path (@todo should we just terminate the path instead)
@@ -78,6 +90,17 @@ int kowhai_get_node_type_size(uint16_t type);
  * @param target_node if return is successful this is the node that matches the symbol path
  */
 int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
+
+/**
+ * @brief find a item in the tree given its path
+ * @param node to start searching from for the given item
+ * @param num_symbols number of items in the symbols path (@todo should we just terminate the path instead)
+ * @param symbols the path of the item to find
+ * @param offset set to number of bytes from the current branch to the item
+ * @param target_node if return is successful this is the node that matches the symbol path
+ * @param permissions the permission flags found in the symbol path
+ */
+int kowhai_get_node2(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int* permissions);
 
 /**
  * @brief calculate the complete size of a node including all the sub-elements and array items.

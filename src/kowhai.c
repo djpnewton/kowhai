@@ -11,7 +11,7 @@
 
 int kowhai_get_node_type_size(uint16_t type)
 {
-    switch ((enum kowhai_node_type)type)
+    switch ((enum kowhai_node_type_t)type)
     {
         // meta tags only (no real size in the buffer)
         case KOW_BRANCH_START:
@@ -58,7 +58,7 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
     {
         i++;
         *num_nodes_processed = i;
-        switch ((enum kowhai_node_type)node[i].type)
+        switch ((enum kowhai_node_type_t)node[i].type)
         {
             // navigate the hierarchy info
             case KOW_BRANCH_START:
@@ -100,21 +100,11 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
     return get_node_size(node, size, &num_nodes_processed);
 }
 
-/**
- * @brief find a item in the tree given its path
- * @param node to start searching from for the given item
- * @param num_symbols number of items in the path (@todo should we just terminate the path instead)
- * @param symbols the path of the item to seek
- * @param offset set to number of bytes from the current branch to the item
- * @param target_node placeholder for the result of the node search
- * @param num_nodes_processed how many nodes were iterated over during this function call
- * @return < 0 on failure
- * @todo find the correct index (always 0 atm)
- */
-static int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch)
+static int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int* permissions, int initial_branch)
 {
     int i = 0;
     uint16_t _offset = 0;
+    int _perms = 0;
     int ret;
 
     // look through all the items in the node list
@@ -123,7 +113,7 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
         int skip_size;
         int skip_nodes;
 
-        switch ((enum kowhai_node_type)node[i].type)
+        switch ((enum kowhai_node_type_t)node[i].type)
         {
             case KOW_BRANCH_END:
                 // if we got a branch end then we didn't find it on this path
@@ -133,6 +123,9 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
                 // if the path symbols match and the node array count is large enough to contain our index this could be the target node
                 if ((symbols->parts.name == node[i].symbol) && (node[i].count > symbols->parts.array_index))
                 {
+                    // add the permissions of this node
+                    _perms |= node[i].permissions;
+
                     if (num_symbols == 1)
                     {
                         // the symbol paths fully match in values and length so this is the node we are looking for
@@ -142,16 +135,19 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
                         goto done;
                     }
                     
-                    if ((enum kowhai_node_type)node[i].type == KOW_BRANCH_START)
+                    if ((enum kowhai_node_type_t)node[i].type == KOW_BRANCH_START)
                     {
                         uint16_t branch_offset = 0;
+                        int branch_permissions;
                         // this is not the target node but it is possibly in this branch so drill baby drill
-                        ret = get_node(node + i + 1, num_symbols - 1, symbols + 1, &branch_offset, target_node, 0);
+                        ret = get_node(node + i + 1, num_symbols - 1, symbols + 1, &branch_offset, target_node, &branch_permissions, 0);
                         if (ret == KOW_STATUS_INVALID_SYMBOL_PATH)
                             // branch ended without finding our target node so goto next
                             break;
                         // add the branch offset to current total
                         _offset += branch_offset;
+                        // add the branch permissions to current collection
+                        _perms |= branch_permissions;
                         goto done;
                     }
                 }
@@ -186,25 +182,33 @@ done:
         *offset = _offset;
     }
 
+    // update permissions return parameter
+    if (permissions != NULL)
+        *permissions = _perms;
+
     return ret;
 }
 
 int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node)
 {
+    return kowhai_get_node2(node, num_symbols, symbols, offset, target_node, NULL);
+}
+
+int kowhai_get_node2(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int* permissions)
+{
     if (node->type != KOW_BRANCH_START)
         return KOW_STATUS_INVALID_DESCRIPTOR;
-    return get_node(node, num_symbols, symbols, offset, target_node, 1);
+    return get_node(node, num_symbols, symbols, offset, target_node, permissions, 1);
 }
 
 int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    int size;
+    int permissions, status, size;
 
     // find this node
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
     if (read_offset < 0)
@@ -214,6 +218,8 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
     status = kowhai_get_node_size(node, &size);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+        return KOW_STATUS_NODE_WRITE_ONLY;
     if (read_size + read_offset > size)
         return KOW_STATUS_NODE_DATA_TOO_SMALL;
 
@@ -226,13 +232,14 @@ int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    int size;
+    int permissions, status, size;
     
     // find this node
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_READ_ONLY) == KOW_READ_ONLY)
+        return KOW_STATUS_NODE_READ_ONLY;
     if (write_offset < 0)
         return KOW_STATUS_INVALID_OFFSET;
     
@@ -252,10 +259,12 @@ int kowhai_get_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+        return KOW_STATUS_NODE_WRITE_ONLY;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
         *result = *((char*)((char*)tree_data + offset));
@@ -268,10 +277,12 @@ int kowhai_get_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+        return KOW_STATUS_NODE_WRITE_ONLY;
     if (node->type == KOW_INT16 || node->type == KOW_UINT16)
     {
         *result = *((int16_t*)((char*)tree_data + offset));
@@ -284,10 +295,12 @@ int kowhai_get_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+        return KOW_STATUS_NODE_WRITE_ONLY;
     if (node->type == KOW_INT32 || node->type == KOW_UINT32)
     {
         *result = *((uint32_t*)((char*)tree_data + offset));
@@ -300,10 +313,12 @@ int kowhai_get_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_WRITE_ONLY) == KOW_WRITE_ONLY)
+        return KOW_STATUS_NODE_WRITE_ONLY;
     if (node->type == KOW_FLOAT)
     {
         *result = *((float*)((char*)tree_data + offset));
@@ -316,10 +331,12 @@ int kowhai_set_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_READ_ONLY) == KOW_READ_ONLY)
+        return KOW_STATUS_NODE_READ_ONLY;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
         char* target_address = (char*)((char*)tree_data + offset);
@@ -333,10 +350,12 @@ int kowhai_set_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_READ_ONLY) == KOW_READ_ONLY)
+        return KOW_STATUS_NODE_READ_ONLY;
     if (node->type == KOW_INT16 || node->type == KOW_UINT16)
     {
         int16_t* target_address = (int16_t*)((char*)tree_data + offset);
@@ -350,10 +369,12 @@ int kowhai_set_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
+    if ((permissions & KOW_READ_ONLY) == KOW_READ_ONLY)
+        return KOW_STATUS_NODE_READ_ONLY;
     if (node->type == KOW_INT32 || node->type == KOW_UINT32)
     {
         uint32_t* target_address = (uint32_t*)((char*)tree_data + offset);
@@ -367,11 +388,13 @@ int kowhai_set_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int
 {
     struct kowhai_node_t* node;
     uint16_t offset;
-    int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    int permissions, status;
+    status = kowhai_get_node2(tree_descriptor, num_symbols, symbols, &offset, &node, &permissions);
     if (status != KOW_STATUS_OK)
         return status;
-    if (node->type == KOW_FLOAT)
+    if ((permissions & KOW_READ_ONLY) == KOW_READ_ONLY)
+        return KOW_STATUS_NODE_READ_ONLY;
+   if (node->type == KOW_FLOAT)
     {
         float* target_address = (float*)((char*)tree_data + offset);
         *target_address = value;
