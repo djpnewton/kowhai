@@ -12,17 +12,17 @@
 enum kowhai_node_type
 {
     // meta tags to denote structure
-    BRANCH_START = 0x0000,
-    BRANCH_END,
+    KOW_BRANCH_START = 0x0000,
+    KOW_BRANCH_END,
 
     // types to describe buffer layout
-    INT8_T = 0x0070,        ///@todo make this a reasonable balance
-    UINT8_T,
-    INT16_T,
-    UINT16_T,
-    INT32_T,
-    UINT32_T,
-    FLOAT_T,
+    KOW_INT8 = 0x0070,        ///@todo make this a reasonable balance
+    KOW_UINT8,
+    KOW_INT16,
+    KOW_UINT16,
+    KOW_INT32,
+    KOW_UINT32,
+    KOW_FLOAT,
 };
 
 /*
@@ -52,16 +52,15 @@ union kowhai_symbol_t
 
 #pragma pack()
 
-#define STATUS_OK                       0
-#define STATUS_INVALID_SYMBOL_PATH      1
-#define STATUS_INVALID_DESCRIPTOR       2
-#define STATUS_INVALID_OFFSET           3
-#define STATUS_NODE_DATA_TOO_SMALL      4
-#define STATUS_INVALID_NODE_TYPE        5
-#define STATUS_PACKET_BUFFER_TOO_SMALL  6
-#define STATUS_INVALID_PROTOCOL_COMMAND 7
-#define STATUS_PACKET_BUFFER_TOO_BIG    8
-#define STATUS_PACKET_ 9
+#define KOW_STATUS_OK                       0
+#define KOW_STATUS_INVALID_SYMBOL_PATH      1
+#define KOW_STATUS_INVALID_DESCRIPTOR       2
+#define KOW_STATUS_INVALID_OFFSET           3
+#define KOW_STATUS_NODE_DATA_TOO_SMALL      4
+#define KOW_STATUS_INVALID_NODE_TYPE        5
+#define KOW_STATUS_PACKET_BUFFER_TOO_SMALL  6
+#define KOW_STATUS_INVALID_PROTOCOL_COMMAND 7
+#define KOW_STATUS_PACKET_BUFFER_TOO_BIG    8
 
 /**
  * @brief return the size for a given node type

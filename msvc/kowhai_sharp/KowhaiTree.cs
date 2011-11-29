@@ -70,19 +70,19 @@ namespace kowhai_sharp
             dataType = Kowhai.RawDataType(dataType);
             switch (dataType)
             {
-                case Kowhai.DATA_TYPE_CHAR:
-                    return "char";
-                case Kowhai.DATA_TYPE_UCHAR:
-                    return "uchar";
-                case Kowhai.DATA_TYPE_INT16:
+                case Kowhai.INT8:
+                    return "int8";
+                case Kowhai.UINT8:
+                    return "uint8";
+                case Kowhai.INT16:
                     return "int16";
-                case Kowhai.DATA_TYPE_UINT16:
+                case Kowhai.UINT16:
                     return "uint16";
-                case Kowhai.DATA_TYPE_INT32:
+                case Kowhai.INT32:
                     return "int32";
-                case Kowhai.DATA_TYPE_UINT32:
+                case Kowhai.UINT32:
                     return "uint32";
-                case Kowhai.DATA_TYPE_FLOAT:
+                case Kowhai.FLOAT:
                     return "float";
             }
             return "error";
@@ -97,19 +97,19 @@ namespace kowhai_sharp
             {
                 switch (info.KowhaiNode.type)
                 {
-                    case Kowhai.DATA_TYPE_CHAR:
+                    case Kowhai.INT8:
                         return (sbyte)data[info.Offset];
-                    case Kowhai.DATA_TYPE_UCHAR:
+                    case Kowhai.UINT8:
                         return data[info.Offset];
-                    case Kowhai.DATA_TYPE_INT16:
+                    case Kowhai.INT16:
                         return BitConverter.ToInt16(data, info.Offset);
-                    case Kowhai.DATA_TYPE_UINT16:
+                    case Kowhai.UINT16:
                         return BitConverter.ToUInt16(data, info.Offset);
-                    case Kowhai.DATA_TYPE_INT32:
+                    case Kowhai.INT32:
                         return BitConverter.ToInt32(data, info.Offset);
-                    case Kowhai.DATA_TYPE_UINT32:
+                    case Kowhai.UINT32:
                         return BitConverter.ToUInt32(data, info.Offset);
-                    case Kowhai.DATA_TYPE_FLOAT:
+                    case Kowhai.FLOAT:
                         return BitConverter.ToSingle(data, info.Offset);
                 }
             }
@@ -120,19 +120,19 @@ namespace kowhai_sharp
         {
             switch (dataType)
             {
-                case Kowhai.DATA_TYPE_CHAR:
+                case Kowhai.INT8:
                     return new byte[] { (byte)Convert.ToSByte(text) };
-                case Kowhai.DATA_TYPE_UCHAR:
+                case Kowhai.UINT8:
                     return new byte[] { Convert.ToByte(text) };
-                case Kowhai.DATA_TYPE_INT16:
+                case Kowhai.INT16:
                     return BitConverter.GetBytes(Convert.ToInt16(text));
-                case Kowhai.DATA_TYPE_UINT16:
+                case Kowhai.UINT16:
                     return BitConverter.GetBytes(Convert.ToUInt16(text));
-                case Kowhai.DATA_TYPE_INT32:
+                case Kowhai.INT32:
                     return BitConverter.GetBytes(Convert.ToInt32(text));
-                case Kowhai.DATA_TYPE_UINT32:
+                case Kowhai.UINT32:
                     return BitConverter.GetBytes(Convert.ToUInt32(text));
-                case Kowhai.DATA_TYPE_FLOAT:
+                case Kowhai.FLOAT:
                     return BitConverter.GetBytes(Convert.ToSingle(text));
             }
             return null;
@@ -154,7 +154,7 @@ namespace kowhai_sharp
 
         string GetNodeName(Kowhai.kowhai_node_t node, KowhaiNodeInfo info)
         {
-            if (node.type == Kowhai.NODE_TYPE_BRANCH)
+            if (node.type == Kowhai.BRANCH)
                 return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
             if (info != null && info.IsArrayItem)
                 return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
@@ -171,7 +171,7 @@ namespace kowhai_sharp
                 Kowhai.kowhai_node_t descNode = descriptor[index];
                 switch (descNode.type)
                 {
-                    case Kowhai.NODE_TYPE_BRANCH:
+                    case Kowhai.BRANCH:
                         if (node == null)
                             node = treeView1.Nodes.Add(GetNodeName(descNode, null));
                         else
@@ -199,7 +199,7 @@ namespace kowhai_sharp
                         }
                         node = node.Parent;
                         break;
-                    case Kowhai.NODE_TYPE_END:
+                    case Kowhai.BRANCH_END:
                         return;
                     default:
                         TreeNode leaf = node.Nodes.Add(GetNodeName(descNode, null));
@@ -297,7 +297,7 @@ namespace kowhai_sharp
                 if (node.Tag != null)
                 {
                     KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-                    if (info.KowhaiNode.type != Kowhai.NODE_TYPE_BRANCH)
+                    if (info.KowhaiNode.type != Kowhai.BRANCH)
                     {
                         object dataValue = GetDataValue(info);
                         if (dataValue != null)

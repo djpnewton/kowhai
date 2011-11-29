@@ -12,11 +12,11 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
     if (packet_size > server->max_packet_size)
     {
         printf("    error: packet size too large\n");
-        return STATUS_PACKET_BUFFER_TOO_BIG;
+        return KOW_STATUS_PACKET_BUFFER_TOO_BIG;
     }
 
     status = kowhai_protocol_parse(packet, packet_size, &prot);
-    if (status != STATUS_OK && status != STATUS_INVALID_PROTOCOL_COMMAND)
+    if (status != KOW_STATUS_OK && status != KOW_STATUS_INVALID_PROTOCOL_COMMAND)
         return status;
 
     if (prot.header.tree_id >= 0 && prot.header.tree_id < server->tree_count)
@@ -25,10 +25,10 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
         void* tree_data = *(server->tree_data_buffers + prot.header.tree_id);
         switch (prot.header.command)
         {
-            case CMD_WRITE_DATA:
+            case KOW_CMD_WRITE_DATA:
                 printf("    CMD write data\n");
                 status = kowhai_write(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
-                if (status == STATUS_OK)
+                if (status == KOW_STATUS_OK)
                 {
                     // call node_written callback
                     struct kowhai_node_t* node;
@@ -36,7 +36,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                     kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
                     server->node_written(server->node_written_param, node);
                     // send response
-                    prot.header.command = CMD_WRITE_DATA_ACK;
+                    prot.header.command = KOW_CMD_WRITE_DATA_ACK;
                     kowhai_read(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                     server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
@@ -45,28 +45,28 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 {
                     switch (status)
                     {
-                        case STATUS_INVALID_SYMBOL_PATH:
+                        case KOW_STATUS_INVALID_SYMBOL_PATH:
                             printf("    invalid symbol path\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_SYMBOL_PATH);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
                             break;
-                        case STATUS_INVALID_OFFSET:
+                        case KOW_STATUS_INVALID_OFFSET:
                             printf("    invalid payload offset\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_OFFSET);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET);
                             break;
-                        case STATUS_NODE_DATA_TOO_SMALL:
+                        case KOW_STATUS_NODE_DATA_TOO_SMALL:
                             printf("    invalid payload size\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_SIZE);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE);
                             break;
                         default:
                             printf("    unkown error\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_UNKNOWN);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_UNKNOWN);
                             break;
                     }
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                     server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                 }
                 break;
-            case CMD_READ_DATA:
+            case KOW_CMD_READ_DATA:
             {
                 uint16_t node_offset;
                 int size, overhead, max_payload_size;
@@ -74,11 +74,11 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 printf("    CMD read data\n");
                 // get node information
                 status = kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
-                if (status == STATUS_OK)
+                if (status == KOW_STATUS_OK)
                 {
                     kowhai_get_node_size(node, &size);
                     // get protocol overhead
-                    prot.header.command = CMD_READ_DATA_ACK;
+                    prot.header.command = KOW_CMD_READ_DATA_ACK;
                     kowhai_protocol_get_overhead(&prot, &overhead);
                     // setup max payload size and payload offset
                     max_payload_size = server->max_packet_size - overhead;
@@ -99,7 +99,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                         size -= max_payload_size;
                     }
                     // send final packet
-                    prot.header.command = CMD_READ_DATA_ACK_END;
+                    prot.header.command = KOW_CMD_READ_DATA_ACK_END;
                     prot.payload.spec.data.memory.size = size;
                     kowhai_read(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
@@ -111,21 +111,21 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 {
                     switch (status)
                     {
-                        case STATUS_INVALID_SYMBOL_PATH:
+                        case KOW_STATUS_INVALID_SYMBOL_PATH:
                             printf("    invalid symbol path\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_SYMBOL_PATH);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
                             break;
-                        case STATUS_INVALID_OFFSET:
+                        case KOW_STATUS_INVALID_OFFSET:
                             printf("    invalid payload offset\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_OFFSET);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET);
                             break;
-                        case STATUS_NODE_DATA_TOO_SMALL:
+                        case KOW_STATUS_NODE_DATA_TOO_SMALL:
                             printf("    invalid payload size\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_PAYLOAD_SIZE);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE);
                             break;
                         default:
                             printf("    unkown error\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_UNKNOWN);
+                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_UNKNOWN);
                             break;
                     }
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
@@ -133,14 +133,14 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                 }
                 break;
             }
-            case CMD_READ_DESCRIPTOR:
+            case KOW_CMD_READ_DESCRIPTOR:
             {
                 int size, overhead, max_payload_size;
                 printf("    CMD read descriptor\n");
                 // get descriptor size
                 size = *(server->tree_descriptor_sizes + prot.header.tree_id);
                 // get protocol overhead
-                prot.header.command = CMD_READ_DESCRIPTOR_ACK;
+                prot.header.command = KOW_CMD_READ_DESCRIPTOR_ACK;
                 kowhai_protocol_get_overhead(&prot, &overhead);
                 // setup max payload size and payload offset
                 max_payload_size = server->max_packet_size - overhead;
@@ -161,7 +161,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
                     size -= max_payload_size;
                 }
                 // send final packet
-                prot.header.command = CMD_READ_DESCRIPTOR_ACK_END;
+                prot.header.command = KOW_CMD_READ_DESCRIPTOR_ACK_END;
                 prot.payload.spec.descriptor.size = size;
                 memcpy(prot.payload.buffer, (char*)tree_descriptor + prot.payload.spec.descriptor.offset, prot.payload.spec.descriptor.size);
                 kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
@@ -172,7 +172,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
             }
             default:
                 printf("    invalid command (%d)\n", prot.header.command);
-                POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_COMMAND);
+                POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_COMMAND);
                 kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                 server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                 break;
@@ -181,10 +181,10 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, char* 
     else
     {
         printf("    invalid tree id (%d)\n", prot.header.tree_id);
-        POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, CMD_ERROR_INVALID_TREE_ID);
+        POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_TREE_ID);
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
         server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
     }
 
-    return STATUS_OK;
+    return KOW_STATUS_OK;
 }

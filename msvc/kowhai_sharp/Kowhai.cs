@@ -50,21 +50,21 @@ namespace kowhai_sharp
             public uint16_t tag;
         }
 
-        public const int NODE_TYPE_BRANCH = 0;
-        public const int NODE_TYPE_END = 1;
+        public const int BRANCH = 0;
+        public const int BRANCH_END = 1;
 
-        public const int DATA_TYPE_CHAR = 0x0070;
-        public const int DATA_TYPE_UCHAR = 0x0071;
-        public const int DATA_TYPE_INT16 = 0x0072;
-        public const int DATA_TYPE_UINT16 = 0x0073;
-        public const int DATA_TYPE_INT32 = 0x0074;
-        public const int DATA_TYPE_UINT32 = 0x0075;
-        public const int DATA_TYPE_FLOAT = 0x0076;
-        public const int DATA_TYPE_READONLY = 0x8000;
+        public const int INT8 = 0x0070;
+        public const int UINT8 = 0x0071;
+        public const int INT16 = 0x0072;
+        public const int UINT16 = 0x0073;
+        public const int INT32 = 0x0074;
+        public const int UINT32 = 0x0075;
+        public const int FLOAT = 0x0076;
+        public const int READONLY = 0x8000;
 
         public static int RawDataType(int dataType)
         {
-            return dataType = dataType & (~DATA_TYPE_READONLY);
+            return dataType = dataType & (~READONLY);
         }
 
         public const int STATUS_OK = 0;
@@ -137,9 +137,9 @@ namespace kowhai_sharp
                 kowhai_node_t newNode = descriptor[i];
                 if (i == nodeIndex)
                     syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
-                else if (newNode.type == NODE_TYPE_BRANCH)
+                else if (newNode.type == BRANCH)
                     syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
-                else if (newNode.type == NODE_TYPE_END)
+                else if (newNode.type == BRANCH_END)
                     syms.Pop();
             }
             kowhai_symbol_t[] result = syms.ToArray();
