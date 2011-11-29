@@ -3,49 +3,54 @@
 
 #include <stdint.h>
 
-#define KOWHAI_SYMBOL(name, array_index) ((array_index << 16) + name)
-#define KOWHAI_RAW_DATA_TYPE(data_type) (data_type & (~DATA_TYPE_READONLY))
-
 #pragma pack(1)
 
-struct kowhai_symbol_parts_t
+/*
+ * @brief basic types found in a tree descriptor
+ * @todo should we namespace these
+ */
+enum kowhai_node_type
 {
-    uint16_t name;
-    uint16_t array_index;
+    // meta tags to denote structure
+    BRANCH_START = 0x0000,
+    BRANCH_END,
+
+    // types to describe buffer layout
+    INT8_T = 0x0070,        ///@todo make this a reasonable balance
+    UINT8_T,
+    INT16_T,
+    UINT16_T,
+    INT32_T,
+    UINT32_T,
+    FLOAT_T,
 };
 
-union kowhai_symbol_t
-{
-    uint32_t symbol;
-    struct kowhai_symbol_parts_t parts;
-};
-
-// base tree descriptor node entry
+/*
+ * @brief base tree descriptor node entry
+ */
 struct kowhai_node_t
 {
-    uint16_t type;
-    uint16_t symbol;
-    uint16_t count;
-    uint16_t data_type;
-    uint16_t tag;
+    uint16_t type;          ///< what is this node
+    uint16_t symbol;        ///< index to a name for this node
+    uint16_t count;         ///< if this is an array number of elements in the array (otherwise 1)
+    uint16_t tag;           ///< user defined tag
 };
 
+/*
+ * @brief a list of these (a path) will specify a unique address in the tree
+ */
+union kowhai_symbol_t
+{
+    uint32_t symbol;            ///< symbol of this node (really this is only 16bits max)
+    struct
+    {
+        uint16_t name;          ///< symbol of this node
+        uint16_t array_index;   ///< zero based array index of this node
+    } parts;
+};
+#define KOWHAI_SYMBOL(name, array_index) ((array_index << 16) + name)
+
 #pragma pack()
-
-// tree descriptor node types
-#define NODE_TYPE_BRANCH 0
-#define NODE_TYPE_LEAF   1
-#define NODE_TYPE_END    2
-
-// leaf data types
-#define DATA_TYPE_CHAR     0
-#define DATA_TYPE_UCHAR    1
-#define DATA_TYPE_INT16    2
-#define DATA_TYPE_UINT16   3
-#define DATA_TYPE_INT32    4
-#define DATA_TYPE_UINT32   5
-#define DATA_TYPE_FLOAT    6
-#define DATA_TYPE_READONLY 0x8000
 
 #define STATUS_OK                       0
 #define STATUS_INVALID_SYMBOL_PATH      1
@@ -56,22 +61,32 @@ struct kowhai_node_t
 #define STATUS_PACKET_BUFFER_TOO_SMALL  6
 #define STATUS_INVALID_PROTOCOL_COMMAND 7
 #define STATUS_PACKET_BUFFER_TOO_BIG    8
+#define STATUS_PACKET_ 9
 
-/* 
- * Return the size of a data type
+/**
+ * @brief return the size for a given node type
+ * @param type a node type to find the size of
+ * @return the size in bytes
  */
-int kowhai_get_data_size(int data_type);
+int kowhai_get_node_type_size(uint16_t type);
 
-/* 
- * Get the memory offset (in the tree data) and the node of the tree descriptor specified by
- * a symbol path (ie, array of symbols).
+/** 
+ * @brief find a item in the tree given its path
+ * @param node to start searching from for the given item
+ * @param num_symbols number of items in the symbols path (@todo should we just terminate the path instead)
+ * @param symbols the path of the item to find
+ * @param offset set to number of bytes from the current branch to the item
+ * @param target_node if return is successful this is the node that matches the symbol path
  */
-int kowhai_get_node(struct kowhai_node_t* tree_descriptor, int num_symbols, union kowhai_symbol_t* symbols, int* offset, struct kowhai_node_t** target_node);
+int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
 
-/* 
- * Get the memory size of a tree node (could be a branch or leaf)
+/**
+ * @brief calculate the complete size of a node including all the sub-elements and array items.
+ * @param node to find the size of
+ * @param size size of the node in bytes
+ * @return kowhia status
  */
-int kowhai_get_node_size(struct kowhai_node_t* tree_descriptor, int* size);
+int kowhai_get_node_size(const struct kowhai_node_t *node, int *size);
 
 /*
  * Read from a tree data buffer starting at a symbol path

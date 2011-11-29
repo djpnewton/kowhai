@@ -24,17 +24,20 @@
 
 struct kowhai_node_t settings_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_SETTINGS,      1, 0 },
-    { NODE_TYPE_BRANCH, SYM_FLUXCAPACITOR, FLUX_CAP_COUNT, 0 },
-    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, DATA_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   SYM_GAIN,          1, DATA_TYPE_UINT32 },
-    { NODE_TYPE_LEAF,   SYM_COEFFICIENT,   COEFF_COUNT, DATA_TYPE_FLOAT },
-    { NODE_TYPE_END,    SYM_FLUXCAPACITOR, 0, 0 },
-    { NODE_TYPE_BRANCH, SYM_OVEN,          1, 0 },
-    { NODE_TYPE_LEAF,   SYM_TEMP,          1, DATA_TYPE_INT16 },
-    { NODE_TYPE_LEAF,   SYM_TIMEOUT,       1, DATA_TYPE_UINT16 },
-    { NODE_TYPE_END,    SYM_OVEN,          0, 0 },
-    { NODE_TYPE_END,    SYM_SETTINGS,      0, 0 },
+    { BRANCH_START,     SYM_SETTINGS,       1,                0 },
+
+    { BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+    { UINT32_T,         SYM_FREQUENCY,      1,                0 },
+    { UINT32_T,         SYM_GAIN,           1,                0 },
+    { FLOAT_T,          SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+    { BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+
+    { BRANCH_START,     SYM_OVEN,           1,                0 },
+    { INT16_T,          SYM_TEMP,           1,                0 },
+    { UINT16_T,         SYM_TIMEOUT,        1,                0 },
+    { BRANCH_END,       SYM_OVEN,           0,                0 },
+
+    { BRANCH_END,       SYM_SETTINGS,       1,                0 },
 };
 
 //
@@ -43,10 +46,10 @@ struct kowhai_node_t settings_descriptor[] =
 
 struct kowhai_node_t shadow_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_SHADOW,        1, 0 },
-    { NODE_TYPE_LEAF,   SYM_RUNNING,       1, DATA_TYPE_UCHAR },
-    { NODE_TYPE_LEAF,   SYM_STATUS,        1, DATA_TYPE_UCHAR },
-    { NODE_TYPE_END,    SYM_SHADOW,        0, 0 },
+    { BRANCH_START,     SYM_SHADOW,         1,                0 },
+    { UINT8_T,          SYM_RUNNING,        1,                0 },
+    { UINT8_T,          SYM_STATUS,         1,                0 },
+    { BRANCH_END,       SYM_SHADOW,         0,                0 },
 };
 
 //
@@ -59,17 +62,17 @@ struct kowhai_node_t shadow_descriptor[] =
 
 struct kowhai_node_t action_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_ACTIONS,       1, 0 },
-    { NODE_TYPE_BRANCH, SYM_START,         1, 0, ACTION_START},
-    { NODE_TYPE_LEAF,   SYM_DELAY,         1, DATA_TYPE_UINT32 },
-    { NODE_TYPE_END,    SYM_START,         0, 0 },
-    { NODE_TYPE_BRANCH, SYM_STOP,          1, 0, ACTION_STOP },
-    { NODE_TYPE_END,    SYM_STOP,          0, 0},
-    { NODE_TYPE_BRANCH, SYM_BEEP,          1, 0, ACTION_BEEP},
-    { NODE_TYPE_LEAF,   SYM_FREQUENCY,     1, DATA_TYPE_INT32 },
-    { NODE_TYPE_LEAF,   SYM_DURATION,      1, DATA_TYPE_INT32 },
-    { NODE_TYPE_END,    SYM_BEEP,          0, 0 },
-    { NODE_TYPE_END,    SYM_ACTIONS,       0, 0 },
+    { BRANCH_START,     SYM_ACTIONS,        1,                 0 },
+    { BRANCH_START,     SYM_START,          1,                 ACTION_START },
+    { UINT32_T,         SYM_DELAY,          1,                 0 },
+    { BRANCH_END,       SYM_START,          0,                 0 },
+    { BRANCH_START,     SYM_STOP,           1,                 ACTION_STOP },
+    { BRANCH_END,       SYM_STOP,           0,                 0 },
+    { BRANCH_START,     SYM_BEEP,           1,                 ACTION_BEEP},
+    { INT32_T,          SYM_FREQUENCY,      1,                 0 },
+    { INT32_T,          SYM_DURATION,       1,                 0 },
+    { BRANCH_END,       SYM_BEEP,           0,                 0 },
+    { BRANCH_END,       SYM_ACTIONS,        0,                 0 },
 };
 
 //
@@ -80,9 +83,9 @@ struct kowhai_node_t action_descriptor[] =
 
 struct kowhai_node_t scope_descriptor[] =
 {
-    { NODE_TYPE_BRANCH, SYM_SCOPE,         1, 0 },
-    { NODE_TYPE_LEAF,   SYM_PIXELS,        NUM_PIXELS, DATA_TYPE_UINT16 },
-    { NODE_TYPE_END,    SYM_SCOPE,         0, 0 },
+    { BRANCH_START,     SYM_SCOPE,          1,                 0 },
+    { UINT16_T,         SYM_PIXELS,         NUM_PIXELS,        0 },
+    { BRANCH_END,       SYM_SCOPE,          0,                 0 },
 };
 
 //
@@ -222,7 +225,7 @@ int main(int argc, char* argv[])
     union kowhai_symbol_t symbols11[] = {SYM_SETTINGS, SYM_OVEN};
     union kowhai_symbol_t symbols12[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1)};
 
-    int offset;
+    uint16_t offset;
     int size;
     struct kowhai_node_t* node;
 
@@ -250,21 +253,29 @@ int main(int argc, char* argv[])
     printf("test kowhai_get_node...\t\t\t");
     assert(kowhai_get_node(settings_descriptor, 3, symbols1, &offset, &node) == STATUS_OK);
     assert(offset == 64);
+    assert(node == &settings_descriptor[7]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols2, &offset, &node) == STATUS_OK);
     assert(offset == 66);
+    assert(node == &settings_descriptor[8]);
     assert(kowhai_get_node(settings_descriptor, 2, symbols3, &offset, &node) == STATUS_OK);
     assert(offset == 0);
+    assert(node == &settings_descriptor[1]);
     assert(kowhai_get_node(settings_descriptor, 2, symbols4, &offset, &node) == STATUS_INVALID_SYMBOL_PATH);
     assert(kowhai_get_node(settings_descriptor, 3, symbols6, &offset, &node) == STATUS_OK);
     assert(offset == 4);
+    assert(node == &settings_descriptor[3]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols8, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 4);
+    assert(node == &settings_descriptor[3]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols9, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
+    assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols10, &offset, &node) == STATUS_OK);
     assert(offset == 8 + 3 * 4);
+    assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_descriptor, 2, symbols12, &offset, &node) == STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t));
+    assert(node == &settings_descriptor[1]);
     printf(" passed!\n");
 
     // test get node size
@@ -367,7 +378,7 @@ int main(int argc, char* argv[])
             struct flux_capacitor_t flux_cap[2] = {{100, 200, {1, 2, 3, 4, 5, 6}}, {110, 210, {11, 12, 13, 14, 15, 16}}};
             // write oven.temp
             temp = 25;
-            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, INT16_T, 0, sizeof(uint16_t), &temp);
             assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, MAX_PACKET_SIZE);
@@ -377,13 +388,13 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.payload.spec.data.symbols.count == 3);
             assert(memcmp(prot.payload.spec.data.symbols.array_, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.data.memory.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.data.memory.type == INT16_T);
             assert(prot.payload.spec.data.memory.offset == 0);
             assert(prot.payload.spec.data.memory.size == sizeof(uint16_t));
             assert(*((uint16_t*)prot.payload.buffer) == temp);
             // write low byte of oven.temp
             value = 255;
-            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, DATA_TYPE_INT16, 1, 1, &value);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 3, symbols1, INT16_T, 1, 1, &value);
             assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, MAX_PACKET_SIZE);
@@ -393,7 +404,7 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_WRITE_DATA_ACK);
             assert(prot.payload.spec.data.symbols.count == 3);
             assert(memcmp(prot.payload.spec.data.symbols.array_, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.data.memory.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.data.memory.type == INT16_T);
             assert(prot.payload.spec.data.memory.offset == 1);
             assert(prot.payload.spec.data.memory.size == 1);
             assert(*((char*)prot.payload.buffer) == value);
@@ -475,7 +486,7 @@ int main(int argc, char* argv[])
             assert(prot.header.command == CMD_READ_DATA_ACK_END);
             assert(prot.payload.spec.data.symbols.count == 3);
             assert(memcmp(prot.payload.spec.data.symbols.array_, symbols1, sizeof(union kowhai_symbol_t) * 3) == 0);
-            assert(prot.payload.spec.data.memory.type == DATA_TYPE_INT16);
+            assert(prot.payload.spec.data.memory.type == INT16_T);
             assert(prot.payload.spec.data.memory.offset == 0);
             assert(prot.payload.spec.data.memory.size == sizeof(int16_t));
             assert(*((int16_t*)prot.payload.buffer) == 0x0102);
@@ -558,7 +569,7 @@ int main(int argc, char* argv[])
             kowhai_protocol_parse(buffer, received_size, &prot);
             assert(prot.header.tree_id == TREE_ID_SETTINGS);
             assert(prot.header.command == CMD_ERROR_INVALID_SYMBOL_PATH);
-            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols4, DATA_TYPE_INT16, 0, sizeof(uint16_t), &temp);
+            POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, CMD_WRITE_DATA, 2, symbols4, INT16_T, 0, sizeof(uint16_t), &temp);
             assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == STATUS_OK);
             xpsocket_send(conn, buffer, bytes_required);
             memset(buffer, 0, MAX_PACKET_SIZE);
