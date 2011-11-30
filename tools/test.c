@@ -63,10 +63,10 @@ struct kowhai_node_t shadow_descriptor[] =
 struct kowhai_node_t action_descriptor[] =
 {
     { KOW_BRANCH_START,     SYM_ACTIONS,        1,                 0 },
-    { KOW_BRANCH_START,     SYM_START,          1,                 0, ACTION_START },
+    { KOW_BRANCH_START,     SYM_START,          1,                 KOW_WRITE_ONLY, ACTION_START },
     { KOW_UINT32,           SYM_DELAY,          1,                 0 },
     { KOW_BRANCH_END,       SYM_START,          0,                 0 },
-    { KOW_BRANCH_START,     SYM_STOP,           1,                 0, ACTION_STOP },
+    { KOW_BRANCH_START,     SYM_STOP,           1,                 KOW_WRITE_ONLY, ACTION_STOP },
     { KOW_BRANCH_END,       SYM_STOP,           0,                 0 },
     { KOW_BRANCH_START,     SYM_BEEP,           1,                 KOW_WRITE_ONLY, ACTION_BEEP},
     { KOW_INT32,            SYM_FREQUENCY,      1,                 0 },
@@ -281,11 +281,11 @@ int main(int argc, char* argv[])
     assert(offset == sizeof(struct flux_capacitor_t));
     assert(node == &settings_descriptor[1]);
     assert(kowhai_get_node2(action_descriptor, 2, symbols13, &offset, &node, &permissions) == KOW_STATUS_OK);
-    assert(offset == 4);
+    assert(offset == 0);
     assert(node == &action_descriptor[6]);
     assert(permissions == KOW_WRITE_ONLY);
     assert(kowhai_get_node2(action_descriptor, 3, symbols14, &offset, &node, &permissions) == KOW_STATUS_OK);
-    assert(offset == 8);
+    assert(offset == 0);
     assert(node == &action_descriptor[8]);
     assert(permissions == KOW_WRITE_ONLY);
     assert(kowhai_get_node2(scope_descriptor, 1, symbols15, &offset, &node, &permissions) == KOW_STATUS_OK);

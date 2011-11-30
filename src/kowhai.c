@@ -38,17 +38,19 @@ int kowhai_get_node_type_size(uint16_t type)
 }
 
 // calculate the complete size of a node including all the sub-elements and array items.
-static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_nodes_processed)
+static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_nodes_processed, int permissions)
 {
     int _size = 0;
     uint16_t i = 0;
 
     *num_nodes_processed = 0;
+    permissions |= node->permissions;
 
     // if this is not a branch then just return the size of the node item (otherwise we need to drill baby)
     if (node->type != KOW_BRANCH_START)
     {
-        _size = kowhai_get_node_type_size(node->type) * node->count;
+        if ((permissions & KOW_WRITE_ONLY) != KOW_WRITE_ONLY)
+            _size = kowhai_get_node_type_size(node->type) * node->count;
         *num_nodes_processed = 1;
         goto done;
     }
@@ -58,6 +60,7 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
     {
         i++;
         *num_nodes_processed = i;
+        permissions |= node[i].permissions;
         switch ((enum kowhai_node_type_t)node[i].type)
         {
             // navigate the hierarchy info
@@ -66,11 +69,12 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
                 int child_branch_size = 0;
                 int _num_child_nodes_processed;
                 int ret;
-                ret = get_node_size(node + i, &child_branch_size, &_num_child_nodes_processed);
+                ret = get_node_size(node + i, &child_branch_size, &_num_child_nodes_processed, permissions);
                 if (ret != KOW_STATUS_OK)
                     return ret;
                 // accumulate the branches size
-                _size += child_branch_size;
+                if ((permissions & KOW_WRITE_ONLY) != KOW_WRITE_ONLY)
+                    _size += child_branch_size;
                 // skip the already processed nodes
                 i += _num_child_nodes_processed;
                 break;
@@ -82,7 +86,8 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
             
             // accumulate the size of all the other node_count
             default:
-                _size += kowhai_get_node_type_size(node[i].type) * node[i].count;
+                if ((permissions & KOW_WRITE_ONLY) != KOW_WRITE_ONLY)
+                    _size += kowhai_get_node_type_size(node[i].type) * node[i].count;
                 break;
         }
     }
@@ -97,15 +102,17 @@ done:
 int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
 {
     int num_nodes_processed;
-    return get_node_size(node, size, &num_nodes_processed);
+    return get_node_size(node, size, &num_nodes_processed, 0);
 }
 
 static int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int* permissions, int initial_branch)
 {
     int i = 0;
     uint16_t _offset = 0;
-    int _perms = 0;
     int ret;
+    int _perms = 0;
+    if (permissions != NULL)
+        _perms = *permissions;
 
     // look through all the items in the node list
     while (1)
@@ -123,7 +130,7 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
                 // if the path symbols match and the node array count is large enough to contain our index this could be the target node
                 if ((symbols->parts.name == node[i].symbol) && (node[i].count > symbols->parts.array_index))
                 {
-                    // add the permissions of this node
+                    // add permissions flags
                     _perms |= node[i].permissions;
 
                     if (num_symbols == 1)
@@ -138,16 +145,16 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
                     if ((enum kowhai_node_type_t)node[i].type == KOW_BRANCH_START)
                     {
                         uint16_t branch_offset = 0;
-                        int branch_permissions;
+                        int branch_perms = _perms;
                         // this is not the target node but it is possibly in this branch so drill baby drill
-                        ret = get_node(node + i + 1, num_symbols - 1, symbols + 1, &branch_offset, target_node, &branch_permissions, 0);
+                        ret = get_node(node + i + 1, num_symbols - 1, symbols + 1, &branch_offset, target_node, &branch_perms, 0);
                         if (ret == KOW_STATUS_INVALID_SYMBOL_PATH)
                             // branch ended without finding our target node so goto next
                             break;
                         // add the branch offset to current total
-                        _offset += branch_offset;
-                        // add the branch permissions to current collection
-                        _perms |= branch_permissions;
+                        _perms |= branch_perms;
+                        if ((_perms & KOW_WRITE_ONLY) != KOW_WRITE_ONLY)
+                            _offset += branch_offset;
                         goto done;
                     }
                 }
@@ -157,7 +164,7 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
         if (initial_branch)
             return KOW_STATUS_INVALID_SYMBOL_PATH;
         // this item is not a match so skip it (find out how many bytes and nodes to skip)
-        ret = get_node_size(node + i, &skip_size, &skip_nodes);
+        ret = get_node_size(node + i, &skip_size, &skip_nodes, *permissions);
         if (ret != KOW_STATUS_OK)
             // propagate the error
             return ret;
@@ -178,7 +185,8 @@ done:
         ret = kowhai_get_node_size(node + i, &size);
         if (ret != KOW_STATUS_OK)
             return ret;
-        _offset += (size / node[i].count) * symbols->parts.array_index;
+        if ((_perms & KOW_WRITE_ONLY) != KOW_WRITE_ONLY)
+            _offset += (size / node[i].count) * symbols->parts.array_index;
         *offset = _offset;
     }
 
@@ -198,6 +206,8 @@ int kowhai_get_node2(const struct kowhai_node_t *node, int num_symbols, const un
 {
     if (node->type != KOW_BRANCH_START)
         return KOW_STATUS_INVALID_DESCRIPTOR;
+    if (permissions != NULL)
+        *permissions = 0;
     return get_node(node, num_symbols, symbols, offset, target_node, permissions, 1);
 }
 

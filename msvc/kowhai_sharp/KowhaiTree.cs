@@ -185,7 +185,7 @@ namespace kowhai_sharp
                 return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeAttributesString(node), GetDataTypeString(node.type), GetDataValue(info));
         }
 
-        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node)
+        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node, int permissions)
         {
             while (index < descriptor.Length)
             {
@@ -209,14 +209,14 @@ namespace kowhai_sharp
                                 TreeNode arrayNode = node.Nodes.Add("#" + i.ToString());
                                 arrayNode.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentInfo);
                                 index++;
-                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode);
+                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode, permissions | descNode.permissions);
                             }
                         }
                         else
                         {
                             node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
                             index++;
-                            _UpdateDescriptor(descriptor, ref index, ref offset, node);
+                            _UpdateDescriptor(descriptor, ref index, ref offset, node, permissions | descNode.permissions);
                         }
                         node = node.Parent;
                         break;
@@ -224,19 +224,22 @@ namespace kowhai_sharp
                         return;
                     default:
                         TreeNode leaf = node.Nodes.Add(GetNodeName(descNode, null));
+                        int _perms = permissions | descNode.permissions;
                         if (descNode.count > 1)
                         {
                             for (ushort i = 0; i < descNode.count; i++)
                             {
                                 TreeNode child = leaf.Nodes.Add("#" + i.ToString());
                                 child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                                offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
+                                if ((_perms & Kowhai.WRITE_ONLY) != Kowhai.WRITE_ONLY)
+                                    offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                             }
                         }
                         else
                         {
                             leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                            offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
+                            if ((_perms & Kowhai.WRITE_ONLY) != Kowhai.WRITE_ONLY)
+                                offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                         }
                         break;
                 }
@@ -250,7 +253,7 @@ namespace kowhai_sharp
             treeView1.Nodes.Clear();
             int index = 0;
             ushort offset = 0;
-            _UpdateDescriptor(descriptor, ref index, ref offset, null);
+            _UpdateDescriptor(descriptor, ref index, ref offset, null, 0);
             treeView1.ExpandAll();
             return;
         }
@@ -322,11 +325,11 @@ namespace kowhai_sharp
                     {
                         object dataValue = GetDataValue(info);
                         if (dataValue != null)
-                        {
-                            treeView1.LabelEdit = true;
                             node.Text = dataValue.ToString();
-                            node.BeginEdit();
-                        }
+                        else
+                            node.Text = "";
+                        treeView1.LabelEdit = true;
+                        node.BeginEdit();
                     }
                 }
             }
