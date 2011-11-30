@@ -52,8 +52,11 @@ namespace kowhai_sharp
             }
         }
 
+        public bool ContextMenuEnabled { get; set; }
+
         public delegate void NodeReadEventHandler(object sender, NodeReadEventArgs e);
 
+        Kowhai.kowhai_node_t[] descriptor;
         string[] symbols;
         byte[] data;
 
@@ -63,6 +66,7 @@ namespace kowhai_sharp
         public KowhaiTree()
         {
             InitializeComponent();
+            ContextMenuEnabled = true;
         }
 
         string GetDataTypeString(int dataType)
@@ -86,6 +90,20 @@ namespace kowhai_sharp
                     return "float";
             }
             return "error";
+        }
+
+        byte[] GetNodeData(KowhaiNodeInfo info)
+        {
+            if (info == null)
+                return null;
+            int size = Kowhai.kowhai_get_node_type_size(info.KowhaiNode.type);
+            if (info.Offset + size <= data.Length)
+            {
+                byte[] nodeData = new byte[size];
+                Array.Copy(data, info.Offset, nodeData, 0, size);
+                return nodeData;
+            }
+            return null;
         }
 
         private object GetDataValue(KowhaiNodeInfo info)
@@ -225,6 +243,7 @@ namespace kowhai_sharp
 
         public void UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, string[] symbols)
         {
+            this.descriptor = descriptor;
             this.symbols = symbols;
             treeView1.Nodes.Clear();
             int index = 0;
@@ -264,6 +283,11 @@ namespace kowhai_sharp
             treeView1.EndUpdate();
         }
 
+        public byte[] GetData()
+        {
+            return data;
+        }
+
         TreeNode selectedNode;
 
         private void treeView1_MouseDown(object sender, MouseEventArgs e)
@@ -271,10 +295,9 @@ namespace kowhai_sharp
             selectedNode = treeView1.GetNodeAt(e.X, e.Y);
         }
 
-
         private void treeView1_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == System.Windows.Forms.MouseButtons.Right && selectedNode != null)
+            if (ContextMenuEnabled && e.Button == System.Windows.Forms.MouseButtons.Right && selectedNode != null)
             {
                 treeView1.SelectedNode = selectedNode;
                 contextMenuStrip1.Show(this, new Point(e.X, e.Y));
@@ -355,7 +378,38 @@ namespace kowhai_sharp
             if (selectedNode != null && selectedNode.Tag != null)
             {
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-                DataChange(this, new DataChangeEventArgs(info, new byte[0]));
+
+                if (descriptor[info.NodeIndex].type == Kowhai.BRANCH)
+                {
+                    // create sub branch descriptor and data
+                    int depth = 0;
+                    List<Kowhai.kowhai_node_t> descBranch = new List<Kowhai.kowhai_node_t>();
+                    for (int i = info.NodeIndex; i < descriptor.Length; i++)
+                    {
+                        Kowhai.kowhai_node_t node = descriptor[i];
+                        descBranch.Add(node);
+                        if (node.type == Kowhai.BRANCH)
+                            depth++;
+                        else if (node.type == Kowhai.BRANCH_END)
+                            depth--;
+                        if (depth == 0)
+                            break;
+                    }
+                    int size;
+                    Kowhai.kowhai_node_t[] descBranchArray = descBranch.ToArray();
+                    Kowhai.GetNodeSize(descBranchArray, out size);
+                    byte[] dataBranchArray = new byte[size];
+                    Array.Copy(data, info.Offset, dataBranchArray, 0, size);
+
+                    // show form with sub branch
+                    NodeEditForm f = new NodeEditForm();
+                    f.UpdateTree(descBranchArray, symbols, dataBranchArray);
+                    if (f.ShowDialog() == DialogResult.OK)
+                        DataChange(this, new DataChangeEventArgs(info, f.GetData()));
+                }
+                else
+                    // send leaf node data
+                    DataChange(this, new DataChangeEventArgs(info, GetNodeData(info)));
             }
         }
     }

@@ -129,6 +129,14 @@ namespace kowhai_sharp
             return result;
         }
 
+        public static int GetNodeSize(kowhai_node_t[] descriptor, out int size)
+        {
+            GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
+            int result = kowhai_get_node_size(h.AddrOfPinnedObject(), out size);
+            h.Free();
+            return result;
+        }
+
         public static kowhai_symbol_t[] GetSymbolPath(kowhai_node_t[] descriptor, kowhai_node_t node, int32_t nodeIndex,  uint16_t[] arrayIndexes)
         {
             Stack<kowhai_symbol_t> syms = new Stack<kowhai_symbol_t>();
