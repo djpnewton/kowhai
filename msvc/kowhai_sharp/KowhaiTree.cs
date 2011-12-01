@@ -220,14 +220,21 @@ namespace kowhai_sharp
                     case Kowhai.BRANCH_END:
                         return;
                     default:
-                        TreeNode leaf = node.Nodes.Add(GetNodeName(descNode, null));
-                        leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
+                        TreeNode leaf;
+                        if (node == null)
+                            leaf = treeView1.Nodes.Add(GetNodeName(descNode, null));
+                        else
+                            leaf = node.Nodes.Add(GetNodeName(descNode, null));
+                        KowhaiNodeInfo parentNodeInfo = null;
+                        if (leaf.Parent != null)
+                            parentNodeInfo = (KowhaiNodeInfo)leaf.Parent.Tag;
+                        leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentNodeInfo);
                         if (descNode.count > 1)
                         {
                             for (ushort i = 0; i < descNode.count; i++)
                             {
                                 TreeNode child = leaf.Nodes.Add("#" + i.ToString());
-                                child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
+                                child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentNodeInfo);
                                 offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                             }
                         }
