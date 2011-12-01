@@ -145,6 +145,9 @@ namespace kowhai_test
 
         void kowhaiTree_DataChange(object sender, KowhaiTree.DataChangeEventArgs e)
         {
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(250);
+
             byte[] buffer = new byte[PACKET_SIZE];
             List<ushort> arrayIndexes = CreateNodeInfoArrayIndexList(e.Info);
             Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetDescriptor(sender), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
@@ -159,11 +162,11 @@ namespace kowhai_test
             int maxPayloadSize = PACKET_SIZE - overhead;
             while (e.Buffer.Length - offset > maxPayloadSize)
             {
-                KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, e.Buffer.Length - offset), (ushort)offset, out bytesRequired);
+                KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, maxPayloadSize), (ushort)offset, out bytesRequired);
                 sock.Send(buffer, bytesRequired);
                 offset += maxPayloadSize;
             }
-            KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, maxPayloadSize), (ushort)offset, out bytesRequired);
+            KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, e.Buffer.Length - offset), (ushort)offset, out bytesRequired);
             sock.Send(buffer, bytesRequired);
         }
 
@@ -176,6 +179,9 @@ namespace kowhai_test
 
         void kowhaiTree_NodeRead(object sender, KowhaiTree.NodeReadEventArgs e)
         {
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(250);
+
             byte[] buffer = new byte[PACKET_SIZE];
             List<ushort> arrayIndexes = CreateNodeInfoArrayIndexList(e.Info);
             Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetDescriptor(sender), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());

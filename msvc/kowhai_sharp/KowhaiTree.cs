@@ -197,6 +197,7 @@ namespace kowhai_sharp
                         KowhaiNodeInfo parentInfo = null;
                         if (node.Parent != null)
                             parentInfo = (KowhaiNodeInfo)node.Parent.Tag;
+                        node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
                         if (descNode.count > 1)
                         {
                             int prevIndex = index;
@@ -211,7 +212,6 @@ namespace kowhai_sharp
                         }
                         else
                         {
-                            node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
                             index++;
                             _UpdateDescriptor(descriptor, ref index, ref offset, node);
                         }
@@ -221,6 +221,7 @@ namespace kowhai_sharp
                         return;
                     default:
                         TreeNode leaf = node.Nodes.Add(GetNodeName(descNode, null));
+                        leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
                         if (descNode.count > 1)
                         {
                             for (ushort i = 0; i < descNode.count; i++)
@@ -231,10 +232,7 @@ namespace kowhai_sharp
                             }
                         }
                         else
-                        {
-                            leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
                             offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
-                        }
                         break;
                 }
                 index++;
@@ -368,6 +366,7 @@ namespace kowhai_sharp
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
+                BlankNodes(selectedNode);
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
                 NodeRead(this, new NodeReadEventArgs(info));
             }
@@ -377,8 +376,8 @@ namespace kowhai_sharp
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
+                BlankNodes(selectedNode);
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-
                 if (descriptor[info.NodeIndex].type == Kowhai.BRANCH)
                 {
                     // create sub branch descriptor and data
@@ -411,6 +410,22 @@ namespace kowhai_sharp
                     // send leaf node data
                     DataChange(this, new DataChangeEventArgs(info, GetNodeData(info)));
             }
+        }
+
+        private void BlankNodes(TreeNode node)
+        {
+            treeView1.BeginUpdate();
+            _blankNodes(node);
+            treeView1.EndUpdate();
+        }
+
+        const string blank = "...";
+        private void _blankNodes(TreeNode node)
+        {
+            if (node.Nodes.Count == 0)
+                node.Text = blank;
+            foreach (TreeNode childNode in node.Nodes)
+                BlankNodes(childNode);
         }
     }
 }
