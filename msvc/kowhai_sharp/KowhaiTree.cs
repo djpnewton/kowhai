@@ -326,9 +326,9 @@ namespace kowhai_sharp
             {
                 if (node.Tag != null)
                 {
-                    KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-                    if (info.KowhaiNode.type != Kowhai.BRANCH)
+                    if (node.Nodes.Count == 0)
                     {
+                        KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
                         object dataValue = GetDataValue(info);
                         if (dataValue != null)
                         {
@@ -387,7 +387,7 @@ namespace kowhai_sharp
             {
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
                 bool branch = info.KowhaiNode.type == Kowhai.BRANCH;
-                bool leafArrayParent = info.KowhaiNode.count > 1 && info.IsArrayItem == false;
+                bool leafArrayParent = !branch && info.KowhaiNode.count > 1 && info.IsArrayItem == false;
                 if (branch | leafArrayParent)
                 {
                     // create sub branch descriptor and data
