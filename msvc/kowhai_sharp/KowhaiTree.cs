@@ -376,7 +376,6 @@ namespace kowhai_sharp
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
-                BlankNodes(selectedNode);
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
                 if (descriptor[info.NodeIndex].type == Kowhai.BRANCH)
                 {
@@ -404,11 +403,17 @@ namespace kowhai_sharp
                     NodeEditForm f = new NodeEditForm();
                     f.UpdateTree(descBranchArray, symbols, dataBranchArray);
                     if (f.ShowDialog() == DialogResult.OK)
+                    {
+                        BlankNodes(selectedNode);
                         DataChange(this, new DataChangeEventArgs(info, f.GetData()));
+                    }
                 }
                 else
+                {
                     // send leaf node data
+                    BlankNodes(selectedNode);
                     DataChange(this, new DataChangeEventArgs(info, GetNodeData(info)));
+                }
             }
         }
 
