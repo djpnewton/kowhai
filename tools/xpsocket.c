@@ -60,7 +60,7 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, void* buffer_recei
     struct sockaddr_in service;
     SOCKET acc_socket = SOCKET_ERROR;
     int bytes_received;
-    char* recv_buffer = malloc(buffer_size);
+    void* recv_buffer = malloc(buffer_size);
 
     if (sock == INVALID_SOCKET)
     {
@@ -96,7 +96,7 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, void* buffer_recei
 
     while (1)
     {
-        bytes_received = recv(sock, recv_buffer, buffer_size, 0);
+        bytes_received = recv(sock, (char*)recv_buffer, buffer_size, 0);
         if (bytes_received > 0)
         {
             printf("  received %d bytes\n", bytes_received);
@@ -118,11 +118,11 @@ int xpsocket_serve(xpsocket_receive_callback buffer_received, void* buffer_recei
     return 1;
 }
 
-int xpsocket_send(xpsocket_handle conn, char* buffer, int size)
+int xpsocket_send(xpsocket_handle conn, void* buffer, int size)
 {
     int bytes_sent;
 
-    bytes_sent = send(conn->sock, buffer, size, 0);
+    bytes_sent = send(conn->sock, (char*)buffer, size, 0);
 
     if (bytes_sent == SOCKET_ERROR)
     {
@@ -135,9 +135,9 @@ int xpsocket_send(xpsocket_handle conn, char* buffer, int size)
     return 1;
 }
 
-int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* received_size)
+int xpsocket_receive(xpsocket_handle conn, void* buffer, int buffer_size, int* received_size)
 {
-    *received_size = recv(conn->sock, buffer, buffer_size, 0);
+    *received_size = recv(conn->sock, (char*)buffer, buffer_size, 0);
 
     if (*received_size > 0)
     {
@@ -159,7 +159,7 @@ int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* r
 xpsocket_handle xpsocket_init_client()
 {
     struct sockaddr_in service;
-    struct xpsocket_t* xpsock = malloc(sizeof(struct xpsocket_t));
+    struct xpsocket_t* xpsock = (struct xpsocket_t*)malloc(sizeof(struct xpsocket_t));
     if (xpsock == NULL)
         return NULL;
 

@@ -106,7 +106,7 @@ int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num
 /*
  * Get a single byte char setting specified by a symbol path from a settings buffer
  */
-int kowhai_get_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, char* result);
+int kowhai_get_int8(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
 
 /*
  * Get a 16 bit integer setting specified by a symbol path from a settings buffer

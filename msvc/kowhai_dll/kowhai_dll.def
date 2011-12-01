@@ -5,7 +5,7 @@ EXPORTS
 	kowhai_get_node_size
 	kowhai_read
 	kowhai_write
-	kowhai_get_char
+	kowhai_get_int8
 	kowhai_get_int16
 	kowhai_get_int32
 	kowhai_get_float

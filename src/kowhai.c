@@ -248,7 +248,7 @@ int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num
     return status;
 }
 
-int kowhai_get_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, char* result)
+int kowhai_get_int8(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result)
 {
     struct kowhai_node_t* node;
     uint16_t offset;

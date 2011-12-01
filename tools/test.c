@@ -195,7 +195,7 @@ void server_buffer_send(void* param, void* buffer, size_t buffer_size)
     xpsocket_send(conn, buffer, buffer_size);
 }
 
-void server_buffer_received(xpsocket_handle conn, void* param, char* buffer, int buffer_size)
+void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int buffer_size)
 {
     int i;
     struct kowhai_protocol_server_t* server = (struct kowhai_protocol_server_t*)param;
@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
     shadow.status = 0;
     assert(kowhai_set_char(shadow_descriptor, &shadow, 2, symbols5, 255) == KOW_STATUS_OK);
     assert(shadow.status == 255);
-    assert(kowhai_get_char(shadow_descriptor, &shadow, 2, symbols5, &status) == KOW_STATUS_OK);
+    assert(kowhai_get_int8(shadow_descriptor, &shadow, 2, symbols5, &status) == KOW_STATUS_OK);
     assert(status == 255);
     settings.oven.temp = 0;
     assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols1, 999) == KOW_STATUS_OK);
