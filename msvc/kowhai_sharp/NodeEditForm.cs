@@ -22,6 +22,7 @@ namespace kowhai_sharp
         void kowhaiTree1_DataChange(object sender, KowhaiTree.DataChangeEventArgs e)
         {
             kowhaiTree1.UpdateData(e.Buffer, e.Info.Offset);
+            tbHex.Text = BytesToHexString(kowhaiTree1.GetData());
         }
 
         void kowhaiTree1_NodeRead(object sender, KowhaiTree.NodeReadEventArgs e)
@@ -32,11 +33,39 @@ namespace kowhai_sharp
         {
             kowhaiTree1.UpdateDescriptor(descriptor, symbols);
             kowhaiTree1.UpdateData(data, 0);
+            tbHex.Text = BytesToHexString(data);
+        }
+
+        private string BytesToHexString(byte[] data)
+        {
+            string hex = BitConverter.ToString(data);
+            hex = hex.Replace("-", string.Empty);
+            return hex;
+        }
+
+        private byte[] HexStringToBytes(string hex)
+        {
+            byte[] bytes = new byte[hex.Length / 2];
+            for (int i = 0; i < bytes.Length; i++)
+                bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+            return bytes;
         }
 
         public byte[] GetData()
         {
             return kowhaiTree1.GetData();
+        }
+
+        private void tbHex_Validated(object sender, EventArgs e)
+        {
+            try
+            {
+                kowhaiTree1.UpdateData(HexStringToBytes(tbHex.Text), 0);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

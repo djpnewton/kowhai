@@ -32,7 +32,7 @@
             this.treeView1 = new System.Windows.Forms.TreeView();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.refreshNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.writeNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.editNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -54,7 +54,7 @@
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.refreshNodeToolStripMenuItem,
-            this.writeNodeToolStripMenuItem});
+            this.editNodeToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
             this.contextMenuStrip1.Size = new System.Drawing.Size(153, 70);
             // 
@@ -65,12 +65,12 @@
             this.refreshNodeToolStripMenuItem.Text = "Refresh Node";
             this.refreshNodeToolStripMenuItem.Click += new System.EventHandler(this.refreshNodeToolStripMenuItem_Click);
             // 
-            // writeNodeToolStripMenuItem
+            // editNodeToolStripMenuItem
             // 
-            this.writeNodeToolStripMenuItem.Name = "writeNodeToolStripMenuItem";
-            this.writeNodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.writeNodeToolStripMenuItem.Text = "Write Node";
-            this.writeNodeToolStripMenuItem.Click += new System.EventHandler(this.writeNodeToolStripMenuItem_Click);
+            this.editNodeToolStripMenuItem.Name = "editNodeToolStripMenuItem";
+            this.editNodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.editNodeToolStripMenuItem.Text = "Edit Node";
+            this.editNodeToolStripMenuItem.Click += new System.EventHandler(this.editNodeToolStripMenuItem_Click);
             // 
             // KowhaiTree
             // 
@@ -90,6 +90,6 @@
         private System.Windows.Forms.TreeView treeView1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem refreshNodeToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem writeNodeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem editNodeToolStripMenuItem;
     }
 }

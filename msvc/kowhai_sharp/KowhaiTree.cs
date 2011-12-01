@@ -379,7 +379,7 @@ namespace kowhai_sharp
             }
         }
 
-        private void writeNodeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void editNodeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
