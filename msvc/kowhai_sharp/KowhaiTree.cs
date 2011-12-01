@@ -423,11 +423,7 @@ namespace kowhai_sharp
                     }
                 }
                 else
-                {
-                    // send leaf node data
-                    BlankNodes(selectedNode);
-                    DataChange(this, new DataChangeEventArgs(info, GetNodeData(info)));
-                }
+                    BeginEdit(selectedNode);
             }
         }
 
