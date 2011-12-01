@@ -29,9 +29,9 @@ namespace kowhai_sharp
         {
         }
 
-        public void UpdateTree(Kowhai.kowhai_node_t[] descriptor, string[] symbols, byte[] data)
+        public void UpdateTree(Kowhai.kowhai_node_t[] descriptor, string[] symbols, byte[] data, KowhaiTree.KowhaiNodeInfo info)
         {
-            kowhaiTree1.UpdateDescriptor(descriptor, symbols);
+            kowhaiTree1.UpdateDescriptor(descriptor, symbols, info);
             kowhaiTree1.UpdateData(data, 0);
             tbHex.Text = BytesToHexString(data);
         }

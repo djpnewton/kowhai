@@ -116,7 +116,7 @@ namespace kowhai_test
 
                         if (prot.header.command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
                         {
-                            GetKowhaiTree(prot.header.tree_id).UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings); ;
+                            GetKowhaiTree(prot.header.tree_id).UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
 
                             buffer = new byte[PACKET_SIZE];
                             int bytesRequired;

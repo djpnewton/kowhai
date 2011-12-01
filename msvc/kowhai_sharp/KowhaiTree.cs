@@ -182,7 +182,7 @@ namespace kowhai_sharp
                 return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.type), GetDataValue(info));
         }
 
-        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node)
+        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node, KowhaiNodeInfo initialNodeInfo)
         {
             while (index < descriptor.Length)
             {
@@ -203,17 +203,19 @@ namespace kowhai_sharp
                             int prevIndex = index;
                             for (ushort i = 0; i < descNode.count; i++)
                             {
+                                if (initialNodeInfo != null && initialNodeInfo.IsArrayItem && initialNodeInfo.ArrayIndex != i)
+                                    continue;
                                 index = prevIndex;
                                 TreeNode arrayNode = node.Nodes.Add("#" + i.ToString());
                                 arrayNode.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentInfo);
                                 index++;
-                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode);
+                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode, null);
                             }
                         }
                         else
                         {
                             index++;
-                            _UpdateDescriptor(descriptor, ref index, ref offset, node);
+                            _UpdateDescriptor(descriptor, ref index, ref offset, node, null);
                         }
                         node = node.Parent;
                         break;
@@ -246,14 +248,14 @@ namespace kowhai_sharp
             }
         }
 
-        public void UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, string[] symbols)
+        public void UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, string[] symbols, KowhaiNodeInfo info)
         {
             this.descriptor = descriptor;
             this.symbols = symbols;
             treeView1.Nodes.Clear();
             int index = 0;
             ushort offset = 0;
-            _UpdateDescriptor(descriptor, ref index, ref offset, null);
+            _UpdateDescriptor(descriptor, ref index, ref offset, null, info);
             treeView1.ExpandAll();
             return;
         }
@@ -410,12 +412,14 @@ namespace kowhai_sharp
                     int size;
                     Kowhai.kowhai_node_t[] descBranchArray = descBranch.ToArray();
                     Kowhai.GetNodeSize(descBranchArray, out size);
+                    if (info.IsArrayItem)
+                        size /= info.KowhaiNode.count;
                     byte[] dataBranchArray = new byte[size];
                     Array.Copy(data, info.Offset, dataBranchArray, 0, size);
 
                     // show form with sub branch
                     NodeEditForm f = new NodeEditForm();
-                    f.UpdateTree(descBranchArray, symbols, dataBranchArray);
+                    f.UpdateTree(descBranchArray, symbols, dataBranchArray, info);
                     if (f.ShowDialog() == DialogResult.OK)
                     {
                         BlankNodes(selectedNode);
