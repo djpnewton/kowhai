@@ -377,21 +377,28 @@ namespace kowhai_sharp
             if (selectedNode != null && selectedNode.Tag != null)
             {
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-                if (descriptor[info.NodeIndex].type == Kowhai.BRANCH)
+                bool branch = info.KowhaiNode.type == Kowhai.BRANCH;
+                bool leafArrayParent = info.KowhaiNode.count > 1 && info.IsArrayItem == false;
+                if (branch | leafArrayParent)
                 {
                     // create sub branch descriptor and data
-                    int depth = 0;
                     List<Kowhai.kowhai_node_t> descBranch = new List<Kowhai.kowhai_node_t>();
-                    for (int i = info.NodeIndex; i < descriptor.Length; i++)
+                    if (leafArrayParent)
+                        descBranch.Add(info.KowhaiNode);
+                    else
                     {
-                        Kowhai.kowhai_node_t node = descriptor[i];
-                        descBranch.Add(node);
-                        if (node.type == Kowhai.BRANCH)
-                            depth++;
-                        else if (node.type == Kowhai.BRANCH_END)
-                            depth--;
-                        if (depth == 0)
-                            break;
+                        int depth = 0;
+                        for (int i = info.NodeIndex; i < descriptor.Length; i++)
+                        {
+                            Kowhai.kowhai_node_t node = descriptor[i];
+                            descBranch.Add(node);
+                            if (node.type == Kowhai.BRANCH)
+                                depth++;
+                            else if (node.type == Kowhai.BRANCH_END)
+                                depth--;
+                            if (depth == 0)
+                                break;
+                        }
                     }
                     int size;
                     Kowhai.kowhai_node_t[] descBranchArray = descBranch.ToArray();
