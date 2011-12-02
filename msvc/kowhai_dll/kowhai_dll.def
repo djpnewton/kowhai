@@ -1,12 +1,11 @@
 LIBRARY KOWHAI_DLL
 EXPORTS
-	kowhai_get_data_size
+	kowhai_get_node_type_size
 	kowhai_get_node
-	kowhai_get_node_size
 	kowhai_get_node_size
 	kowhai_read
 	kowhai_write
-	kowhai_get_char
+	kowhai_get_int8
 	kowhai_get_int16
 	kowhai_get_int32
 	kowhai_get_float

@@ -52,8 +52,11 @@ namespace kowhai_sharp
             }
         }
 
+        public bool ContextMenuEnabled { get; set; }
+
         public delegate void NodeReadEventHandler(object sender, NodeReadEventArgs e);
 
+        Kowhai.kowhai_node_t[] descriptor;
         string[] symbols;
         byte[] data;
 
@@ -63,6 +66,7 @@ namespace kowhai_sharp
         public KowhaiTree()
         {
             InitializeComponent();
+            ContextMenuEnabled = true;
         }
 
         string GetDataTypeString(int dataType)
@@ -70,46 +74,60 @@ namespace kowhai_sharp
             dataType = Kowhai.RawDataType(dataType);
             switch (dataType)
             {
-                case Kowhai.DATA_TYPE_CHAR:
-                    return "char";
-                case Kowhai.DATA_TYPE_UCHAR:
-                    return "uchar";
-                case Kowhai.DATA_TYPE_INT16:
+                case Kowhai.INT8:
+                    return "int8";
+                case Kowhai.UINT8:
+                    return "uint8";
+                case Kowhai.INT16:
                     return "int16";
-                case Kowhai.DATA_TYPE_UINT16:
+                case Kowhai.UINT16:
                     return "uint16";
-                case Kowhai.DATA_TYPE_INT32:
+                case Kowhai.INT32:
                     return "int32";
-                case Kowhai.DATA_TYPE_UINT32:
+                case Kowhai.UINT32:
                     return "uint32";
-                case Kowhai.DATA_TYPE_FLOAT:
+                case Kowhai.FLOAT:
                     return "float";
             }
             return "error";
+        }
+
+        byte[] GetNodeData(KowhaiNodeInfo info)
+        {
+            if (info == null)
+                return null;
+            int size = Kowhai.kowhai_get_node_type_size(info.KowhaiNode.type);
+            if (info.Offset + size <= data.Length)
+            {
+                byte[] nodeData = new byte[size];
+                Array.Copy(data, info.Offset, nodeData, 0, size);
+                return nodeData;
+            }
+            return null;
         }
 
         private object GetDataValue(KowhaiNodeInfo info)
         {
             if (info == null)
                 return null;
-            int size = Kowhai.kowhai_get_data_size(info.KowhaiNode.data_type);
+            int size = Kowhai.kowhai_get_node_type_size(info.KowhaiNode.type);
             if (info.Offset + size <= data.Length)
             {
-                switch (info.KowhaiNode.data_type)
+                switch (info.KowhaiNode.type)
                 {
-                    case Kowhai.DATA_TYPE_CHAR:
+                    case Kowhai.INT8:
                         return (sbyte)data[info.Offset];
-                    case Kowhai.DATA_TYPE_UCHAR:
+                    case Kowhai.UINT8:
                         return data[info.Offset];
-                    case Kowhai.DATA_TYPE_INT16:
+                    case Kowhai.INT16:
                         return BitConverter.ToInt16(data, info.Offset);
-                    case Kowhai.DATA_TYPE_UINT16:
+                    case Kowhai.UINT16:
                         return BitConverter.ToUInt16(data, info.Offset);
-                    case Kowhai.DATA_TYPE_INT32:
+                    case Kowhai.INT32:
                         return BitConverter.ToInt32(data, info.Offset);
-                    case Kowhai.DATA_TYPE_UINT32:
+                    case Kowhai.UINT32:
                         return BitConverter.ToUInt32(data, info.Offset);
-                    case Kowhai.DATA_TYPE_FLOAT:
+                    case Kowhai.FLOAT:
                         return BitConverter.ToSingle(data, info.Offset);
                 }
             }
@@ -120,19 +138,19 @@ namespace kowhai_sharp
         {
             switch (dataType)
             {
-                case Kowhai.DATA_TYPE_CHAR:
+                case Kowhai.INT8:
                     return new byte[] { (byte)Convert.ToSByte(text) };
-                case Kowhai.DATA_TYPE_UCHAR:
+                case Kowhai.UINT8:
                     return new byte[] { Convert.ToByte(text) };
-                case Kowhai.DATA_TYPE_INT16:
+                case Kowhai.INT16:
                     return BitConverter.GetBytes(Convert.ToInt16(text));
-                case Kowhai.DATA_TYPE_UINT16:
+                case Kowhai.UINT16:
                     return BitConverter.GetBytes(Convert.ToUInt16(text));
-                case Kowhai.DATA_TYPE_INT32:
+                case Kowhai.INT32:
                     return BitConverter.GetBytes(Convert.ToInt32(text));
-                case Kowhai.DATA_TYPE_UINT32:
+                case Kowhai.UINT32:
                     return BitConverter.GetBytes(Convert.ToUInt32(text));
-                case Kowhai.DATA_TYPE_FLOAT:
+                case Kowhai.FLOAT:
                     return BitConverter.GetBytes(Convert.ToSingle(text));
             }
             return null;
@@ -154,24 +172,24 @@ namespace kowhai_sharp
 
         string GetNodeName(Kowhai.kowhai_node_t node, KowhaiNodeInfo info)
         {
-            if (node.type == Kowhai.NODE_TYPE_BRANCH)
+            if (node.type == Kowhai.BRANCH)
                 return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
             if (info != null && info.IsArrayItem)
                 return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
             else if (node.count > 1)
-                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.data_type));
+                return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.type));
             else
-                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.data_type), GetDataValue(info));
+                return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.type), GetDataValue(info));
         }
 
-        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node)
+        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node, KowhaiNodeInfo initialNodeInfo)
         {
             while (index < descriptor.Length)
             {
                 Kowhai.kowhai_node_t descNode = descriptor[index];
                 switch (descNode.type)
                 {
-                    case Kowhai.NODE_TYPE_BRANCH:
+                    case Kowhai.BRANCH:
                         if (node == null)
                             node = treeView1.Nodes.Add(GetNodeName(descNode, null));
                         else
@@ -179,57 +197,65 @@ namespace kowhai_sharp
                         KowhaiNodeInfo parentInfo = null;
                         if (node.Parent != null)
                             parentInfo = (KowhaiNodeInfo)node.Parent.Tag;
+                        node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
                         if (descNode.count > 1)
                         {
                             int prevIndex = index;
                             for (ushort i = 0; i < descNode.count; i++)
                             {
+                                if (initialNodeInfo != null && initialNodeInfo.IsArrayItem && initialNodeInfo.ArrayIndex != i)
+                                    continue;
                                 index = prevIndex;
                                 TreeNode arrayNode = node.Nodes.Add("#" + i.ToString());
                                 arrayNode.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentInfo);
                                 index++;
-                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode);
+                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode, null);
                             }
                         }
                         else
                         {
-                            node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
                             index++;
-                            _UpdateDescriptor(descriptor, ref index, ref offset, node);
+                            _UpdateDescriptor(descriptor, ref index, ref offset, node, null);
                         }
                         node = node.Parent;
                         break;
-                    case Kowhai.NODE_TYPE_LEAF:
-                        TreeNode leaf = node.Nodes.Add(GetNodeName(descNode, null));
+                    case Kowhai.BRANCH_END:
+                        return;
+                    default:
+                        TreeNode leaf;
+                        if (node == null)
+                            leaf = treeView1.Nodes.Add(GetNodeName(descNode, null));
+                        else
+                            leaf = node.Nodes.Add(GetNodeName(descNode, null));
+                        KowhaiNodeInfo parentNodeInfo = null;
+                        if (leaf.Parent != null)
+                            parentNodeInfo = (KowhaiNodeInfo)leaf.Parent.Tag;
+                        leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentNodeInfo);
                         if (descNode.count > 1)
                         {
                             for (ushort i = 0; i < descNode.count; i++)
                             {
                                 TreeNode child = leaf.Nodes.Add("#" + i.ToString());
-                                child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                                offset += (ushort)Kowhai.kowhai_get_data_size(descNode.data_type);
+                                child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentNodeInfo);
+                                offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                             }
                         }
                         else
-                        {
-                            leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, (KowhaiNodeInfo)leaf.Parent.Tag);
-                            offset += (ushort)Kowhai.kowhai_get_data_size(descNode.data_type);
-                        }
+                            offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                         break;
-                    case Kowhai.NODE_TYPE_END:
-                        return;
                 }
                 index++;
             }
         }
 
-        public void UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, string[] symbols)
+        public void UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, string[] symbols, KowhaiNodeInfo info)
         {
+            this.descriptor = descriptor;
             this.symbols = symbols;
             treeView1.Nodes.Clear();
             int index = 0;
             ushort offset = 0;
-            _UpdateDescriptor(descriptor, ref index, ref offset, null);
+            _UpdateDescriptor(descriptor, ref index, ref offset, null, info);
             treeView1.ExpandAll();
             return;
         }
@@ -264,6 +290,11 @@ namespace kowhai_sharp
             treeView1.EndUpdate();
         }
 
+        public byte[] GetData()
+        {
+            return data;
+        }
+
         TreeNode selectedNode;
 
         private void treeView1_MouseDown(object sender, MouseEventArgs e)
@@ -271,10 +302,9 @@ namespace kowhai_sharp
             selectedNode = treeView1.GetNodeAt(e.X, e.Y);
         }
 
-
         private void treeView1_MouseUp(object sender, MouseEventArgs e)
         {
-            if (e.Button == System.Windows.Forms.MouseButtons.Right && selectedNode != null)
+            if (ContextMenuEnabled && e.Button == System.Windows.Forms.MouseButtons.Right && selectedNode != null)
             {
                 treeView1.SelectedNode = selectedNode;
                 contextMenuStrip1.Show(this, new Point(e.X, e.Y));
@@ -296,9 +326,9 @@ namespace kowhai_sharp
             {
                 if (node.Tag != null)
                 {
-                    KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-                    if (info.KowhaiNode.type == Kowhai.NODE_TYPE_LEAF)
+                    if (node.Nodes.Count == 0)
                     {
+                        KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
                         object dataValue = GetDataValue(info);
                         if (dataValue != null)
                         {
@@ -326,7 +356,7 @@ namespace kowhai_sharp
                 byte[] data;
                 try
                 {
-                    data = TextToData(e.Label, info.KowhaiNode.data_type);
+                    data = TextToData(e.Label, info.KowhaiNode.type);
                     e.Node.Text = "updating...";
                 }
                 catch (Exception ex)
@@ -345,18 +375,76 @@ namespace kowhai_sharp
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
+                BlankNodes(selectedNode);
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
                 NodeRead(this, new NodeReadEventArgs(info));
             }
         }
 
-        private void writeNodeToolStripMenuItem_Click(object sender, EventArgs e)
+        private void editNodeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-                DataChange(this, new DataChangeEventArgs(info, new byte[0]));
+                bool branch = info.KowhaiNode.type == Kowhai.BRANCH;
+                bool leafArrayParent = !branch && info.KowhaiNode.count > 1 && info.IsArrayItem == false;
+                if (branch | leafArrayParent)
+                {
+                    // create sub branch descriptor and data
+                    List<Kowhai.kowhai_node_t> descBranch = new List<Kowhai.kowhai_node_t>();
+                    if (leafArrayParent)
+                        descBranch.Add(info.KowhaiNode);
+                    else
+                    {
+                        int depth = 0;
+                        for (int i = info.NodeIndex; i < descriptor.Length; i++)
+                        {
+                            Kowhai.kowhai_node_t node = descriptor[i];
+                            descBranch.Add(node);
+                            if (node.type == Kowhai.BRANCH)
+                                depth++;
+                            else if (node.type == Kowhai.BRANCH_END)
+                                depth--;
+                            if (depth == 0)
+                                break;
+                        }
+                    }
+                    int size;
+                    Kowhai.kowhai_node_t[] descBranchArray = descBranch.ToArray();
+                    Kowhai.GetNodeSize(descBranchArray, out size);
+                    if (info.IsArrayItem)
+                        size /= info.KowhaiNode.count;
+                    byte[] dataBranchArray = new byte[size];
+                    Array.Copy(data, info.Offset, dataBranchArray, 0, size);
+
+                    // show form with sub branch
+                    NodeEditForm f = new NodeEditForm();
+                    f.UpdateTree(descBranchArray, symbols, dataBranchArray, info);
+                    if (f.ShowDialog() == DialogResult.OK)
+                    {
+                        BlankNodes(selectedNode);
+                        DataChange(this, new DataChangeEventArgs(info, f.GetData()));
+                    }
+                }
+                else
+                    BeginEdit(selectedNode);
             }
+        }
+
+        private void BlankNodes(TreeNode node)
+        {
+            treeView1.BeginUpdate();
+            _blankNodes(node);
+            treeView1.EndUpdate();
+        }
+
+        const string blank = "...";
+        private void _blankNodes(TreeNode node)
+        {
+            if (node.Nodes.Count == 0)
+                node.Text = blank;
+            foreach (TreeNode childNode in node.Nodes)
+                BlankNodes(childNode);
         }
     }
 }

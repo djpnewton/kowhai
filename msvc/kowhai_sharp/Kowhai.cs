@@ -47,26 +47,24 @@ namespace kowhai_sharp
             public uint16_t type;
             public uint16_t symbol;
             public uint16_t count;
-            public uint16_t data_type;
             public uint16_t tag;
         }
 
-        public const int NODE_TYPE_BRANCH = 0;
-        public const int NODE_TYPE_LEAF = 1;
-        public const int NODE_TYPE_END = 2;
+        public const int BRANCH = 0;
+        public const int BRANCH_END = 1;
 
-        public const int DATA_TYPE_CHAR = 0;
-        public const int DATA_TYPE_UCHAR = 1;
-        public const int DATA_TYPE_INT16 = 2;
-        public const int DATA_TYPE_UINT16 = 3;
-        public const int DATA_TYPE_INT32 = 4;
-        public const int DATA_TYPE_UINT32 = 5;
-        public const int DATA_TYPE_FLOAT = 6;
-        public const int DATA_TYPE_READONLY = 0x8000;
+        public const int INT8 = 0x0070;
+        public const int UINT8 = 0x0071;
+        public const int INT16 = 0x0072;
+        public const int UINT16 = 0x0073;
+        public const int INT32 = 0x0074;
+        public const int UINT32 = 0x0075;
+        public const int FLOAT = 0x0076;
+        public const int READONLY = 0x8000;
 
         public static int RawDataType(int dataType)
         {
-            return dataType = dataType & (~DATA_TYPE_READONLY);
+            return dataType = dataType & (~READONLY);
         }
 
         public const int STATUS_OK = 0;
@@ -80,7 +78,7 @@ namespace kowhai_sharp
         public const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_data_size(int data_type);
+        public static extern int kowhai_get_node_type_size(uint16_t type);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node(IntPtr tree_descriptor, int num_symbols, IntPtr symbols, out int offset, IntPtr target_node);
@@ -95,7 +93,7 @@ namespace kowhai_sharp
         public static extern int kowhai_write(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int write_offset, IntPtr value, int write_size);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out byte result);
+        public static extern int kowhai_get_int8(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out byte result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out int16_t result);
@@ -131,6 +129,14 @@ namespace kowhai_sharp
             return result;
         }
 
+        public static int GetNodeSize(kowhai_node_t[] descriptor, out int size)
+        {
+            GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
+            int result = kowhai_get_node_size(h.AddrOfPinnedObject(), out size);
+            h.Free();
+            return result;
+        }
+
         public static kowhai_symbol_t[] GetSymbolPath(kowhai_node_t[] descriptor, kowhai_node_t node, int32_t nodeIndex,  uint16_t[] arrayIndexes)
         {
             Stack<kowhai_symbol_t> syms = new Stack<kowhai_symbol_t>();
@@ -139,9 +145,9 @@ namespace kowhai_sharp
                 kowhai_node_t newNode = descriptor[i];
                 if (i == nodeIndex)
                     syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
-                else if (newNode.type == NODE_TYPE_BRANCH)
+                else if (newNode.type == BRANCH)
                     syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
-                else if (newNode.type == NODE_TYPE_END)
+                else if (newNode.type == BRANCH_END)
                     syms.Pop();
             }
             kowhai_symbol_t[] result = syms.ToArray();

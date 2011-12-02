@@ -20,13 +20,13 @@
 #endif // WIN32
 
 typedef struct xpsocket_t* xpsocket_handle;
-typedef void (*xpsocket_receive_callback)(xpsocket_handle conn, void* param, char* buffer, int buffer_size);
+typedef void (*xpsocket_receive_callback)(xpsocket_handle conn, void* param, void* buffer, int buffer_size);
 
 int xpsocket_init();
 void xpsocket_cleanup();
 int xpsocket_serve(xpsocket_receive_callback buffer_received, void* buffer_received_param, int buffer_size);
-int xpsocket_send(xpsocket_handle conn, char* buffer, int size);
-int xpsocket_receive(xpsocket_handle conn, char* buffer, int buffer_size, int* received_size);
+int xpsocket_send(xpsocket_handle conn, void* buffer, int size);
+int xpsocket_receive(xpsocket_handle conn, void* buffer, int buffer_size, int* received_size);
 xpsocket_handle xpsocket_init_client();
 void xpsocket_free_client(xpsocket_handle conn);
 
