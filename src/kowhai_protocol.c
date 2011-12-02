@@ -18,7 +18,15 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
     return KOW_STATUS_OK;
 }
 
-int _parse_symbols(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload, int* symbols_size)
+/**
+ * @brief Parse the symbols from a read packet into a formatted kowhai_protocol_payload_t structure
+ * @param payload_packet a packet read over the protocol that needs the symbols parsed out of 
+ * @param packet_size number of bytes in the payload_packet
+ * @param payload parse the payload_packet and place the symbol path into this
+ * @param symbols_size number of bytes needed to store the symbol path ?dan please check this?
+ * @return KOW_STATUS_OK on success otherwise a KOW_STATUS error code
+ */
+static int parse_symbols(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload, int* symbols_size)
 {
     // check packet is large enough for symbol count byte
     int required_size = sizeof(payload->spec.data.symbols.count);
@@ -41,11 +49,18 @@ int _parse_symbols(void* payload_packet, int packet_size, struct kowhai_protocol
     return KOW_STATUS_OK;
 }
 
-int _parse_data_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+/**
+ * @brief Parse a read/write request packet read over the kowhai protocol into a kowhai_protocol_payload_t structure
+ * @param payload_packet a packet that needs parsing
+ * @param packet_size number of bytes in the payload_packet
+ * @param payload parse the payload_packet into the data and buffer sections of this structure
+ * @return KOW_STATUS_OK on success otherwise a KOW_STATUS error code
+ */
+static int parse_data_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
 {
     // parse symbols
     int required_size;
-    int status = _parse_symbols(payload_packet, packet_size, payload, &required_size);
+    int status = parse_symbols(payload_packet, packet_size, payload, &required_size);
     if (status != KOW_STATUS_OK)
         return status;
 
@@ -69,7 +84,14 @@ int _parse_data_payload(void* payload_packet, int packet_size, struct kowhai_pro
     return KOW_STATUS_OK;
 }
 
-int _parse_descriptor_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+/**
+ * @brief Parse a descriptor request packet read over the kowhai protocol into a kowhai_protocol_payload_t structure
+ * @param payload_packet a packet that needs parsing
+ * @param packet_size number of bytes in the payload_packet
+ * @param payload parse the payload_packet into the descriptor sections of this structure
+ * @return KOW_STATUS_OK on success otherwise a KOW_STATUS error code
+ */
+static int parse_descriptor_payload(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
 {
     if (packet_size < sizeof(struct kowhai_protocol_descriptor_payload_spec_t))
         return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
@@ -94,18 +116,18 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
     switch (protocol->header.command)
     {
         case KOW_CMD_READ_DATA:
-            return _parse_symbols((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload, &required_size);
+            return parse_symbols((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload, &required_size);
         case KOW_CMD_WRITE_DATA:
         case KOW_CMD_WRITE_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK_END:
-            return _parse_data_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
+            return parse_data_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         case KOW_CMD_READ_DESCRIPTOR:
             // read descriptor command requires no more parameters
             return KOW_STATUS_OK;
         case KOW_CMD_READ_DESCRIPTOR_ACK:
         case KOW_CMD_READ_DESCRIPTOR_ACK_END:
-            return _parse_descriptor_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
+            return parse_descriptor_payload((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;
     }
