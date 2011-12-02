@@ -14,7 +14,7 @@
 typedef void (*kowhai_send_packet_t)(void* param, void* packet, size_t packet_size);
 
 /**
- * @brief called after a node has been written over the kowhia protocol
+ * @brief called after a node has been written over the kowhai protocol
  * @param param application specific parameter passed through
  * @param node points to the node that was updated
  */

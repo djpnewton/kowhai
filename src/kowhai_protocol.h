@@ -168,7 +168,7 @@ struct kowhai_protocol_t
 int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tree_id);
 
 /**
- * @brief Parse a packet read over the kowhia protocol in to a kowhai_protocol_t struct
+ * @brief Parse a packet read over the kowhai protocol in to a kowhai_protocol_t struct
  * @param proto_packet a packet read over the protocol that needs parsing
  * @param packet_size number of bytes in the proto_packet
  * @param protocol update this with the information in the proto_packet
@@ -177,7 +177,7 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
 int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol);
 
 /**
- * @brief Create a new protocol packet used to communicate with another kowhia enabled program
+ * @brief Create a new protocol packet used to communicate with another kowhai enabled program
  * @param proto_packet place the packet information into this buffer
  * @param packet_size bytes allocated for the proto_packet
  * @param protocol make the packet from the request info found in this structure

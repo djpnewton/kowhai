@@ -76,7 +76,7 @@ int kowhai_get_node_type_size(uint16_t type);
  * @param symbols, the path of the item to find
  * @param offset, set to number of bytes from the current branch to the item
  * @param target_node, if return is successful this is the node that matches the symbol path
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
 
@@ -84,8 +84,8 @@ int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const uni
  * @brief calculate the complete size of a node including all the sub-elements and array items.
  * @param node to find the size of
  * @param size size of the node in bytes
- * @return kowhia status
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_node_size(const struct kowhai_node_t *node, int *size);
 
@@ -98,7 +98,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size);
  * @param read_offset, the offset into the node data to start reading from
  * @param result, the buffer to read the result into
  * @param read_size, the number of bytes to read into the result
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size);
 
@@ -111,7 +111,7 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
  * @param write_offset, the offset into the node data to start writing at
  * @param value, the buffer to write from
  * @param write_size, the number of bytes to write into the settings buffer
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size);
 
@@ -133,7 +133,7 @@ int kowhai_get_int8(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param result, the value of the node if found
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result);
 
@@ -144,7 +144,7 @@ int kowhai_get_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param result, the value of the node if found
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int32_t* result);
 
@@ -155,7 +155,7 @@ int kowhai_get_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param result, the value of the node if found
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, float* result);
 
@@ -166,7 +166,7 @@ int kowhai_get_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param value, the new value to change the node to
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_set_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, char value);
 
@@ -177,7 +177,7 @@ int kowhai_set_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param value, the new value to change the node to
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_set_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int16_t value);
 
@@ -188,7 +188,7 @@ int kowhai_set_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param value, the new value to change the node to
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_set_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int32_t value);
 
@@ -199,7 +199,7 @@ int kowhai_set_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int
  * @param num_symbols, number of symbols that make up the symbols path below
  * @param symbols, a collection of symbols that forms a path to the node to start the get from
  * @param value, the new value to change the node to
- * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
+ * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_set_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, float value);
 
