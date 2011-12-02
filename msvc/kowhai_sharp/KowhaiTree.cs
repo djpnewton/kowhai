@@ -420,6 +420,7 @@ namespace kowhai_sharp
                     // show form with sub branch
                     NodeEditForm f = new NodeEditForm();
                     f.UpdateTree(descBranchArray, symbols, dataBranchArray, info);
+                    f.Location = PointToScreen(selectedNode.Bounds.Location);
                     if (f.ShowDialog() == DialogResult.OK)
                     {
                         BlankNodes(selectedNode);
