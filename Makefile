@@ -37,6 +37,6 @@ src/beep.o: tools/beep.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean: 
-	rm -f ${TEST_EXECUTABLE} libkowhai.a tools/test.o tools/xpsocket.o tools/beep.o src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
+	rm -f ${TEST_EXECUTABLE} libkowhai.a tools/*.o src/*.o
 
 .PHONY: clean

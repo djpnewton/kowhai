@@ -189,8 +189,20 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 
 void node_written(void* param, struct kowhai_node_t* node)
 {
-    if (node->tag == ACTION_BEEP)
-        beep(action.beep.freq, action.beep.duration);
+    switch (node->tag)
+    {
+        case ACTION_START:
+            shadow.running = 1;
+            shadow.status = rand();
+            break;
+        case ACTION_STOP:
+            shadow.running = 0;
+            shadow.status = 0;
+            break;
+        case ACTION_BEEP:
+            beep(action.beep.freq, action.beep.duration);
+            break;
+    }
 }
 
 void server_buffer_send(void* param, void* buffer, size_t buffer_size)
