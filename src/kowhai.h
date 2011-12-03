@@ -36,6 +36,15 @@ struct kowhai_node_t
     uint16_t tag;           ///< user defined tag
 };
 
+/**
+ * @brief contains a descriptor and data pair
+ */
+struct kowhai_tree_t
+{
+    struct kowhai_node_t *desc;    ///< points to a descriptor of the data of this tree
+    void *data;                    ///< points to the start of a structure containing the data described by the tree
+};
+
 /*
  * @brief a list of these (a path) will specify a unique address in the tree
  */
@@ -89,58 +98,68 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size);
 
 /*
  * Read from a tree data buffer starting at a symbol path
+ * @param tree, the tree to read from
  * @param read_offset, the offset into the node data to start reading from
  * @param result, the buffer to read the result into
  * @param read_size, the number of bytes to read into the result
  */
-int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size);
+int kowhai_read(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size);
 
 /*
  * Write to a tree data buffer starting at a symbol path
+ * @param tree, the tree to write to
  * @param write_offset, the offset into the node data to start writing at
  * @param value, the buffer to write from
  * @param write_size, the number of bytes to write into the settings buffer
  */
-int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size);
+int kowhai_write(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size);
 
 /*
  * Get a single byte char setting specified by a symbol path from a settings buffer
+ * @param tree, the tree to get the value from
  */
-int kowhai_get_int8(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
+int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
 
 /*
  * Get a 16 bit integer setting specified by a symbol path from a settings buffer
+ * @param tree, the tree to get the value from
  */
-int kowhai_get_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result);
+int kowhai_get_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result);
 
 /*
  * Get a 32 bit integer setting specified by a symbol path from a settings buffer
+ * @param tree, the tree to get the value from
  */
-int kowhai_get_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int32_t* result);
+int kowhai_get_int32(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int32_t* result);
 
 /*
  * Get a 32 bit floating point setting specified by a symbol path from a settings buffer
+ * @param tree, the tree to get the value from
  */
-int kowhai_get_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, float* result);
+int kowhai_get_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, float* result);
 
 /*
  * Set a single byte char setting specified by a symbol path in a settings buffer
+ * @param tree, the tree to write the value into
  */
-int kowhai_set_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, char value);
+int kowhai_set_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value);
 
 /*
  * Set a 16 bit integer setting specified by a symbol path in a settings buffer
+ * @param tree, the tree to write the value into
  */
-int kowhai_set_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int16_t value);
+int kowhai_set_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t value);
 
 /*
  * Set a 32 bit integer setting specified by a symbol path in a settings buffer
+ * @param tree, the tree to write the value into
  */
-int kowhai_set_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int32_t value);
+int kowhai_set_int32(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int32_t value);
 
 /*
  * Set a 32 bit floating point setting specified by a symbol path in a settings buffer
+ * @param tree, the tree to write the value into
  */
-int kowhai_set_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, float value);
+int kowhai_set_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, float value);
 
 #endif

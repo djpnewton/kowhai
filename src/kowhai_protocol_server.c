@@ -21,23 +21,24 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
 
     if (prot.header.tree_id >= 0 && prot.header.tree_id < server->tree_count)
     {
-        struct kowhai_node_t* tree_descriptor = *(server->tree_descriptors + prot.header.tree_id);
-        void* tree_data = *(server->tree_data_buffers + prot.header.tree_id);
+		struct kowhai_tree_t tree;
+		tree.desc = *(server->tree_descriptors + prot.header.tree_id);
+        tree.data = *(server->tree_data_buffers + prot.header.tree_id);
         switch (prot.header.command)
         {
             case KOW_CMD_WRITE_DATA:
                 printf("    CMD write data\n");
-                status = kowhai_write(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
+                status = kowhai_write(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                 if (status == KOW_STATUS_OK)
                 {
                     // call node_written callback
                     struct kowhai_node_t* node;
                     uint16_t offset;
-                    kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
+                    kowhai_get_node(tree.desc, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &offset, &node);
                     server->node_written(server->node_written_param, node);
                     // send response
                     prot.header.command = KOW_CMD_WRITE_DATA_ACK;
-                    kowhai_read(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
+                    kowhai_read(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                     server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                 }
@@ -73,7 +74,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 struct kowhai_node_t* node;
                 printf("    CMD read data\n");
                 // get node information
-                status = kowhai_get_node(tree_descriptor, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
+                status = kowhai_get_node(tree.desc, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
                 if (status == KOW_STATUS_OK)
                 {
                     kowhai_get_node_size(node, &size);
@@ -91,7 +92,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     while (size > max_payload_size)
                     {
                         prot.payload.spec.data.memory.size = max_payload_size;
-                        kowhai_read(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
+                        kowhai_read(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                         server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                         // increment payload offset and decrement remaining payload size
@@ -101,7 +102,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     // send final packet
                     prot.header.command = KOW_CMD_READ_DATA_ACK_END;
                     prot.payload.spec.data.memory.size = size;
-                    kowhai_read(tree_descriptor, tree_data, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
+                    kowhai_read(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                     server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                     // free payload buffer
@@ -153,7 +154,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 while (size > max_payload_size)
                 {
                     prot.payload.spec.descriptor.size = max_payload_size;
-                    memcpy(prot.payload.buffer, (char*)tree_descriptor + prot.payload.spec.descriptor.offset, prot.payload.spec.descriptor.size);
+                    memcpy(prot.payload.buffer, (char*)tree.desc + prot.payload.spec.descriptor.offset, prot.payload.spec.descriptor.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                     server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                     // increment payload offset and decrement remaining payload size
@@ -163,7 +164,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 // send final packet
                 prot.header.command = KOW_CMD_READ_DESCRIPTOR_ACK_END;
                 prot.payload.spec.descriptor.size = size;
-                memcpy(prot.payload.buffer, (char*)tree_descriptor + prot.payload.spec.descriptor.offset, prot.payload.spec.descriptor.size);
+                memcpy(prot.payload.buffer, (char*)tree.desc + prot.payload.spec.descriptor.offset, prot.payload.spec.descriptor.size);
                 kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                 server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                 // free payload buffer
