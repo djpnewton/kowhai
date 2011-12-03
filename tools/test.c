@@ -1,4 +1,5 @@
 #include "../src/kowhai.h"
+#include "../src/kowhai_utils.h"
 #include "../src/kowhai_protocol.h"
 #include "../src/kowhai_protocol_server.h"
 #include "xpsocket.h"
@@ -8,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdbool.h>
 
 //
 // treenode symbols
@@ -171,6 +173,113 @@ struct scope_data_t
 #define TREE_ID_SHADOW   1
 #define TREE_ID_ACTIONS  2
 #define TREE_ID_SCOPE    3
+
+//
+// merge tests
+//
+void merge_tests(void)
+{
+
+	struct kowhai_node_t old_settings_descriptor[] =
+	{
+		{ KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+
+		{ KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+		{ KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+		{ KOW_UINT32,           SYM_GAIN,           1,                0 },
+		{ KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+		{ KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+
+		{ KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+		{ KOW_INT16,            SYM_TEMP,           1,                0 },
+		{ KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+		{ KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+
+		{ KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+	};
+	
+	struct old_settings_data_t
+	{
+		struct flux_capacitor_t
+		{
+			uint32_t frequency;
+			uint32_t gain;
+			float coefficient[COEFF_COUNT];
+		} flux_capacitor [FLUX_CAP_COUNT];
+
+		struct oven_t
+		{
+			int16_t temp;
+			uint16_t timeout;
+		} oven;
+	};
+
+	struct old_settings_data_t old_settings =
+	{
+		// flux capacitor array
+		{
+			{ 1000, 200, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6} },
+			{ 3000, 400, {0.6, 0.5, 0.4, 0.3, 0.2, 0.1} }
+		},
+		// oven
+		{ 180, 30 }
+	};
+
+	struct kowhai_node_t new_settings_descriptor[] =
+	{
+		{ KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+
+		{ KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+		{ KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+		{ KOW_UINT8,            SYM_RUNNING,        1,                0 },
+		{ KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+		{ KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+
+		{ KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+		{ KOW_INT16,            SYM_TEMP,           1,                0 },
+		{ KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+		{ KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+
+		{ KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+	};
+
+	struct new_settings_data_t
+	{
+		struct new_flux_capacitor_t
+		{
+			uint32_t frequency;
+			uint8_t running;
+			float coefficient[COEFF_COUNT];
+		} flux_capacitor [FLUX_CAP_COUNT];
+
+		struct new_oven_t
+		{
+			int16_t temp;
+			uint16_t timeout;
+		} oven;
+	};
+
+	struct new_settings_data_t new_settings =
+	{
+		// flux capacitor array
+		{
+			{ 5000, false, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6} },
+			{ 6000, true, {0.6, 0.5, 0.4, 0.3, 0.2, 0.1} }
+		},
+		// oven
+		{ 180, 30 }
+	};
+	
+	struct kowhai_tree_t old_settings_tree = {old_settings_descriptor, &old_settings};
+	struct kowhai_tree_t new_settings_tree = {new_settings_descriptor, &new_settings};
+
+	// test the merge of old into new
+	assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
+	assert(new_settings.flux_capacitor[0].running == false);
+	assert(new_settings.flux_capacitor[1].running == true);
+	assert(new_settings.flux_capacitor[0].frequency == 1000);
+	assert(new_settings.flux_capacitor[1].frequency == 3000);
+}
 
 //
 // main
@@ -360,6 +469,9 @@ int main(int argc, char* argv[])
     assert(kowhai_get_float(&settings_tree, 3, symbols7, &coeff) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
+
+	// test utils
+	merge_tests();
 
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)
