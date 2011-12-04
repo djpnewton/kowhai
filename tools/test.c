@@ -179,7 +179,6 @@ struct scope_data_t
 //
 void merge_tests(void)
 {
-
 	struct kowhai_node_t old_settings_descriptor[] =
 	{
 		{ KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
@@ -273,12 +272,16 @@ void merge_tests(void)
 	struct kowhai_tree_t old_settings_tree = {old_settings_descriptor, &old_settings};
 	struct kowhai_tree_t new_settings_tree = {new_settings_descriptor, &new_settings};
 
+    printf("test kowhai utils...\t");
+
 	// test the merge of old into new
 	assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
 	assert(new_settings.flux_capacitor[0].running == false);
 	assert(new_settings.flux_capacitor[1].running == true);
 	assert(new_settings.flux_capacitor[0].frequency == 1000);
 	assert(new_settings.flux_capacitor[1].frequency == 3000);
+    
+	printf(" passed!\n");
 }
 
 //
