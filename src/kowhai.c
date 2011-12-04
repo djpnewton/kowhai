@@ -111,7 +111,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
  * @return < 0 on failure
  * @todo find the correct index (always 0 atm)
  */
-static int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch)
+int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch)
 {
     int i = 0;
     uint16_t _offset = 0;

@@ -26,6 +26,10 @@ static int merge_nodes(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 	return KOW_STATUS_INVALID_MERGE_NODE_TYPE;
 }
 
+// forward decalre this to bring it in from kowhai.c as we need it
+///@todo there should be a way to either use the public api or get at internal kowhia stuff more easily
+int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch);
+
 /**
  * @brief 
  * @param dst, branch start to search for matches from
@@ -39,7 +43,7 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 	union kowhai_symbol_t symbol[1];
 	int size;
 
-	// go through all the dst nodes look for matches in src
+	// go through all the dst nodes and look for matches in src
 	while (1)
 	{
 		if (dst->desc->type == KOW_BRANCH_END)
@@ -48,7 +52,7 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 		
 		// try to find this node in the current src branch
 		symbol[0].symbol = dst->desc->symbol;
-		ret = kowhai_get_node(src->desc, 1, symbol, &offset, &target_node);
+		ret = get_node(src->desc, 1, symbol, &offset, &target_node, 0);
 		switch (ret)
 		{
 			case KOW_STATUS_OK:
@@ -63,7 +67,7 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 						return ret;
 
 					// skip this branch since its already been merged above
-					// note merge already updated dst pasted this branch so just continue
+					// note merge already updated dst to skip this branch so just continue
 					continue;
 				}
 				else
