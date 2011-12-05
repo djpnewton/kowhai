@@ -1,6 +1,7 @@
 #include "../src/kowhai.h"
 #include "../src/kowhai_protocol.h"
 #include "../src/kowhai_protocol_server.h"
+#include "../src/kowhai_serialize.h"
 #include "xpsocket.h"
 #include "beep.h"
 
@@ -220,6 +221,11 @@ void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int
     kowhai_server_process_packet(server, buffer, buffer_size);
 }
 
+char* get_symbol_name(uint16_t symbol)
+{
+    return symbols[symbol];
+}
+
 int main(int argc, char* argv[])
 {
     int test_command = TEST_BASIC;
@@ -356,6 +362,17 @@ int main(int argc, char* argv[])
     assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
+
+    // test serialization
+    printf("test kowhai_serialize/kowhai_deserialize...\n");
+    {
+    char* dat = (char*)malloc(0x1000);
+    kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, 0x1000, get_symbol_name);
+    printf("---\n");
+    printf(dat);
+    printf("\n---\n");
+    printf(" passed!\n");
+    }
 
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)

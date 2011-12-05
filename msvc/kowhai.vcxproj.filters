@@ -24,6 +24,9 @@
     <ClCompile Include="..\src\kowhai_protocol_server.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\kowhai_serialize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\kowhai.h">
@@ -33,6 +36,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\kowhai_protocol_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\kowhai_serialize.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

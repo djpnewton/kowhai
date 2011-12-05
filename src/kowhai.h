@@ -61,6 +61,7 @@ union kowhai_symbol_t
 #define KOW_STATUS_PACKET_BUFFER_TOO_SMALL  6
 #define KOW_STATUS_INVALID_PROTOCOL_COMMAND 7
 #define KOW_STATUS_PACKET_BUFFER_TOO_BIG    8
+#define KOW_STATUS_TARGET_BUFFER_TOO_SMALL  9
 
 /**
  * @brief return the size for a given node type
