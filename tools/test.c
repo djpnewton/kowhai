@@ -179,6 +179,8 @@ struct scope_data_t
 //
 void merge_tests(void)
 {
+	#pragma pack(1)
+
 	struct kowhai_node_t old_settings_descriptor[] =
 	{
 		{ KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
@@ -236,6 +238,7 @@ void merge_tests(void)
 
 		{ KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
 		{ KOW_INT16,            SYM_TEMP,           1,                0 },
+		{ KOW_INT32,            SYM_BEEP,           2,                0 },
 		{ KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
 		{ KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
 
@@ -254,6 +257,7 @@ void merge_tests(void)
 		struct new_oven_t
 		{
 			int16_t temp;
+			uint32_t beep[2];
 			uint16_t timeout;
 		} oven;
 	};
@@ -262,24 +266,41 @@ void merge_tests(void)
 	{
 		// flux capacitor array
 		{
-			{ 5000, false, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6} },
-			{ 6000, true, {0.6, 0.5, 0.4, 0.3, 0.2, 0.1} }
+			{ 5000, false, {-0.1, -0.2, -0.3, -0.4, -0.5, -0.6} },
+			{ 6000, true, {-0.6, -0.5, -0.4, -0.3, -0.2, -0.1} }
 		},
 		// oven
-		{ 180, 30 }
+		{ 220, {10000, 5000}, 20 }
 	};
-	
+
 	struct kowhai_tree_t old_settings_tree = {old_settings_descriptor, &old_settings};
 	struct kowhai_tree_t new_settings_tree = {new_settings_descriptor, &new_settings};
+
+	int cap;
+	int coeff;
+
+	#pragma pack()
 
     printf("test kowhai utils...\t");
 
 	// test the merge of old into new
 	assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
+
+	// test things that should not have been merged are untouched
 	assert(new_settings.flux_capacitor[0].running == false);
 	assert(new_settings.flux_capacitor[1].running == true);
-	assert(new_settings.flux_capacitor[0].frequency == 1000);
-	assert(new_settings.flux_capacitor[1].frequency == 3000);
+	assert(new_settings.oven.beep[0] == 10000);
+	assert(new_settings.oven.beep[1] == 5000);
+
+	// check that things that should be merged are
+	for (cap = 0; cap < FLUX_CAP_COUNT; cap++)
+	{
+		assert(new_settings.flux_capacitor[cap].frequency == old_settings.flux_capacitor[cap].frequency);
+		for (coeff = 0; coeff < COEFF_COUNT; coeff++)
+			assert(new_settings.flux_capacitor[cap].coefficient[coeff] == old_settings.flux_capacitor[cap].coefficient[coeff]);
+	}
+	assert(new_settings.oven.temp == old_settings.oven.temp);
+	assert(new_settings.oven.timeout == old_settings.oven.timeout);
     
 	printf(" passed!\n");
 }
