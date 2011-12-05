@@ -18,6 +18,20 @@ int debug_printf(char* buf, size_t buf_size, char* format, ...)
     va_end(args);
 }
 
+int add_header(char** dest, size_t* dest_size, int* current_offset, struct kowhai_node_t* node, kowhai_get_symbol_name_t get_name)
+{
+    int chars = snprintf(*dest, *dest_size,
+            "{\"name\": %s, \"type\": %d, \"symbol\": %d, \"count\": %d, \"tag\": %d",
+            get_name(node->symbol), node->type, node->symbol, node->count, node->tag);
+    if (chars >= 0)
+    {
+        *dest += chars;
+        *dest_size -= chars;
+        *current_offset += chars;
+    }
+    return chars;
+}
+
 int add_string(char** dest, size_t* dest_size, int* current_offset, char* string)
 {
     int chars = snprintf(*dest, *dest_size, string);
@@ -81,6 +95,7 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
         if (node->type == KOW_BRANCH_END)
             return target_offset;
 
+        // indent to current level using tabs
         for (i = 0; i < level; i++)
         {
             chars = add_string(&target_buffer, &target_size, &target_offset, "\t");
@@ -89,45 +104,70 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
         }
 
         //
-        // write node header
-        //
-
-        chars = snprintf(target_buffer, target_size,
-                "{\"name\": %s, \"type\": %d, \"symbol\": %d, \"count\": %d, \"tag\": %d",
-                get_name(node->symbol), node->type, node->symbol, node->count, node->tag);
-        if (chars < 0)
-            return chars;
-        target_offset += chars;
-        target_buffer += chars;
-        target_size -= chars;
-
-        //
-        // write node body
+        // write node
         //
 
         switch (node->type)
         {
             case KOW_BRANCH_START:
             {
-                char* children_str = ", \"children\": [\n";
-                char* end_str = "]}\n";
-                chars = add_string(&target_buffer, &target_size, &target_offset, children_str);
+                // write header
+                chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name);
                 if (chars < 0)
                     return chars;
-                (*desc) += 1;
-                chars = serialize_node(desc, data, data_size, data_offset, target_buffer, target_size, level + 1, get_name);
-                if (chars < 0)
+                if (node->count > 1)
+                {
+                    struct kowhai_node_t* initial_node = *desc;
+                    int j;
+                    // write array identifier
+                    chars = add_string(&target_buffer, &target_size, &target_offset, ", \"array\": [\n");
+                    if (chars < 0)
                     return chars;
-                target_offset += chars;
-                target_buffer += chars;
-                target_size -= chars;
+                    for (i = 0; i < node->count; i++)
+                    {
+                        // set descriptor to initial node at the branch array
+                        *desc = initial_node;
+                        // write branch children
+                        (*desc) += 1;
+                        chars = serialize_node(desc, data, data_size, data_offset, target_buffer, target_size, level + 1, get_name);
+                        if (chars < 0)
+                            return chars;
+                        target_offset += chars;
+                        target_buffer += chars;
+                        target_size -= chars;
+                        // indent to current level using tab
+                        for (j = 0; j < level + 1; j++)
+                        {
+                            chars = add_string(&target_buffer, &target_size, &target_offset, "\t");
+                            if (chars < 0)
+                                return chars;
+                        }
+                    }
+                }
+                else
+                {
+                    // write children identifier
+                    chars = add_string(&target_buffer, &target_size, &target_offset, ", \"children\": [\n");
+                    if (chars < 0)
+                        return chars;
+                    // write branch children
+                    (*desc) += 1;
+                    chars = serialize_node(desc, data, data_size, data_offset, target_buffer, target_size, level + 1, get_name);
+                    if (chars < 0)
+                        return chars;
+                    target_offset += chars;
+                    target_buffer += chars;
+                    target_size -= chars;
+                }
+                // indent to current level using tab
                 for (i = 0; i < level; i++)
                 {
                     chars = add_string(&target_buffer, &target_size, &target_offset, "\t");
                     if (chars < 0)
                         return chars;
                 }
-                chars = add_string(&target_buffer, &target_size, &target_offset, end_str);
+                // write node end
+                chars = add_string(&target_buffer, &target_size, &target_offset, "]}\n");
                 if (chars < 0)
                     return chars;
                 break;
@@ -135,9 +175,15 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
             default:
             {
                 int value_size = kowhai_get_node_type_size(node->type);
+                // write header
+                chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name);
+                if (chars < 0)
+                    return chars;
+                // write value identifier
                 chars = add_string(&target_buffer, &target_size, &target_offset, ", \"value\": ");
                 if (chars < 0)
                     return chars;
+                // write value/s
                 if (node->count > 1)
                 {
                     chars = add_string(&target_buffer, &target_size, &target_offset, "[");
@@ -169,6 +215,7 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                     data = (char*)data + value_size;
                     *data_offset += value_size;
                 }
+                // write node end
                 chars = add_string(&target_buffer, &target_size, &target_offset, " }\n");
                 if (chars < 0)
                     return chars;
