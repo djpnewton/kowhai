@@ -4,8 +4,9 @@
 
 #ifdef KOWHAI_DBG
 #include <stdio.h>
-#define KOWHAI_ERR "KOWHAI ERROR:"
-#define KOWHAI_INFO "KOWHAI INFO: "
+#define KOWHAI_UTILS_ERR "KOWHAI_UTILS ERROR:"
+#define KOWHAI_UTILS_INFO "KOWHAI_UTILS INFO: "
+#define KOWHAI_TABS "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 #endif
 
 // forward decalre this to bring it in from kowhai.c as we need it
@@ -32,7 +33,12 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src, int depth
 	{
 		// are we at the end of this branch, if so branch is merged
 		if (dst->desc->type == KOW_BRANCH_END)
+		{
+			#ifdef KOWHAI_DBG
+			printf(KOWHAI_UTILS_INFO "(%d)%.*s pop\n", depth, depth, KOWHAI_TABS, dst->desc->symbol);
+			#endif
 			return KOW_STATUS_OK;
+		}
 
 		// does the dst path exist in the src path
 		skip_nodes = 0;
@@ -64,6 +70,9 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src, int depth
 							_src.data = ((uint8_t *)src->data + offset);
 							_dst.desc = dst->desc + 1;
 							// merge this branch array item (drill)
+							#ifdef KOWHAI_DBG
+							printf(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, dst->desc->symbol);
+							#endif
 							ret = merge(&_dst, &_src, depth + 1);
 							if (ret != KOW_STATUS_OK)
 								return ret;
@@ -83,6 +92,9 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src, int depth
 							if (ret != KOW_STATUS_OK)
 								// propagate error 
 								return ret;
+							#ifdef KOWHAI_DBG
+							printf(KOWHAI_UTILS_INFO "(%d)%.*s merging %d from src into dst\n", depth, depth, KOWHAI_TABS, dst->desc->symbol);
+							#endif
 							///@todo perhaps this should use kohai_read/write here for safety ??
 							memcpy(dst->data, ((uint8_t *)src->data + offset), size);
 						}
@@ -92,6 +104,9 @@ static int merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src, int depth
 				break;
 			case KOW_STATUS_INVALID_SYMBOL_PATH:
 				// could not find matching node in src so leave this nodes value alone and move on to next node
+				#ifdef KOWHAI_DBG
+				printf(KOWHAI_UTILS_INFO "(%d)%.*s could not find %d in src\n", depth, depth, KOWHAI_TABS, dst->desc->symbol);
+				#endif
 				break;
 			default:
 				// propagate error down
@@ -120,6 +135,9 @@ int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 {
 	struct kowhai_tree_t *_dst = dst;
 
+	#ifdef KOWHAI_DBG
+	printf("\n");
+	#endif
 	// we only support merging of well formed tree's (both src and dst)
 	if (dst->desc->type != KOW_BRANCH_START ||
 		src->desc->type != KOW_BRANCH_START)
