@@ -36,6 +36,7 @@
             this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeSettings = new kowhai_sharp.KowhaiTree();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.btnSave = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -52,6 +53,7 @@
             // 
             // kowhaiTreeScope
             // 
+            this.kowhaiTreeScope.ContextMenuEnabled = true;
             this.kowhaiTreeScope.Location = new System.Drawing.Point(726, 52);
             this.kowhaiTreeScope.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeScope.Name = "kowhaiTreeScope";
@@ -60,6 +62,7 @@
             // 
             // kowhaiTreeActions
             // 
+            this.kowhaiTreeActions.ContextMenuEnabled = true;
             this.kowhaiTreeActions.Location = new System.Drawing.Point(487, 52);
             this.kowhaiTreeActions.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeActions.Name = "kowhaiTreeActions";
@@ -68,6 +71,7 @@
             // 
             // kowhaiTreeShadow
             // 
+            this.kowhaiTreeShadow.ContextMenuEnabled = true;
             this.kowhaiTreeShadow.Location = new System.Drawing.Point(250, 52);
             this.kowhaiTreeShadow.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeShadow.Name = "kowhaiTreeShadow";
@@ -76,6 +80,7 @@
             // 
             // kowhaiTreeSettings
             // 
+            this.kowhaiTreeSettings.ContextMenuEnabled = true;
             this.kowhaiTreeSettings.Location = new System.Drawing.Point(12, 52);
             this.kowhaiTreeSettings.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeSettings.Name = "kowhaiTreeSettings";
@@ -98,11 +103,22 @@
             this.chart1.TabIndex = 5;
             this.chart1.Text = "chart1";
             // 
+            // btnSave
+            // 
+            this.btnSave.Location = new System.Drawing.Point(487, 12);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(75, 34);
+            this.btnSave.TabIndex = 6;
+            this.btnSave.Text = "Save";
+            this.btnSave.UseVisualStyleBackColor = true;
+            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(966, 572);
+            this.Controls.Add(this.btnSave);
             this.Controls.Add(this.chart1);
             this.Controls.Add(this.kowhaiTreeScope);
             this.Controls.Add(this.kowhaiTreeActions);
@@ -127,5 +143,6 @@
         private kowhai_sharp.KowhaiTree kowhaiTreeActions;
         private kowhai_sharp.KowhaiTree kowhaiTreeScope;
         private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
+        private System.Windows.Forms.Button btnSave;
     }
 }

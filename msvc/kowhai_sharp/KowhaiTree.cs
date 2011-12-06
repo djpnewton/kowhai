@@ -290,6 +290,11 @@ namespace kowhai_sharp
             treeView1.EndUpdate();
         }
 
+        public Kowhai.kowhai_node_t[] GetDescriptor()
+        {
+            return descriptor;
+        }
+
         public byte[] GetData()
         {
             return data;

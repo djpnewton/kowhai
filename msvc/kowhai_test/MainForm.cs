@@ -213,6 +213,26 @@ namespace kowhai_test
             sock.Send(buffer, 2);
         }
 
+        string getSymbolName(UInt16 value)
+        {
+            return KowhaiSymbols.Symbols.Strings[value];
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            string text;
+            if (KowhaiSerialize.Serialize(kowhaiTreeActions.GetDescriptor(), kowhaiTreeActions.GetData(), out text, 0x1000, getSymbolName) == Kowhai.STATUS_OK)
+            {
+                SaveFileDialog d = new SaveFileDialog();
+                if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    System.IO.StreamWriter sw = System.IO.File.CreateText(d.FileName);
+                    sw.Write(text);
+                    sw.Close();
+                }
+            }
+        }
+
         private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
         {
             if (treeId == TREE_ID_SETTINGS)
