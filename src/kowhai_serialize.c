@@ -21,7 +21,7 @@ int debug_printf(char* buf, size_t buf_size, char* format, ...)
 int add_header(char** dest, size_t* dest_size, int* current_offset, struct kowhai_node_t* node, kowhai_get_symbol_name_t get_name)
 {
     int chars = snprintf(*dest, *dest_size,
-            "{\"name\": %s, \"type\": %d, \"symbol\": %d, \"count\": %d, \"tag\": %d",
+            "{\"name\": \"%s\", \"type\": %d, \"symbol\": %d, \"count\": %d, \"tag\": %d",
             get_name(node->symbol), node->type, node->symbol, node->count, node->tag);
     if (chars >= 0)
     {
@@ -40,6 +40,19 @@ int add_string(char** dest, size_t* dest_size, int* current_offset, char* string
         *dest += chars;
         *dest_size -= chars;
         *current_offset += chars;
+    }
+    return chars;
+}
+
+int add_indent(char** dest, size_t* dest_size, int* current_offset, int depth)
+{
+    int i, chars = 0;
+    for (i = 0; i < depth; i++)
+    {
+        int c = add_string(dest, dest_size, current_offset, "\t");
+        if (c < 0)
+            return c;
+        chars += c;
     }
     return chars;
 }
@@ -87,6 +100,7 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
     int target_offset = 0;
     struct kowhai_node_t* node;
     int i, chars;
+    char* node_end_str;
 
     while (1)
     {
@@ -96,12 +110,9 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
             return target_offset;
 
         // indent to current level using tabs
-        for (i = 0; i < level; i++)
-        {
-            chars = add_string(&target_buffer, &target_size, &target_offset, "\t");
-            if (chars < 0)
-                return chars;
-        }
+        chars = add_indent(&target_buffer, &target_size, &target_offset, level);
+        if (chars < 0)
+            return chars;
 
         //
         // write node
@@ -118,7 +129,6 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                 if (node->count > 1)
                 {
                     struct kowhai_node_t* initial_node = *desc;
-                    int j;
                     // write array identifier
                     chars = add_string(&target_buffer, &target_size, &target_offset, ", \"array\": [\n");
                     if (chars < 0)
@@ -127,8 +137,16 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                     {
                         // set descriptor to initial node at the branch array
                         *desc = initial_node;
-                        // write branch children
                         (*desc) += 1;
+                        // indent to current level using tab
+                        chars = add_indent(&target_buffer, &target_size, &target_offset, level + 1);
+                        if (chars < 0)
+                            return chars;
+                        // write branch children start
+                        chars = add_string(&target_buffer, &target_size, &target_offset, "[\n");
+                        if (chars < 0)
+                            return chars;
+                        // write branch children
                         chars = serialize_node(desc, data, data_size, data_offset, target_buffer, target_size, level + 1, get_name);
                         if (chars < 0)
                             return chars;
@@ -136,9 +154,22 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                         target_buffer += chars;
                         target_size -= chars;
                         // indent to current level using tab
-                        for (j = 0; j < level + 1; j++)
+                        chars = add_indent(&target_buffer, &target_size, &target_offset, level + 1);
+                        if (chars < 0)
+                            return chars;
+                        // write branch children end
+                        chars = add_string(&target_buffer, &target_size, &target_offset, "]");
+                        if (chars < 0)
+                            return chars;
+                        if (i < node->count - 1)
                         {
-                            chars = add_string(&target_buffer, &target_size, &target_offset, "\t");
+                            chars = add_string(&target_buffer, &target_size, &target_offset, ",\n");
+                            if (chars < 0)
+                                return chars;
+                        }
+                        else
+                        {
+                            chars = add_string(&target_buffer, &target_size, &target_offset, "\n");
                             if (chars < 0)
                                 return chars;
                         }
@@ -160,14 +191,15 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                     target_size -= chars;
                 }
                 // indent to current level using tab
-                for (i = 0; i < level; i++)
-                {
-                    chars = add_string(&target_buffer, &target_size, &target_offset, "\t");
-                    if (chars < 0)
-                        return chars;
-                }
+                chars = add_indent(&target_buffer, &target_size, &target_offset, level);
+                if (chars < 0)
+                    return chars;
                 // write node end
-                chars = add_string(&target_buffer, &target_size, &target_offset, "]}\n");
+                if (level == 0 || (*desc)[1].type == KOW_BRANCH_END)
+                    node_end_str = "]}\n";
+                else
+                    node_end_str = "]},\n";
+                chars = add_string(&target_buffer, &target_size, &target_offset, node_end_str);
                 if (chars < 0)
                     return chars;
                 break;
@@ -216,7 +248,11 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                     *data_offset += value_size;
                 }
                 // write node end
-                chars = add_string(&target_buffer, &target_size, &target_offset, " }\n");
+                if (level == 0 || node[1].type == KOW_BRANCH_END)
+                    node_end_str = " }\n";
+                else
+                    node_end_str = " },\n";
+                chars = add_string(&target_buffer, &target_size, &target_offset, node_end_str);
                 if (chars < 0)
                     return chars;
                 break;

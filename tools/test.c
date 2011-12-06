@@ -366,12 +366,15 @@ int main(int argc, char* argv[])
     // test serialization
     printf("test kowhai_serialize/kowhai_deserialize...\n");
     {
-    char* dat = (char*)malloc(0x1000);
-    kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, 0x1000, get_symbol_name);
-    printf("---\n");
-    printf(dat);
-    printf("\n---\n");
-    printf(" passed!\n");
+        char* dat = (char*)malloc(0x1000);
+        FILE* f = fopen("test.json", "w");
+        int chars_written = kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, 0x1000, get_symbol_name);
+        printf("---\n");
+        printf(dat);
+        fwrite(dat, chars_written, 1, f);
+        fclose(f);
+        printf("\n---\n");
+        printf(" passed!\n");
     }
 
     // test server protocol
