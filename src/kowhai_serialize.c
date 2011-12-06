@@ -95,7 +95,7 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     return chars;
 }
 
-int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* data_offset, char* target_buffer, size_t target_size, int level, kowhai_get_symbol_name_t get_name)
+int serialize_node(struct kowhai_node_t** desc, void** data, int* data_size, char* target_buffer, size_t target_size, int level, kowhai_get_symbol_name_t get_name)
 {
     int target_offset = 0;
     struct kowhai_node_t* node;
@@ -147,7 +147,7 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                         if (chars < 0)
                             return chars;
                         // write branch children
-                        chars = serialize_node(desc, data, data_size, data_offset, target_buffer, target_size, level + 1, get_name);
+                        chars = serialize_node(desc, data, data_size, target_buffer, target_size, level + 1, get_name);
                         if (chars < 0)
                             return chars;
                         target_offset += chars;
@@ -183,7 +183,7 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                         return chars;
                     // write branch children
                     (*desc) += 1;
-                    chars = serialize_node(desc, data, data_size, data_offset, target_buffer, target_size, level + 1, get_name);
+                    chars = serialize_node(desc, data, data_size, target_buffer, target_size, level + 1, get_name);
                     if (chars < 0)
                         return chars;
                     target_offset += chars;
@@ -223,11 +223,13 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                         return chars;
                     for (i = 0; i < node->count; i++)
                     {
-                        chars = add_value(&target_buffer, &target_size, &target_offset, node->type, data);
+                        // write leaf node array item value
+                        chars = add_value(&target_buffer, &target_size, &target_offset, node->type, *data);
                         if (chars < 0)
                             return chars;
-                        data = (char*)data + value_size;
-                        *data_offset += value_size;
+                        // increment data pointer
+                        *data = (char*)*data + value_size;
+                        // write comma if there is another array item
                         if (i < node->count - 1)
                         {
                             chars = add_string(&target_buffer, &target_size, &target_offset, ", ");
@@ -241,11 +243,12 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
                 }
                 else
                 {
-                    chars = add_value(&target_buffer, &target_size, &target_offset, node->type, data);
+                    // write leaf node value
+                    chars = add_value(&target_buffer, &target_size, &target_offset, node->type, *data);
                     if (chars < 0)
                         return chars;
-                    data = (char*)data + value_size;
-                    *data_offset += value_size;
+                    // increment data pointer
+                    *data = (char*)*data + value_size;
                 }
                 // write node end
                 if (level == 0 || node[1].type == KOW_BRANCH_END)
@@ -266,10 +269,10 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
     }
 }
 
+//TODO: data_size param is not used, do we need it as a safeguard?
 int kowhai_serialize(struct kowhai_node_t* descriptor, void* data, int data_size, char* target_buffer, int* target_size, kowhai_get_symbol_name_t get_name)
 {
-    int data_offset = 0;
-    int chars = serialize_node(&descriptor, data, data_size, &data_offset, target_buffer, *target_size, 0, get_name);
+    int chars = serialize_node(&descriptor, &data, &data_size, target_buffer, *target_size, 0, get_name);
     if (chars < 0)
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
     *target_size = chars;
