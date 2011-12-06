@@ -266,11 +266,12 @@ int serialize_node(struct kowhai_node_t** desc, void* data, int data_size, int* 
     }
 }
 
-int kowhai_serialize(struct kowhai_node_t* descriptor, void* data, int data_size, char* target_buffer, int target_size, kowhai_get_symbol_name_t get_name)
+int kowhai_serialize(struct kowhai_node_t* descriptor, void* data, int data_size, char* target_buffer, int* target_size, kowhai_get_symbol_name_t get_name)
 {
     int data_offset = 0;
-    int chars = serialize_node(&descriptor, data, data_size, &data_offset, target_buffer, target_size, 0, get_name);
+    int chars = serialize_node(&descriptor, data, data_size, &data_offset, target_buffer, *target_size, 0, get_name);
     if (chars < 0)
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
-    return chars;
+    *target_size = chars;
+    return KOW_STATUS_OK;
 }

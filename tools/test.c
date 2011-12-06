@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
     uint16_t timeout;
     uint32_t gain;
     float coeff;
-    struct flux_capacitor_t flux_capacitor;
+    struct flux_capacitor_t flux_capacitor = {1, 2, 10, 20, 30, 40, 50, 60};
 
 #ifdef KOWHAI_DBG
     printf("kowhai debugging enabled!\n");
@@ -366,14 +366,15 @@ int main(int argc, char* argv[])
     // test serialization
     printf("test kowhai_serialize/kowhai_deserialize...\n");
     {
-        char* dat = (char*)malloc(0x1000);
-        FILE* f = fopen("test.json", "w");
-        int chars_written = kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, 0x1000, get_symbol_name);
+        int dat_size = 0x1000;
+        char* dat = (char*)malloc(dat_size);
+        assert(dat != NULL);
+        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, &dat_size, get_symbol_name) == KOW_STATUS_OK);
         printf("---\n");
         printf(dat);
-        fwrite(dat, chars_written, 1, f);
-        fclose(f);
         printf("\n---\n");
+        dat_size = 100;
+        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, &dat_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
         printf(" passed!\n");
     }
 
