@@ -224,6 +224,8 @@ namespace kowhai_test
             if (KowhaiSerialize.Serialize(kowhaiTreeActions.GetDescriptor(), kowhaiTreeActions.GetData(), out text, 0x1000, getSymbolName) == Kowhai.STATUS_OK)
             {
                 SaveFileDialog d = new SaveFileDialog();
+                d.Filter = "Kowhai Files | *.kowhai";
+                d.DefaultExt = "kowhai";
                 if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
                     System.IO.StreamWriter sw = System.IO.File.CreateText(d.FileName);
