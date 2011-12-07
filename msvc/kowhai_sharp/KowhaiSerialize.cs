@@ -14,6 +14,9 @@ namespace kowhai_sharp
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_serialize(IntPtr descriptor, IntPtr data, int data_size, byte[] target_buffer, ref int target_size, kowhai_get_symbol_name_t get_name);
 
+        [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int kowhai_deserialize(byte[] buffer, int buffer_size, byte[] scratch, int scratch_size, IntPtr descriptor, ref int descriptor_size, byte[] data, ref int data_size);
+
         public static int Serialize(Kowhai.kowhai_node_t[] descriptor, byte[] data, out string target, int targetBufferSize, kowhai_get_symbol_name_t getName)
         {
             byte[] targetBuf = new byte[targetBufferSize];

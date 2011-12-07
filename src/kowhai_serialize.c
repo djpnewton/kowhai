@@ -4,6 +4,7 @@
 #endif
 
 #include "kowhai_serialize.h"
+#include "../3rdparty/jsmn/jsmn.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -277,4 +278,34 @@ int kowhai_serialize(struct kowhai_node_t* descriptor, void* data, int data_size
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
     *target_size = chars;
     return KOW_STATUS_OK;
+}
+
+int deserialize_node(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* desc, int* desc_size, void* data, int* data_size)
+{
+    jsmn_parser parser;
+    jsmntok_t* tokens = (jsmntok_t*)scratch;
+    int token_count = scratch_size / sizeof(jsmntok_t);
+    jsmnerr_t err;
+    jsmn_init_parser(&parser, buffer, tokens, token_count);
+    err = jsmn_parse(&parser);
+    switch (err)
+    {
+        case JSMN_ERROR_INVAL:
+        case JSMN_ERROR_PART:
+            return KOW_STATUS_BUFFER_INVALID;
+        case JSMN_ERROR_NOMEM:
+            return KOW_STATUS_SCRATCH_TOO_SMALL;
+    }
+
+    //
+    // TODO: the rest of the deserialization
+    //
+
+    return KOW_STATUS_OK;
+}
+
+int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size)
+{
+    int result = deserialize_node(buffer, scratch, scratch_size, descriptor, descriptor_size, data, data_size);
+    return result;
 }
