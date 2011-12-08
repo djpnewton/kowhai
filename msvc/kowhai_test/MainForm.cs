@@ -235,6 +235,21 @@ namespace kowhai_test
             }
         }
 
+        private void btnLoad_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog d = new OpenFileDialog();
+            d.Filter = "Kowhai Files | *.kowhai";
+            d.DefaultExt = "kowhai";
+            //if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string text = System.IO.File.ReadAllText("C:\\Users\\daniel\\Documents\\test.kowhai"/*d.FileName*/);
+                Kowhai.kowhai_node_t[] descriptor;
+                byte[] data;
+                if (KowhaiSerialize.Deserialize(text, out descriptor, out data) == Kowhai.STATUS_OK)
+                    MessageBox.Show("whoop!");
+            }
+        }
+
         private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
         {
             if (treeId == TREE_ID_SETTINGS)
