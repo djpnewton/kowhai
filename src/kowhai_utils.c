@@ -1,6 +1,7 @@
 #include "kowhai_utils.h"
 
 #include <string.h>
+#include <stdbool.h>
 
 #ifdef KOWHAI_DBG
 #include <stdio.h>
@@ -13,16 +14,18 @@
 ///@todo there should be a way to either use the public api or get at internal kowhia stuff more easily
 int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch);
 
-typedef int (*on_diff_t)(const struct kowhai_tree_t *left, const struct kowhai_tree_t *right, int depth);
-
 /**
- * @brief diff left and right tree's
+ * @brief diff_l2r diff left tree against right tree
+ * If a node is found in the left tree that is not in the right tree (ie symbol path and types/array size match) call on_unique 
+ * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
+ * @note unique items on the right tree are ignored
  * @param left, diff this tree against right
  * @param right, diff this tree against left
- * @param on_diff, call this when a difference is found
+ * @param on_unique, call this when a unique node is found in the left tree
+ * @param on_diff, call this when a common node is found in both left and right trees and the values do not match
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, on_diff_t on_diff, int depth)
+static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, bool swap_cb_param, int depth)
 {
 	int ret;
 	uint16_t offset;
@@ -31,19 +34,17 @@ static int diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, on_diff
 	int size;
 	unsigned int i;
 	unsigned int skip_nodes;
-	struct kowhai_tree_t _left;
-	struct kowhai_tree_t _right;
+	struct kowhai_tree_t __left;
+	struct kowhai_tree_t __right;
 
 	// go through all the left nodes and look for matches in right 
 	while (1)
 	{
-		// are we at the end of this branch, if so branch has been diff'ed completely
+		// are we at the end of this branch
 		if (left->desc->type == KOW_BRANCH_END)
 		{
-			///@todo we have found all the common nodes between left and right, and all the unique nodes
-			/// in left but now we just have to find all the unique nodes in the right branch
 			#ifdef KOWHAI_DBG
-			printf(KOWHAI_UTILS_INFO "(%d)%.*s pop\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
+			printf(KOWHAI_UTILS_INFO "(%d)%.*s pop\n", depth, depth, KOWHAI_TABS);
 			#endif
 			return KOW_STATUS_OK;
 		}
@@ -59,12 +60,12 @@ static int diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, on_diff
 				// found matching node in right 
 				if (left->desc->type == KOW_BRANCH_START)
 				{
-					// if the array counts match in left and right then diff the arrays, otherwise the arrays are unique
+					// if the array counts match in left and right then diff the branch array items, otherwise the arrays are unique
 					///@todo we could just diff all the items in the array if we want to allow array sizes to change 
 					if (left->desc->count == target_node->count)
 					{
 						// diff each branch array item one by one
-						_left = *left;
+						__left = *left;
 						///@todo if allowing changing array sizes then, for (i = 0; i < min(left count, right count)...
 						for (i = 0; i < left->desc->count; i++)
 						{
@@ -73,76 +74,71 @@ static int diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, on_diff
 							ret = get_node(right->desc, 1, symbol, &offset, NULL, 0);
 							if (ret != KOW_STATUS_OK)
 								return ret;
-							_right.desc = &target_node[1];
-							_right.data = ((uint8_t *)right->data + offset);
-							_left.desc = left->desc + 1;
+							__right.desc = &target_node[1];
+							__right.data = ((uint8_t *)right->data + offset);
+							__left.desc = left->desc + 1;
 							// diff this branch array item (drill)
 							#ifdef KOWHAI_DBG
 							printf(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
 							#endif
-							ret = diff(&_left, &_right, on_diff, depth + 1);
+							ret = diff_l2r(&__left, &__right, on_unique, on_diff, swap_cb_param, depth + 1);
 							if (ret != KOW_STATUS_OK)
 								return ret;
 						}
 						// find the number of nodes to skip (don't skip them now as we need to point at the branch_start to find 
 						// its size below) we will skip it after that
-						skip_nodes = ((unsigned int)_left.desc - (unsigned int)left->desc) / sizeof(struct kowhai_node_t);
+						skip_nodes = ((unsigned int)__left.desc - (unsigned int)left->desc) / sizeof(struct kowhai_node_t);
+						break;
 					}
-					else if (on_diff != NULL)
-					{
-						// array sizes don't match so both are unique
-						ret = on_diff(left, NULL, depth);
-						if (ret != KOW_STATUS_OK)
-							return ret;
-					}
+					// branch array size does not match so left is unique
+					#ifdef KOWHAI_DBG
+					printf(KOWHAI_UTILS_INFO "bpa\n");
+					#endif
+					goto unique;
 				}
 				else
 				{
-					// if the array counts match in left and right then diff the arrays, otherwise the arrays are unique
+					// if the array counts match in left and right and the types match then diff the arrays, otherwise the arrays are unique
 					///@todo we could just diff all the items in the array if we want to allow array sizes to change 
-					if (left->desc->count == target_node->count)
+					///@todo we may want to allow up casting eg from uint16_t to uint32_t
+					if ((left->desc->count == target_node->count) && (left->desc->type == target_node->type))
 					{
-						// if nodes have the same type then diff them, else they are unique
-						///@todo we may want to allow up casting eg from uint16_t to uint32_t
-						if (left->desc->type == target_node->type)
+						// since this is not a branch so we can just copy the whole array over
+						int ret = kowhai_get_node_size(left->desc, &size);
+						if (ret != KOW_STATUS_OK)
+							// propagate error 
+							return ret;
+						///@todo if allowing changing array sizes then, if right size is less than left then limit to right size
+						///@todo perhaps this should use kohai_read/write here for safety ??
+						if ((memcmp(left->data, ((uint8_t *)right->data + offset), size) != 0) && (on_diff != NULL))
 						{
-							// since this is not a branch so we can just copy the whole array over
-							int ret = kowhai_get_node_size(left->desc, &size);
+							// nodes differ from left to right so run on_diff event
+							__right.desc = target_node;
+							__right.data = right->data + offset;
+							if (!swap_cb_param)
+								ret = on_diff(left, &__right, depth);
+							else
+								ret = on_diff(&__right, left, depth);
 							if (ret != KOW_STATUS_OK)
-								// propagate error 
 								return ret;
-							///@todo if allowing changing array sizes then, if right size is less than left then limit to right size
-							///@todo perhaps this should use kohai_read/write here for safety ??
-							if ((memcpy(left->data, ((uint8_t *)right->data + offset), size) != 0) && (on_diff != NULL))
-							{
-								// nodes differ from left to right so run on_diff event
-								_right.desc = target_node;
-								_right.data = right->data + offset;
-								ret = on_diff(left, &_right, depth);
-								if (ret != KOW_STATUS_OK)
-									return ret;
-							}
-
 						}
+						break;
 					}
-					else if (on_diff != NULL)
-					{
-						// array sizes don't match so both are unique
-						ret = on_diff(left, NULL, depth);
-						if (ret != KOW_STATUS_OK)
-							return ret;
-						ret = on_diff(NULL, right, depth);
-						if (ret != KOW_STATUS_OK)
-							return ret;
-					}
+					// array sizes or types don't match so both are unique
+					goto unique;
 				}
 				break;
 			case KOW_STATUS_INVALID_SYMBOL_PATH:
+unique:
 				// could not find matching node in right so this node is unique to the left tree
-				if (on_diff != NULL)
+				if (on_unique != NULL)
 				{
-					ret = on_diff(left, NULL, depth);
+					if (!swap_cb_param)
+						ret = on_unique(left, NULL, depth);
+					else
+						ret = on_unique(NULL, left, depth);
 					if (ret != KOW_STATUS_OK)
+						// propagate error down
 						return ret;
 				}
 				break;
@@ -160,7 +156,7 @@ static int diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, on_diff
 		left->data = (uint8_t *)left->data + size;
 		left->desc += skip_nodes + 1;	
 		
-		// if this tree is not nicely formed (wrapped in branch start/end) then the next item may not be a 
+		// if this tree is not nicely formed (ie wrapped in a branch start/end) then the next item may not be a 
 		// branch end, instead we might just run off the end of the buffer so force a stop
 		if (depth == 0)
 			return KOW_STATUS_OK;
@@ -169,17 +165,46 @@ static int diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, on_diff
 }
 
 /**
+ * @brief diff left and right tree
+ * If a node is found in the left tree that is not in the right tree (ie symbol path and types/array size match) or visa versa, call on_diff
+ * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
+ * @param left, diff this tree against right
+ * @param right, diff this tree against left
+ * @param on_diff, call this when a unique node or common nodes that have different values are found
+ */
+int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_diff)
+{
+	struct kowhai_tree_t _left, _right;
+	// we use diff_l2r to find nodes that are unique in the left tree, or nodes that differ in value between left and right first
+	#ifdef KOWHAI_DBG
+	printf(KOWHAI_UTILS_INFO "diff left against right\n");
+	#endif
+	_left = *left;
+	_right = *right;
+	diff_l2r(&_left, &_right, on_diff, on_diff, false, 0);
+
+	// we just have to find nodes that are unique in the right tree. to do this we reuse diff_l2r with left and right swapped
+	// and ask diff_l2r to reverse the params to the callbacks
+	#ifdef KOWHAI_DBG
+	printf(KOWHAI_UTILS_INFO "diff right against left\n");
+	#endif
+	_left = *left;
+	_right = *right;
+	diff_l2r(&_right, &_left, on_diff, NULL, true, 0);
+}
+
+/**
  * @brief called by diff when merging 
  * @param dst this is the destination node to merge common source nodes into, or NULL if node is unique to src
  * @param src this is the source node to merge into common destination nodes, or NULL if node is unique to dst
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-int on_diff_merge(const struct kowhai_tree_t *dst, const struct kowhai_tree_t *src, int depth)
+static int on_diff_merge(const struct kowhai_tree_t *dst, const struct kowhai_tree_t *src, int depth)
 {
 	int ret;
 	int size;
 	uint8_t *dst_data;
-	
+
 	if (dst == NULL)
 	{
 		#ifdef KOWHAI_DBG
@@ -224,6 +249,6 @@ int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 		return KOW_STATUS_INVALID_DESCRIPTOR;
 	
 	// update all the notes in dst that are common to dst and src
-	return diff(_dst, src, on_diff_merge, 0);
+	return kowhai_diff(_dst, src, on_diff_merge);
 }
 
