@@ -1,7 +1,6 @@
 #include "kowhai_utils.h"
 
 #include <string.h>
-#include <stdbool.h>
 
 #ifdef KOWHAI_DBG
 #include <stdio.h>
@@ -25,7 +24,7 @@ int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowh
  * @param on_diff, call this when a common node is found in both left and right trees and the values do not match
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, bool swap_cb_param, int depth)
+static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
 {
 	int ret;
 	uint16_t offset;
@@ -114,7 +113,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
 						{
 							// nodes differ from left to right so run on_diff event
 							__right.desc = target_node;
-							__right.data = right->data + offset;
+							__right.data = (uint8_t *)right->data + offset;
 							if (!swap_cb_param)
 								ret = on_diff(left, &__right, depth);
 							else
@@ -175,13 +174,17 @@ unique:
 int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_diff)
 {
 	struct kowhai_tree_t _left, _right;
+	int ret;
+
 	// we use diff_l2r to find nodes that are unique in the left tree, or nodes that differ in value between left and right first
 	#ifdef KOWHAI_DBG
 	printf(KOWHAI_UTILS_INFO "diff left against right\n");
 	#endif
 	_left = *left;
 	_right = *right;
-	diff_l2r(&_left, &_right, on_diff, on_diff, false, 0);
+	ret = diff_l2r(&_left, &_right, on_diff, on_diff, 0, 0);
+	if (ret != KOW_STATUS_OK)
+		return ret;
 
 	// we just have to find nodes that are unique in the right tree. to do this we reuse diff_l2r with left and right swapped
 	// and ask diff_l2r to reverse the params to the callbacks
@@ -190,7 +193,9 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
 	#endif
 	_left = *left;
 	_right = *right;
-	diff_l2r(&_right, &_left, on_diff, NULL, true, 0);
+	ret = diff_l2r(&_right, &_left, on_diff, NULL, 1, 0);
+
+	return ret;
 }
 
 /**
@@ -229,7 +234,7 @@ static int on_diff_merge(const struct kowhai_tree_t *dst, const struct kowhai_tr
 	#ifdef KOWHAI_DBG
 	printf(KOWHAI_UTILS_INFO "(%d)%.*s merging %d from src into dst\n", depth, depth, KOWHAI_TABS, dst->desc->symbol);
 	#endif
-	dst_data = dst->data;
+	dst_data = (uint8_t *)dst->data;
 	memcpy(dst_data, src->data, size);
 	
 	return KOW_STATUS_OK;

@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <stdbool.h>
 
 //
 // treenode symbols
@@ -219,8 +218,8 @@ void merge_tests(void)
 	{
 		// flux capacitor array
 		{
-			{ 1000, 200, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6} },
-			{ 3000, 400, {0.6, 0.5, 0.4, 0.3, 0.2, 0.1} }
+			{ 1000, 200, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f} },
+			{ 3000, 400, {0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f} }
 		},
 		// oven
 		{ 180, 30 }
@@ -266,8 +265,8 @@ void merge_tests(void)
 	{
 		// flux capacitor array
 		{
-			{ 5000, false, {-0.1, -0.2, -0.3, -0.4, -0.5, -0.6} },
-			{ 6000, true, {-0.6, -0.5, -0.4, -0.3, -0.2, -0.1} }
+			{ 5000, 0, {-0.1f, -0.2f, -0.3f, -0.4f, -0.5f, -0.6f} },
+			{ 6000, 1, {-0.6f, -0.5f, -0.4f, -0.3f, -0.2f, -0.1f} }
 		},
 		// oven
 		{ 220, {10000, 5000}, 20 }
@@ -287,8 +286,8 @@ void merge_tests(void)
 	assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
 
 	// test things that should not have been merged are untouched
-	assert(new_settings.flux_capacitor[0].running == false);
-	assert(new_settings.flux_capacitor[1].running == true);
+	assert(new_settings.flux_capacitor[0].running == 0);
+	assert(new_settings.flux_capacitor[1].running == 1);
 	assert(new_settings.oven.beep[0] == 10000);
 	assert(new_settings.oven.beep[1] == 5000);
 
