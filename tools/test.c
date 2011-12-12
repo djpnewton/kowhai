@@ -178,130 +178,130 @@ struct scope_data_t
 //
 void merge_tests(void)
 {
-	#pragma pack(1)
+    #pragma pack(1)
 
-	struct kowhai_node_t old_settings_descriptor[] =
-	{
-		{ KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+    struct kowhai_node_t old_settings_descriptor[] =
+    {
+        { KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
 
-		{ KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
-		{ KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
-		{ KOW_UINT32,           SYM_GAIN,           1,                0 },
-		{ KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
-		{ KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+        { KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+        { KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+        { KOW_UINT32,           SYM_GAIN,           1,                0 },
+        { KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+        { KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
 
-		{ KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
-		{ KOW_INT16,            SYM_TEMP,           1,                0 },
-		{ KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
-		{ KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+        { KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+        { KOW_INT16,            SYM_TEMP,           1,                0 },
+        { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+        { KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
 
-		{ KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
-	};
-	
-	struct old_settings_data_t
-	{
-		struct flux_capacitor_t
-		{
-			uint32_t frequency;
-			uint32_t gain;
-			float coefficient[COEFF_COUNT];
-		} flux_capacitor [FLUX_CAP_COUNT];
+        { KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+    };
+    
+    struct old_settings_data_t
+    {
+        struct flux_capacitor_t
+        {
+            uint32_t frequency;
+            uint32_t gain;
+            float coefficient[COEFF_COUNT];
+        } flux_capacitor [FLUX_CAP_COUNT];
 
-		struct oven_t
-		{
-			int16_t temp;
-			uint16_t timeout;
-		} oven;
-	};
+        struct oven_t
+        {
+            int16_t temp;
+            uint16_t timeout;
+        } oven;
+    };
 
-	struct old_settings_data_t old_settings =
-	{
-		// flux capacitor array
-		{
-			{ 1000, 200, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f} },
-			{ 3000, 400, {0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f} }
-		},
-		// oven
-		{ 180, 30 }
-	};
+    struct old_settings_data_t old_settings =
+    {
+        // flux capacitor array
+        {
+            { 1000, 200, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f} },
+            { 3000, 400, {0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f} }
+        },
+        // oven
+        { 180, 30 }
+    };
 
-	struct kowhai_node_t new_settings_descriptor[] =
-	{
-		{ KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+    struct kowhai_node_t new_settings_descriptor[] =
+    {
+        { KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
 
-		{ KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
-		{ KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
-		{ KOW_UINT8,            SYM_RUNNING,        1,                0 },
-		{ KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
-		{ KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+        { KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+        { KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+        { KOW_UINT8,            SYM_RUNNING,        1,                0 },
+        { KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+        { KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
 
-		{ KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
-		{ KOW_INT16,            SYM_TEMP,           1,                0 },
-		{ KOW_INT32,            SYM_BEEP,           2,                0 },
-		{ KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
-		{ KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+        { KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+        { KOW_INT16,            SYM_TEMP,           1,                0 },
+        { KOW_INT32,            SYM_BEEP,           2,                0 },
+        { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+        { KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
 
-		{ KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
-	};
+        { KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+    };
 
-	struct new_settings_data_t
-	{
-		struct new_flux_capacitor_t
-		{
-			uint32_t frequency;
-			uint8_t running;
-			float coefficient[COEFF_COUNT];
-		} flux_capacitor [FLUX_CAP_COUNT];
+    struct new_settings_data_t
+    {
+        struct new_flux_capacitor_t
+        {
+            uint32_t frequency;
+            uint8_t running;
+            float coefficient[COEFF_COUNT];
+        } flux_capacitor [FLUX_CAP_COUNT];
 
-		struct new_oven_t
-		{
-			int16_t temp;
-			uint32_t beep[2];
-			uint16_t timeout;
-		} oven;
-	};
+        struct new_oven_t
+        {
+            int16_t temp;
+            uint32_t beep[2];
+            uint16_t timeout;
+        } oven;
+    };
 
-	struct new_settings_data_t new_settings =
-	{
-		// flux capacitor array
-		{
-			{ 5000, 0, {-0.1f, -0.2f, -0.3f, -0.4f, -0.5f, -0.6f} },
-			{ 6000, 1, {-0.6f, -0.5f, -0.4f, -0.3f, -0.2f, -0.1f} }
-		},
-		// oven
-		{ 220, {10000, 5000}, 20 }
-	};
+    struct new_settings_data_t new_settings =
+    {
+        // flux capacitor array
+        {
+            { 5000, 0, {-0.1f, -0.2f, -0.3f, -0.4f, -0.5f, -0.6f} },
+            { 6000, 1, {-0.6f, -0.5f, -0.4f, -0.3f, -0.2f, -0.1f} }
+        },
+        // oven
+        { 220, {10000, 5000}, 20 }
+    };
 
-	struct kowhai_tree_t old_settings_tree = {old_settings_descriptor, &old_settings};
-	struct kowhai_tree_t new_settings_tree = {new_settings_descriptor, &new_settings};
+    struct kowhai_tree_t old_settings_tree = {old_settings_descriptor, &old_settings};
+    struct kowhai_tree_t new_settings_tree = {new_settings_descriptor, &new_settings};
 
-	int cap;
-	int coeff;
+    int cap;
+    int coeff;
 
-	#pragma pack()
+    #pragma pack()
 
     printf("test kowhai utils...\t");
 
-	// test the merge of old into new
-	assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
+    // test the merge of old into new
+    assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
 
-	// test things that should not have been merged are untouched
-	assert(new_settings.flux_capacitor[0].running == 0);
-	assert(new_settings.flux_capacitor[1].running == 1);
-	assert(new_settings.oven.beep[0] == 10000);
-	assert(new_settings.oven.beep[1] == 5000);
+    // test things that should not have been merged are untouched
+    assert(new_settings.flux_capacitor[0].running == 0);
+    assert(new_settings.flux_capacitor[1].running == 1);
+    assert(new_settings.oven.beep[0] == 10000);
+    assert(new_settings.oven.beep[1] == 5000);
 
-	// check that things that should be merged are
-	for (cap = 0; cap < FLUX_CAP_COUNT; cap++)
-	{
-		assert(new_settings.flux_capacitor[cap].frequency == old_settings.flux_capacitor[cap].frequency);
-		for (coeff = 0; coeff < COEFF_COUNT; coeff++)
-			assert(new_settings.flux_capacitor[cap].coefficient[coeff] == old_settings.flux_capacitor[cap].coefficient[coeff]);
-	}
-	assert(new_settings.oven.temp == old_settings.oven.temp);
-	assert(new_settings.oven.timeout == old_settings.oven.timeout);
+    // check that things that should be merged are
+    for (cap = 0; cap < FLUX_CAP_COUNT; cap++)
+    {
+        assert(new_settings.flux_capacitor[cap].frequency == old_settings.flux_capacitor[cap].frequency);
+        for (coeff = 0; coeff < COEFF_COUNT; coeff++)
+            assert(new_settings.flux_capacitor[cap].coefficient[coeff] == old_settings.flux_capacitor[cap].coefficient[coeff]);
+    }
+    assert(new_settings.oven.temp == old_settings.oven.temp);
+    assert(new_settings.oven.timeout == old_settings.oven.timeout);
     
-	printf(" passed!\n");
+    printf(" passed!\n");
 }
 
 //
@@ -493,8 +493,8 @@ int main(int argc, char* argv[])
     assert(coeff == 999.9f);
     printf(" passed!\n");
 
-	// test utils
-	merge_tests();
+    // test utils
+    merge_tests();
 
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)

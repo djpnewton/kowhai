@@ -21,8 +21,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
 
     if (prot.header.tree_id >= 0 && prot.header.tree_id < server->tree_count)
     {
-		struct kowhai_tree_t tree;
-		tree.desc = *(server->tree_descriptors + prot.header.tree_id);
+        struct kowhai_tree_t tree;
+        tree.desc = *(server->tree_descriptors + prot.header.tree_id);
         tree.data = *(server->tree_data_buffers + prot.header.tree_id);
         switch (prot.header.command)
         {
