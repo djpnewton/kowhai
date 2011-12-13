@@ -271,10 +271,10 @@ static int on_diff_merge(const struct kowhai_node_t *dst_node, void *dst_data, i
 	// both nodes exist but differ so copy src into dst
 	//
 
-	ret = kowhai_get_node_size(dst_node, &size);
-	if (ret != KOW_STATUS_OK)
-		return ret;
-	size = size / dst_node->count;
+	size = kowhai_get_node_type_size(dst_node->type);
+	if (size == -1)
+		///@todo need a better error code here !!
+		return KOW_STATUS_OK;
 
 	#ifdef KOWHAI_DBG
 	printf(KOWHAI_UTILS_INFO "(%d)%.*s merging %d bytes of %d[%d] from src into dst\n", depth, depth, KOWHAI_TABS, size, dst_node->symbol, index);
