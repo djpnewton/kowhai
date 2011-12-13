@@ -331,7 +331,7 @@ int main(int argc, char* argv[])
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
     shadow.status = 0;
-    assert(kowhai_set_char(shadow_descriptor, &shadow, 2, symbols5, 255) == KOW_STATUS_OK);
+    assert(kowhai_set_int8(shadow_descriptor, &shadow, 2, symbols5, 255) == KOW_STATUS_OK);
     assert(shadow.status == 255);
     assert(kowhai_get_int8(shadow_descriptor, &shadow, 2, symbols5, &status) == KOW_STATUS_OK);
     assert(status == 255);
