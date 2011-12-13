@@ -264,29 +264,29 @@ int main(int argc, char* argv[])
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
     assert(kowhai_get_node(settings_descriptor, 3, symbols1, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 64);
+    assert(offset == offsetof(struct settings_data_t, oven.temp));
     assert(node == &settings_descriptor[7]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols2, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 66);
+    assert(offset == offsetof(struct settings_data_t, oven.timeout));
     assert(node == &settings_descriptor[8]);
     assert(kowhai_get_node(settings_descriptor, 2, symbols3, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 0);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor));
     assert(node == &settings_descriptor[1]);
     assert(kowhai_get_node(settings_descriptor, 2, symbols4, &offset, &node) == KOW_STATUS_INVALID_SYMBOL_PATH);
     assert(kowhai_get_node(settings_descriptor, 3, symbols6, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 4);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[0].gain));
     assert(node == &settings_descriptor[3]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols8, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == sizeof(struct flux_capacitor_t) + 4);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[1].gain));
     assert(node == &settings_descriptor[3]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols9, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[1].coefficient[3]));
     assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_descriptor, 3, symbols10, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 8 + 3 * 4);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[0].coefficient[3]));
     assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_descriptor, 2, symbols12, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == sizeof(struct flux_capacitor_t));
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[1]));
     assert(node == &settings_descriptor[1]);
     printf(" passed!\n");
 
