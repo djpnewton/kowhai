@@ -100,6 +100,12 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
     return get_node_size(node, size, &num_nodes_processed);
 }
 
+int kowhai_get_node_count(const struct kowhai_node_t *node, int *count)
+{
+    int size;
+    return get_node_size(node, &size, count);
+}
+
 /**
  * @brief find a item in the tree given its path
  * @param node to start searching from for the given item
