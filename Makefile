@@ -15,10 +15,13 @@ all: kowhai test
 test: tools/test.o tools/xpsocket.o tools/beep.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -lkowhai
 
-kowhai: src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o
+kowhai: src/kowhai.o src/kowhai_utils.o src/kowhai_protocol.o src/kowhai_protocol_server.o
 	ar rs lib$@.a $?
 
 src/kowhai.o: src/kowhai.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/kowhai_utils.o: src/kowhai_utils.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/kowhai_protocol.o: src/kowhai_protocol.c

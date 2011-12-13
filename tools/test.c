@@ -1,4 +1,5 @@
 #include "../src/kowhai.h"
+#include "../src/kowhai_utils.h"
 #include "../src/kowhai_protocol.h"
 #include "../src/kowhai_protocol_server.h"
 #include "xpsocket.h"
@@ -173,13 +174,148 @@ struct scope_data_t
 #define TREE_ID_SCOPE    3
 
 //
+// merge tests
+//
+void merge_tests(void)
+{
+    #pragma pack(1)
+
+    struct kowhai_node_t old_settings_descriptor[] =
+    {
+        { KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+
+        { KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+        { KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+        { KOW_UINT32,           SYM_GAIN,           1,                0 },
+        { KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+        { KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+
+        { KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+        { KOW_INT16,            SYM_TEMP,           1,                0 },
+        { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+        { KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+
+        { KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+    };
+    
+    struct old_settings_data_t
+    {
+        struct flux_capacitor_t
+        {
+            uint32_t frequency;
+            uint32_t gain;
+            float coefficient[COEFF_COUNT];
+        } flux_capacitor [FLUX_CAP_COUNT];
+
+        struct oven_t
+        {
+            int16_t temp;
+            uint16_t timeout;
+        } oven;
+    };
+
+    struct old_settings_data_t old_settings =
+    {
+        // flux capacitor array
+        {
+            { 1000, 200, {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f} },
+            { 3000, 400, {0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f} }
+        },
+        // oven
+        { 180, 30 }
+    };
+
+    struct kowhai_node_t new_settings_descriptor[] =
+    {
+        { KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+
+        { KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+        { KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+        { KOW_UINT8,            SYM_RUNNING,        1,                0 },
+        { KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+        { KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+
+        { KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+        { KOW_INT16,            SYM_TEMP,           1,                0 },
+        { KOW_INT32,            SYM_BEEP,           2,                0 },
+        { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+        { KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+
+        { KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+    };
+
+    struct new_settings_data_t
+    {
+        struct new_flux_capacitor_t
+        {
+            uint32_t frequency;
+            uint8_t running;
+            float coefficient[COEFF_COUNT];
+        } flux_capacitor [FLUX_CAP_COUNT];
+
+        struct new_oven_t
+        {
+            int16_t temp;
+            uint32_t beep[2];
+            uint16_t timeout;
+        } oven;
+    };
+
+    struct new_settings_data_t new_settings =
+    {
+        // flux capacitor array
+        {
+            { 5000, 0, {-0.1f, -0.2f, -0.3f, -0.4f, -0.5f, -0.6f} },
+            { 6000, 1, {-0.6f, -0.5f, -0.4f, -0.3f, -0.2f, -0.1f} }
+        },
+        // oven
+        { 220, {10000, 5000}, 20 }
+    };
+
+    struct kowhai_tree_t old_settings_tree = {old_settings_descriptor, &old_settings};
+    struct kowhai_tree_t new_settings_tree = {new_settings_descriptor, &new_settings};
+
+    int cap;
+    int coeff;
+
+    #pragma pack()
+
+    printf("test kowhai utils...\t");
+
+    // test the merge of old into new
+    assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
+
+    // test things that should not have been merged are untouched
+    assert(new_settings.flux_capacitor[0].running == 0);
+    assert(new_settings.flux_capacitor[1].running == 1);
+    assert(new_settings.oven.beep[0] == 10000);
+    assert(new_settings.oven.beep[1] == 5000);
+
+    // check that things that should be merged are
+    for (cap = 0; cap < FLUX_CAP_COUNT; cap++)
+    {
+        assert(new_settings.flux_capacitor[cap].frequency == old_settings.flux_capacitor[cap].frequency);
+        for (coeff = 0; coeff < COEFF_COUNT; coeff++)
+            assert(new_settings.flux_capacitor[cap].coefficient[coeff] == old_settings.flux_capacitor[cap].coefficient[coeff]);
+    }
+    assert(new_settings.oven.temp == old_settings.oven.temp);
+    assert(new_settings.oven.timeout == old_settings.oven.timeout);
+    
+    printf(" passed!\n");
+}
+
+//
 // main
 //
 
 struct settings_data_t settings;
+struct kowhai_tree_t settings_tree = {settings_descriptor, &settings};
 struct shadow_data_t shadow;
+struct kowhai_tree_t shadow_tree = {shadow_descriptor, &shadow};
 struct action_data_t action = { 100, 500, 100 };
+struct kowhai_tree_t action_tree = {action_descriptor, &action};
 struct scope_data_t scope;
+struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 
 #define MAX_PACKET_SIZE 0x40
 
@@ -239,6 +375,7 @@ int main(int argc, char* argv[])
 
     uint16_t offset;
     int size;
+    int count;
     struct kowhai_node_t* node;
 
     uint8_t status;
@@ -263,99 +400,106 @@ int main(int argc, char* argv[])
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
-    assert(kowhai_get_node(settings_descriptor, 3, symbols1, &offset, &node) == KOW_STATUS_OK);
+    assert(kowhai_get_node(settings_tree.desc, 3, symbols1, &offset, &node) == KOW_STATUS_OK);
     assert(offset == 64);
-    assert(node == &settings_descriptor[7]);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols2, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[7]);
+    assert(kowhai_get_node(settings_tree.desc, 3, symbols2, &offset, &node) == KOW_STATUS_OK);
     assert(offset == 66);
-    assert(node == &settings_descriptor[8]);
-    assert(kowhai_get_node(settings_descriptor, 2, symbols3, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[8]);
+    assert(kowhai_get_node(settings_tree.desc, 2, symbols3, &offset, &node) == KOW_STATUS_OK);
     assert(offset == 0);
-    assert(node == &settings_descriptor[1]);
-    assert(kowhai_get_node(settings_descriptor, 2, symbols4, &offset, &node) == KOW_STATUS_INVALID_SYMBOL_PATH);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols6, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[1]);
+    assert(kowhai_get_node(settings_tree.desc, 2, symbols4, &offset, &node) == KOW_STATUS_INVALID_SYMBOL_PATH);
+    assert(kowhai_get_node(settings_tree.desc, 3, symbols6, &offset, &node) == KOW_STATUS_OK);
     assert(offset == 4);
-    assert(node == &settings_descriptor[3]);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols8, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[3]);
+    assert(kowhai_get_node(settings_tree.desc, 3, symbols8, &offset, &node) == KOW_STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 4);
-    assert(node == &settings_descriptor[3]);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols9, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[3]);
+    assert(kowhai_get_node(settings_tree.desc, 3, symbols9, &offset, &node) == KOW_STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
-    assert(node == &settings_descriptor[4]);
-    assert(kowhai_get_node(settings_descriptor, 3, symbols10, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[4]);
+    assert(kowhai_get_node(settings_tree.desc, 3, symbols10, &offset, &node) == KOW_STATUS_OK);
     assert(offset == 8 + 3 * 4);
-    assert(node == &settings_descriptor[4]);
-    assert(kowhai_get_node(settings_descriptor, 2, symbols12, &offset, &node) == KOW_STATUS_OK);
+    assert(node == &settings_tree.desc[4]);
+    assert(kowhai_get_node(settings_tree.desc, 2, symbols12, &offset, &node) == KOW_STATUS_OK);
     assert(offset == sizeof(struct flux_capacitor_t));
-    assert(node == &settings_descriptor[1]);
+    assert(node == &settings_tree.desc[1]);
     printf(" passed!\n");
 
     // test get node size
-    printf("test kowhai_get_node_size...\t\t");
-    assert(kowhai_get_node_size(settings_descriptor, &size) == KOW_STATUS_OK);
+    printf("test kowhai_get_node_size & kowhai_get_node_count...\t\t");
+    assert(kowhai_get_node_size(settings_tree.desc, &size) == KOW_STATUS_OK);
     assert(size == sizeof(struct settings_data_t));
+    assert(kowhai_get_node_count(settings_tree.desc, &count) == KOW_STATUS_OK);
+    assert(count == sizeof(settings_descriptor)/sizeof(struct kowhai_node_t));
+    assert(kowhai_get_node_count(&settings_tree.desc[2], &count) == KOW_STATUS_OK);
+    assert(count == 1);
     printf(" passed!\n");
 
     // test read/write settings
     printf("test kowhai_read/kowhai_write...\t");
     status = 1;
     shadow.status = 0;
-    assert(kowhai_write(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1) == KOW_STATUS_OK);
+    assert(kowhai_write(&shadow_tree, 2, symbols5, 0, &status, 1) == KOW_STATUS_OK);
     assert(shadow.status == 1);
     status = 0;
-    assert(kowhai_read(shadow_descriptor, &shadow, 2, symbols5, 0, &status, 1) == KOW_STATUS_OK);
+    assert(kowhai_read(&shadow_tree, 2, symbols5, 0, &status, 1) == KOW_STATUS_OK);
     assert(status == 1);
     timeout = 999;
     settings.oven.timeout = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)) == KOW_STATUS_OK);
+    assert(kowhai_write(&settings_tree, 3, symbols2, 0, &timeout, sizeof(timeout)) == KOW_STATUS_OK);
     assert(settings.oven.timeout == 999);
     timeout = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 3, symbols2, 0, &timeout, sizeof(timeout)) == KOW_STATUS_OK);
+    assert(kowhai_read(&settings_tree, 3, symbols2, 0, &timeout, sizeof(timeout)) == KOW_STATUS_OK);
     assert(timeout == 999);
     flux_capacitor.frequency = 100; flux_capacitor.gain = 200;
     settings.flux_capacitor[0].frequency = 0; settings.flux_capacitor[0].gain = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)) == KOW_STATUS_OK);
+    assert(kowhai_write(&settings_tree, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)) == KOW_STATUS_OK);
     assert(settings.flux_capacitor[0].frequency == 100 && settings.flux_capacitor[0].gain == 200);
     flux_capacitor.frequency = 0; flux_capacitor.gain = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)) == KOW_STATUS_OK);
+    assert(kowhai_read(&settings_tree, 2, symbols3, 0, &flux_capacitor, sizeof(flux_capacitor)) == KOW_STATUS_OK);
     assert(flux_capacitor.frequency == 100 && flux_capacitor.gain == 200);
     coeff = 999.9f;
     settings.flux_capacitor[1].coefficient[3] = 0;
-    assert(kowhai_write(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)) == KOW_STATUS_OK);
+    assert(kowhai_write(&settings_tree, 3, symbols9, 0, &coeff, sizeof(coeff)) == KOW_STATUS_OK);
     assert(settings.flux_capacitor[1].coefficient[3] == 999.9f);
     coeff = 0;
-    assert(kowhai_read(settings_descriptor, &settings, 3, symbols9, 0, &coeff, sizeof(coeff)) == KOW_STATUS_OK);
+    assert(kowhai_read(&settings_tree, 3, symbols9, 0, &coeff, sizeof(coeff)) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
 
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
     shadow.status = 0;
-    assert(kowhai_set_char(shadow_descriptor, &shadow, 2, symbols5, 255) == KOW_STATUS_OK);
+    assert(kowhai_set_char(&shadow_tree, 2, symbols5, 255) == KOW_STATUS_OK);
     assert(shadow.status == 255);
-    assert(kowhai_get_int8(shadow_descriptor, &shadow, 2, symbols5, &status) == KOW_STATUS_OK);
+    assert(kowhai_get_int8(&shadow_tree, 2, symbols5, &status) == KOW_STATUS_OK);
     assert(status == 255);
     settings.oven.temp = 0;
-    assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols1, 999) == KOW_STATUS_OK);
+    assert(kowhai_set_int16(&settings_tree, 3, symbols1, 999) == KOW_STATUS_OK);
     assert(settings.oven.temp == 999);
-    assert(kowhai_get_int16(settings_descriptor, &settings, 3, symbols1, &temp) == KOW_STATUS_OK);
+    assert(kowhai_get_int16(&settings_tree, 3, symbols1, &temp) == KOW_STATUS_OK);
     assert(temp == 999);
     settings.oven.timeout = 0;
-    assert(kowhai_set_int16(settings_descriptor, &settings, 3, symbols2, 999) == KOW_STATUS_OK);
+    assert(kowhai_set_int16(&settings_tree, 3, symbols2, 999) == KOW_STATUS_OK);
     assert(settings.oven.timeout == 999);
-    assert(kowhai_get_int16(settings_descriptor, &settings, 3, symbols2, &timeout) == KOW_STATUS_OK);
+    assert(kowhai_get_int16(&settings_tree, 3, symbols2, &timeout) == KOW_STATUS_OK);
     assert(timeout == 999);
     settings.flux_capacitor[0].gain = 0;
-    assert(kowhai_set_int32(settings_descriptor, &settings, 3, symbols6, 999) == KOW_STATUS_OK);
+    assert(kowhai_set_int32(&settings_tree, 3, symbols6, 999) == KOW_STATUS_OK);
     assert(settings.flux_capacitor[0].gain == 999);
-    assert(kowhai_get_int32(settings_descriptor, &settings, 3, symbols6, &gain) == KOW_STATUS_OK);
+    assert(kowhai_get_int32(&settings_tree, 3, symbols6, &gain) == KOW_STATUS_OK);
     assert(gain == 999);
     settings.flux_capacitor[0].coefficient[0] = 0;
-    assert(kowhai_set_float(settings_descriptor, &settings, 3, symbols7, 999.9f) == KOW_STATUS_OK);
+    assert(kowhai_set_float(&settings_tree, 3, symbols7, 999.9f) == KOW_STATUS_OK);
     assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
-    assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff) == KOW_STATUS_OK);
+    assert(kowhai_get_float(&settings_tree, 3, symbols7, &coeff) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
     printf(" passed!\n");
+
+    // test utils
+    merge_tests();
 
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)
