@@ -20,5 +20,6 @@
 #define SYM_BEEP		16
 #define SYM_DURATION		17
 #define SYM_PIXELS		18
+#define SYM_OWNER		19
 
 #endif
