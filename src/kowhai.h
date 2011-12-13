@@ -90,9 +90,9 @@ int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const uni
 int kowhai_get_node_size(const struct kowhai_node_t *node, int *size);
 
 /**
- * @brief calculate the complete count of nodes including any child nodes up to a branch end, ie count all the child nodes + this one - branch end nodes
+ * @brief calculate the complete count of nodes including any child nodes, ie count all the child nodes + this one
  * @param node start counting from here
- * @param count number of child nodes + this node - branch end nodes
+ * @param count number of child nodes + this node
  * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_node_count(const struct kowhai_node_t *node, int *count);

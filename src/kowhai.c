@@ -49,7 +49,7 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
     if (node->type != KOW_BRANCH_START)
     {
         _size = kowhai_get_node_type_size(node->type) * node->count;
-        *num_nodes_processed = 1;
+        *num_nodes_processed = 0;
         goto done;
     }
     
@@ -102,8 +102,10 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
 
 int kowhai_get_node_count(const struct kowhai_node_t *node, int *count)
 {
-    int size;
-    return get_node_size(node, &size, count);
+    int size, ret;
+    ret = get_node_size(node, &size, count);
+    (*count)++;
+    return ret;
 }
 
 /**
@@ -172,9 +174,7 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
             // propagate the error
             return ret;
         _offset += skip_size;
-        if (node[i].type == KOW_BRANCH_START)
-            i++;
-        i += skip_nodes;
+        i += skip_nodes + 1;
     }
 
 done:

@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
     assert(kowhai_get_node_size(settings_descriptor, &size) == KOW_STATUS_OK);
     assert(size == sizeof(struct settings_data_t));
     assert(kowhai_get_node_count(settings_descriptor, &count) == KOW_STATUS_OK);
-    assert(count == sizeof(settings_descriptor)/sizeof(struct kowhai_node_t) - 1);
+    assert(count == sizeof(settings_descriptor)/sizeof(struct kowhai_node_t));
     assert(kowhai_get_node_count(&settings_descriptor[2], &count) == KOW_STATUS_OK);
     assert(count == 1);
     printf(" passed!\n");
