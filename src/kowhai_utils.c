@@ -84,10 +84,6 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                         if (ret != KOW_STATUS_OK)
                             return ret;
                     }
-
-                    // find the number of nodes to skip (don't skip them now as we need to point at the branch_start to find 
-                    // its size below) we will skip it after that
-                    skip_nodes = ((unsigned int)__left.desc - (unsigned int)left->desc) / sizeof(struct kowhai_node_t);
                 }
                 else
                 {
@@ -175,9 +171,12 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
         ret = kowhai_get_node_size(left->desc, &size);
         if (ret != KOW_STATUS_OK)
             return ret;
+        ret = kowhai_get_node_count(left->desc, &skip_nodes);
+        if (ret != KOW_STATUS_OK)
+            return ret;
         left->data = (uint8_t *)left->data + size;
-        left->desc += skip_nodes + 1;    
-        
+        left->desc += skip_nodes;
+
         // if this tree is not nicely formed (ie wrapped in a branch start/end) then the next item may not be a 
         // branch end, instead we might just run off the end of the buffer so force a stop
         if (depth == 0)
