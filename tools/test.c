@@ -239,6 +239,7 @@ int main(int argc, char* argv[])
 
     uint16_t offset;
     int size;
+    int count;
     struct kowhai_node_t* node;
 
     uint8_t status;
@@ -290,10 +291,14 @@ int main(int argc, char* argv[])
     assert(node == &settings_descriptor[1]);
     printf(" passed!\n");
 
-    // test get node size
-    printf("test kowhai_get_node_size...\t\t");
+    // test get node size and count
+    printf("test kowhai_get_node_size & kowhai_get_node_count...\t\t");
     assert(kowhai_get_node_size(settings_descriptor, &size) == KOW_STATUS_OK);
     assert(size == sizeof(struct settings_data_t));
+    assert(kowhai_get_node_count(settings_descriptor, &count) == KOW_STATUS_OK);
+    assert(count == sizeof(settings_descriptor)/sizeof(struct kowhai_node_t) - 1);
+    assert(kowhai_get_node_count(&settings_descriptor[2], &count) == KOW_STATUS_OK);
+    assert(count == 1);
     printf(" passed!\n");
 
     // test read/write settings
