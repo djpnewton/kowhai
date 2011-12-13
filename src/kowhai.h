@@ -23,6 +23,7 @@ enum kowhai_node_type
     KOW_INT32,
     KOW_UINT32,
     KOW_FLOAT,
+	KOW_CHAR,
 };
 
 /**
