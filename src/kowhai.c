@@ -105,7 +105,7 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
  * @param node to start searching from for the given item
  * @param num_symbols number of items in the path (@todo should we just terminate the path instead)
  * @param symbols the path of the item to seek
- * @param offset set to number of bytes from the current branch to the item
+ * @param offset set to number of bytes from the current node to the requested symbol
  * @param target_node placeholder for the result of the node search
  * @param num_nodes_processed how many nodes were iterated over during this function call
  * @return < 0 on failure
