@@ -60,6 +60,7 @@ namespace kowhai_sharp
         public const int INT32 = 0x0074;
         public const int UINT32 = 0x0075;
         public const int FLOAT = 0x0076;
+        public const int CHAR = 0x0077;
         public const int READONLY = 0x8000;
 
         public static int RawDataType(int dataType)
@@ -103,6 +104,9 @@ namespace kowhai_sharp
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_float(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out float result);
+
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int kowhai_set_int8(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, byte value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, char value);
