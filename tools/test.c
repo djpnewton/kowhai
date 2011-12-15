@@ -360,9 +360,9 @@ int main(int argc, char* argv[])
     assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
     assert(kowhai_get_float(settings_descriptor, &settings, 3, symbols7, &coeff) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
-    sprintf(settings.flux_capacitor[0].owner, "Dr Brown\n");
+    sprintf(settings.flux_capacitor[0].owner, "Dr brown\n");
+	sprintf(settings.flux_capacitor[1].owner, "Marty McFly\n");
     assert(kowhai_set_char(settings_descriptor, &settings, 3, symbols13, 'B') == KOW_STATUS_OK);
-    assert(shadow.status == 255);
     assert(kowhai_get_char(settings_descriptor, &settings, 3, symbols13, &owner_initial) == KOW_STATUS_OK);
     assert(owner_initial == 'B');
     printf(" passed!\n");
