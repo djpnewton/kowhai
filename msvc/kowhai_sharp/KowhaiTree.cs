@@ -78,6 +78,8 @@ namespace kowhai_sharp
                     return "int8";
                 case Kowhai.UINT8:
                     return "uint8";
+                case Kowhai.CHAR:
+                    return "char";
                 case Kowhai.INT16:
                     return "int16";
                 case Kowhai.UINT16:
@@ -119,6 +121,12 @@ namespace kowhai_sharp
                         return (sbyte)data[info.Offset];
                     case Kowhai.UINT8:
                         return data[info.Offset];
+                    case Kowhai.CHAR:
+						// convert byte array to string
+                        string result = "";
+                        for (int i = info.Offset; i < info.Offset + info.KowhaiNode.count && data[i] != 0; i++)
+                           result += (char)data[i];
+                        return result;
                     case Kowhai.INT16:
                         return BitConverter.ToInt16(data, info.Offset);
                     case Kowhai.UINT16:
@@ -136,6 +144,7 @@ namespace kowhai_sharp
 
         private byte[] TextToData(string text, ushort dataType)
         {
+            byte[] result = new byte[text.Length + 1];  // +1 for NULL
             switch (dataType)
             {
                 case Kowhai.INT8:
@@ -152,6 +161,12 @@ namespace kowhai_sharp
                     return BitConverter.GetBytes(Convert.ToUInt32(text));
                 case Kowhai.FLOAT:
                     return BitConverter.GetBytes(Convert.ToSingle(text));
+                case Kowhai.CHAR:
+                    // convert string to a byte array
+                    for (int i = 0; i < text.Length; i++)
+                        result[i] = (byte)text[i];
+                    result[text.Length] = 0;
+                    return result;
             }
             return null;
         }
@@ -176,6 +191,8 @@ namespace kowhai_sharp
                 return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
             if (info != null && info.IsArrayItem)
                 return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
+            else if (node.type == Kowhai.CHAR)
+                return string.Format("{0}{1}{2}: {3} = \"{4}\"", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.type), GetDataValue(info));
             else if (node.count > 1)
                 return string.Format("{0}{1}{2}: {3}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node), GetDataTypeString(node.type));
             else
@@ -231,7 +248,7 @@ namespace kowhai_sharp
                         if (leaf.Parent != null)
                             parentNodeInfo = (KowhaiNodeInfo)leaf.Parent.Tag;
                         leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentNodeInfo);
-                        if (descNode.count > 1)
+                        if (descNode.count > 1 && descNode.type != Kowhai.CHAR)
                         {
                             for (ushort i = 0; i < descNode.count; i++)
                             {
@@ -241,7 +258,7 @@ namespace kowhai_sharp
                             }
                         }
                         else
-                            offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
+                            offset += (ushort)(Kowhai.kowhai_get_node_type_size(descNode.type) * descNode.count);
                         break;
                 }
                 index++;
