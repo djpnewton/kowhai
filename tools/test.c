@@ -21,7 +21,7 @@
 
 #define FLUX_CAP_COUNT 2
 #define COEFF_COUNT    6
-#define OWNER_MAX_LEN  128
+#define OWNER_MAX_LEN  12
 
 struct kowhai_node_t settings_descriptor[] =
 {
