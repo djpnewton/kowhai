@@ -291,16 +291,62 @@ int kowhai_serialize(struct kowhai_node_t* descriptor, void* data, int data_size
     return KOW_STATUS_OK;
 }
 
-int get_token_integer(jsmn_parser* parser, jsmntok_t* tok, uint16_t* value)
+int copy_string_from_token(const char* js, jsmntok_t* tok, char* dest, int dest_size)
 {
-#define TEMP_SIZE 100
-    char temp[TEMP_SIZE];
     int token_string_size = tok->end - tok->start;
-    if (token_string_size < TEMP_SIZE)
+    if (token_string_size < dest_size)
     {
-        strncpy(temp, parser->js + tok->start, token_string_size);
-        temp[token_string_size] = 0;
+        strncpy(dest, js + tok->start, token_string_size);
+        dest[token_string_size] = 0;
+        return 1;
+    }
+    return 0;
+}
+
+#define TEMP_SIZE 100
+
+int get_token_uint8(jsmn_parser* parser, jsmntok_t* tok, uint8_t* value)
+{
+    char temp[TEMP_SIZE];
+    if (copy_string_from_token(parser->js, tok, temp, TEMP_SIZE))
+    {
         *value = atoi(temp);
+        return KOW_STATUS_OK;
+    }
+    else
+        return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
+}
+
+int get_token_uint16(jsmn_parser* parser, jsmntok_t* tok, uint16_t* value)
+{
+    char temp[TEMP_SIZE];
+    if (copy_string_from_token(parser->js, tok, temp, TEMP_SIZE))
+    {
+        *value = atoi(temp);
+        return KOW_STATUS_OK;
+    }
+    else
+        return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
+}
+
+int get_token_uint32(jsmn_parser* parser, jsmntok_t* tok, uint32_t* value)
+{
+    char temp[TEMP_SIZE];
+    if (copy_string_from_token(parser->js, tok, temp, TEMP_SIZE))
+    {
+        *value = atol(temp);
+        return KOW_STATUS_OK;
+    }
+    else
+        return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
+}
+
+int get_token_float(jsmn_parser* parser, jsmntok_t* tok, float* value)
+{
+    char temp[TEMP_SIZE];
+    if (copy_string_from_token(parser->js, tok, temp, TEMP_SIZE))
+    {
+        *value = (float)atof(temp);
         return KOW_STATUS_OK;
     }
     else
@@ -313,7 +359,7 @@ int token_string_match(jsmn_parser* parser, jsmntok_t* tok, char* str)
         strncmp(parser->js + tok->start, str, strlen(str)) == 0;
 }
 
-int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* desc, int* desc_size, int* desc_nodes_populated)
+int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* desc, int* desc_size, int* desc_nodes_populated, void* data, void* data_size, int* data_offset)
 {
 #define INC { i++; token_index++; continue; }
     int initial_token_index = token_index;
@@ -321,6 +367,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
     int i;
     int res;
     *desc_nodes_populated = 0;
+    *data_offset = 0;
     if (parser->tokens[token_index].type == JSMN_OBJECT)
     {
         int token_is_branch = 0;
@@ -334,35 +381,91 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
             {
                 if (token_string_match(parser, tok, TYPE))
                 {
-                    res = get_token_integer(parser, tok + 1, &desc->type);
+                    res = get_token_uint16(parser, tok + 1, &desc->type);
                     if (res != KOW_STATUS_OK)
                         return -1;
                     INC;
                 }
                 else if (token_string_match(parser, tok, SYMBOL))
                 {
-                    res = get_token_integer(parser, tok + 1, &desc->symbol);
+                    res = get_token_uint16(parser, tok + 1, &desc->symbol);
                     if (res != KOW_STATUS_OK)
                         return -1;
                     INC;
                 }
                 else if (token_string_match(parser, tok, COUNT))
                 {
-                    res = get_token_integer(parser, tok + 1, &desc->count);
+                    res = get_token_uint16(parser, tok + 1, &desc->count);
                     if (res != KOW_STATUS_OK)
                         return -1;
                     INC;
                 }
                 else if (token_string_match(parser, tok, TAG))
                 {
-                    res = get_token_integer(parser, tok + 1, &desc->tag);
+                    res = get_token_uint16(parser, tok + 1, &desc->tag);
                     if (res != KOW_STATUS_OK)
                         return -1;
                     INC;
                 }
+                else if (token_string_match(parser, tok, VALUE))
+                {
+                    switch (desc->type)
+                    {
+                        case KOW_UINT8:
+                        case KOW_INT8:
+                        {
+                            uint8_t value;
+                            //TODO: could probably call get_token_uint32 instead and remove get_token_uint8 (needs testing)
+                            res = get_token_uint8(parser, tok + 1, &value);
+                            if (res != KOW_STATUS_OK)
+                                return -1;
+                            *((uint8_t*)data) = value;
+                            (char*)data += sizeof(uint8_t);
+                            *data_offset += sizeof(uint8_t);
+                            break;
+                        }
+                        case KOW_UINT16:
+                        case KOW_INT16:
+                        {
+                            uint16_t value;
+                            //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
+                            res = get_token_uint16(parser, tok + 1, &value);
+                            if (res != KOW_STATUS_OK)
+                                return -1;
+                            *((uint16_t*)data) = value;
+                            (char*)data += sizeof(uint16_t);
+                            *data_offset += sizeof(uint16_t);
+                            break;
+                        }
+                        case KOW_UINT32:
+                        case KOW_INT32:
+                        {
+                            uint32_t value;
+                            res = get_token_uint32(parser, tok + 1, &value);
+                            if (res != KOW_STATUS_OK)
+                                return -1;
+                            *((uint32_t*)data) = value;
+                            (char*)data += sizeof(uint32_t);
+                            *data_offset += sizeof(uint32_t);
+                            break;
+                        }
+                        case KOW_FLOAT:
+                        {
+                            float value;
+                            res = get_token_float(parser, tok + 1, &value);
+                            if (res != KOW_STATUS_OK)
+                                return -1;
+                            *((float*)data) = value;
+                            (char*)data += sizeof(float);
+                            *data_offset += sizeof(float);
+                            break;
+                        }
+                    }
+                    INC;
+                }
                 else if (token_string_match(parser, tok, CHILDREN))
                 {
-                    int k, nodes_populated;
+                    int k, nodes_populated, _data_offset;
                     jsmntok_t* array_tok = tok + 1;
                     i++;
                     token_index++;
@@ -371,7 +474,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                         token_index++;
                         for (k = 0; k < array_tok->size; k++)
                         {
-                            res = process_token(parser, token_index, desc + 1, desc_size, &nodes_populated);
+                            res = process_token(parser, token_index, desc + 1, desc_size, &nodes_populated, data, data_size, &_data_offset);
                             if (res >= 0)
                             {
                                 token_index += res;
@@ -379,6 +482,8 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                     token_index++;
                                 desc += nodes_populated;
                                 *desc_nodes_populated += nodes_populated;
+                                (char*)data += _data_offset;
+                                *data_offset += _data_offset;
                             }
                         }
                     }
@@ -400,7 +505,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
 
 int deserialize_node(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* desc, int* desc_size, void* data, int* data_size)
 {
-    int desc_nodes_populated;
+    int desc_nodes_populated, data_offset;
     jsmn_parser parser;
     jsmntok_t* tokens = (jsmntok_t*)scratch;
     int token_count = scratch_size / sizeof(jsmntok_t);
@@ -419,9 +524,9 @@ int deserialize_node(char* buffer, void* scratch, int scratch_size, struct kowha
     //
     // TODO: !!!
     //   - Check the descriptor buffer size and bail out if we run out of slots
-    //   - Deserialize the data also
+    //   - Check the data buffer size and bail out if we run out of space
     //
-    process_token(&parser, 0, desc, desc_size, &desc_nodes_populated);
+    process_token(&parser, 0, desc, desc_size, &desc_nodes_populated, data, data_size, &data_offset);
     *desc_size = desc_nodes_populated;
 
     return KOW_STATUS_OK;

@@ -249,8 +249,7 @@ namespace kowhai_test
                 if (KowhaiSerialize.Deserialize(text, out descriptor, out data) == Kowhai.STATUS_OK)
                 {
                     kowhaiTreeActions.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
-                    //TODO: kowhaiTreeActions.UpdateData(data, 0);
-                    MessageBox.Show("whoop!");
+                    kowhaiTreeActions.UpdateData(data, 0);
                 }
             }
         }
