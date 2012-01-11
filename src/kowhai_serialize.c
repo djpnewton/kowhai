@@ -409,59 +409,71 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                 }
                 else if (token_string_match(parser, tok, VALUE))
                 {
-                    switch (desc->type)
+                    int k;
+                    i++;
+                    if (desc->count > 1)
                     {
-                        case KOW_UINT8:
-                        case KOW_INT8:
+                        token_index++;
+                        tok++;
+                    }
+                    for (k = 0; k < desc->count; k++)
+                    {
+                        token_index++;
+                        tok++;
+                        switch (desc->type)
                         {
-                            uint8_t value;
-                            //TODO: could probably call get_token_uint32 instead and remove get_token_uint8 (needs testing)
-                            res = get_token_uint8(parser, tok + 1, &value);
-                            if (res != KOW_STATUS_OK)
-                                return -1;
-                            *((uint8_t*)data) = value;
-                            (char*)data += sizeof(uint8_t);
-                            *data_offset += sizeof(uint8_t);
-                            break;
-                        }
-                        case KOW_UINT16:
-                        case KOW_INT16:
-                        {
-                            uint16_t value;
-                            //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
-                            res = get_token_uint16(parser, tok + 1, &value);
-                            if (res != KOW_STATUS_OK)
-                                return -1;
-                            *((uint16_t*)data) = value;
-                            (char*)data += sizeof(uint16_t);
-                            *data_offset += sizeof(uint16_t);
-                            break;
-                        }
-                        case KOW_UINT32:
-                        case KOW_INT32:
-                        {
-                            uint32_t value;
-                            res = get_token_uint32(parser, tok + 1, &value);
-                            if (res != KOW_STATUS_OK)
-                                return -1;
-                            *((uint32_t*)data) = value;
-                            (char*)data += sizeof(uint32_t);
-                            *data_offset += sizeof(uint32_t);
-                            break;
-                        }
-                        case KOW_FLOAT:
-                        {
-                            float value;
-                            res = get_token_float(parser, tok + 1, &value);
-                            if (res != KOW_STATUS_OK)
-                                return -1;
-                            *((float*)data) = value;
-                            (char*)data += sizeof(float);
-                            *data_offset += sizeof(float);
-                            break;
+                            case KOW_UINT8:
+                            case KOW_INT8:
+                            {
+                                uint8_t value;
+                                //TODO: could probably call get_token_uint32 instead and remove get_token_uint8 (needs testing)
+                                res = get_token_uint8(parser, tok, &value);
+                                if (res != KOW_STATUS_OK)
+                                    return -1;
+                                *((uint8_t*)data) = value;
+                                (char*)data += sizeof(uint8_t);
+                                *data_offset += sizeof(uint8_t);
+                                break;
+                            }
+                            case KOW_UINT16:
+                            case KOW_INT16:
+                            {
+                                uint16_t value;
+                                //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
+                                res = get_token_uint16(parser, tok, &value);
+                                if (res != KOW_STATUS_OK)
+                                    return -1;
+                                *((uint16_t*)data) = value;
+                                (char*)data += sizeof(uint16_t);
+                                *data_offset += sizeof(uint16_t);
+                                break;
+                            }
+                            case KOW_UINT32:
+                            case KOW_INT32:
+                            {
+                                uint32_t value;
+                                res = get_token_uint32(parser, tok, &value);
+                                if (res != KOW_STATUS_OK)
+                                    return -1;
+                                *((uint32_t*)data) = value;
+                                (char*)data += sizeof(uint32_t);
+                                *data_offset += sizeof(uint32_t);
+                                break;
+                            }
+                            case KOW_FLOAT:
+                            {
+                                float value;
+                                res = get_token_float(parser, tok, &value);
+                                if (res != KOW_STATUS_OK)
+                                    return -1;
+                                *((float*)data) = value;
+                                (char*)data += sizeof(float);
+                                *data_offset += sizeof(float);
+                                break;
+                            }
                         }
                     }
-                    INC;
+                    continue;
                 }
                 else if (token_string_match(parser, tok, CHILDREN))
                 {
