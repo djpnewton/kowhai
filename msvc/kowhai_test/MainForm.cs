@@ -220,8 +220,9 @@ namespace kowhai_test
 
         private void btnSave_Click(object sender, EventArgs e)
         {
+            KowhaiTree tree = GetTreeFromRadioButtonSelection();
             string text;
-            if (KowhaiSerialize.Serialize(kowhaiTreeActions.GetDescriptor(), kowhaiTreeActions.GetData(), out text, 0x1000, getSymbolName) == Kowhai.STATUS_OK)
+            if (KowhaiSerialize.Serialize(tree.GetDescriptor(), tree.GetData(), out text, 0x1000, getSymbolName) == Kowhai.STATUS_OK)
             {
                 SaveFileDialog d = new SaveFileDialog();
                 d.Filter = "Kowhai Files | *.kowhai";
@@ -240,16 +241,16 @@ namespace kowhai_test
             OpenFileDialog d = new OpenFileDialog();
             d.Filter = "Kowhai Files | *.kowhai";
             d.DefaultExt = "kowhai";
-            //TODO: use OpenFileDialog
-            //if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                string text = System.IO.File.ReadAllText("C:\\Users\\daniel\\Documents\\test.kowhai"/*d.FileName*/);
+                string text = System.IO.File.ReadAllText(d.FileName);
                 Kowhai.kowhai_node_t[] descriptor;
                 byte[] data;
+                KowhaiTree tree = GetTreeFromRadioButtonSelection();
                 if (KowhaiSerialize.Deserialize(text, out descriptor, out data) == Kowhai.STATUS_OK)
                 {
-                    kowhaiTreeActions.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
-                    kowhaiTreeActions.UpdateData(data, 0);
+                    tree.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
+                    tree.UpdateData(data, 0);
                 }
             }
         }
@@ -291,6 +292,19 @@ namespace kowhai_test
             if (sender == kowhaiTreeScope)
                 return TREE_ID_SCOPE;
             return 255;
+        }
+
+        KowhaiTree GetTreeFromRadioButtonSelection()
+        {
+            if (rbSettings.Checked)
+                return kowhaiTreeSettings;
+            if (rbShadow.Checked)
+                return kowhaiTreeShadow;
+            if (rbActions.Checked)
+                return kowhaiTreeActions;
+            if (rbScope.Checked)
+                return kowhaiTreeScope;
+            return null;
         }
 
         private Kowhai.kowhai_node_t[] GetDescriptor(object sender)
