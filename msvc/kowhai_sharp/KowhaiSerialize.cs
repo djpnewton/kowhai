@@ -30,22 +30,31 @@ namespace kowhai_sharp
 
         public static int Deserialize(string buffer, out Kowhai.kowhai_node_t[] descriptor, out byte[] data)
         {
-            //TODO: check for "buffer too small" errors and increase sizes
-            byte[] scratch = new byte[0x1000];
-            descriptor = new Kowhai.kowhai_node_t[0x1000];
-            data = new byte[0x1000];
-            int scratch_size = 0x1000;
-            int descriptor_size = 0x1000;
-            int data_size = 0x1000;
+            int bufferSize = 0x100;
 
-            GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
-            int result = kowhai_deserialize(buffer, scratch, scratch_size, h.AddrOfPinnedObject(), ref descriptor_size, data, ref data_size);
-            h.Free();
-            if (result == Kowhai.STATUS_OK)
+            int result;
+            do
             {
-                Array.Resize(ref descriptor, descriptor_size);
-                Array.Resize(ref data, data_size);
+                byte[] scratch = new byte[bufferSize];
+                descriptor = new Kowhai.kowhai_node_t[bufferSize];
+                data = new byte[bufferSize];
+                int descriptorSize = bufferSize;
+                int dataSize = bufferSize;
+
+                GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
+                result = kowhai_deserialize(buffer, scratch, bufferSize, h.AddrOfPinnedObject(), ref descriptorSize, data, ref dataSize);
+                h.Free();
+
+                if (result == Kowhai.STATUS_OK)
+                {
+                    Array.Resize(ref descriptor, descriptorSize);
+                    Array.Resize(ref data, dataSize);
+                }
+
+                bufferSize *= 2;
             }
+            while (result == Kowhai.STATUS_SCRATCH_TOO_SMALL || result == Kowhai.STATUS_TARGET_BUFFER_TOO_SMALL);
+
             return result;
         }
     }

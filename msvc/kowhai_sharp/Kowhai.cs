@@ -81,6 +81,8 @@ namespace kowhai_sharp
         public const int STATUS_INVALID_PROTOCOL_COMMAND = 7;
         public const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
         public const int STATUS_TARGET_BUFFER_TOO_SMALL = 9;
+        public const int STATUS_BUFFER_INVALID = 10;
+        public const int STATUS_SCRATCH_TOO_SMALL = 11;
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node_type_size(uint16_t type);
