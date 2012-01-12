@@ -372,7 +372,7 @@ int token_string_match(jsmn_parser* parser, jsmntok_t* tok, char* str)
         strncmp(parser->js + tok->start, str, strlen(str)) == 0;
 }
 
-int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* desc, int* desc_size, int* desc_nodes_populated, void* data, void* data_size, int* data_offset)
+int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* desc, int desc_size, int* desc_nodes_populated, void* data, int data_size, int* data_offset)
 {
 #define INC { i++; token_index++; continue; }
     int initial_token_index = token_index;
@@ -381,6 +381,10 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
     int res;
     *desc_nodes_populated = 0;
     *data_offset = 0;
+
+    if (desc_size < 1)
+        return -2;
+
     if (parser->tokens[token_index].type == JSMN_OBJECT)
     {
         int token_is_branch = 0;
@@ -447,8 +451,11 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_uint8(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
+                                if ((*data_offset) + sizeof(uint8_t) > data_size)
+                                    return -3;
                                 *((uint8_t*)data) = value;
                                 data = (char*)data + sizeof(uint8_t);
+                                data_size -= sizeof(uint8_t);
                                 *data_offset += sizeof(uint8_t);
                                 break;
                             }
@@ -460,8 +467,11 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_uint16(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
+                                if ((*data_offset) + sizeof(uint16_t) > data_size)
+                                    return -3;
                                 *((uint16_t*)data) = value;
                                 data = (char*)data + sizeof(uint16_t);
+                                data_size -= sizeof(uint16_t);
                                 *data_offset += sizeof(uint16_t);
                                 break;
                             }
@@ -472,8 +482,11 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_uint32(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
+                                if ((*data_offset) + sizeof(uint32_t) > data_size)
+                                    return -3;
                                 *((uint32_t*)data) = value;
                                 data = (char*)data + sizeof(uint32_t);
+                                data_size -= sizeof(uint32_t);
                                 *data_offset += sizeof(uint32_t);
                                 break;
                             }
@@ -483,8 +496,11 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_float(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
+                                if ((*data_offset) + sizeof(float) > data_size)
+                                    return -3;
                                 *((float*)data) = value;
                                 data = (char*)data + sizeof(float);
+                                data_size -= sizeof(float);
                                 *data_offset += sizeof(float);
                                 break;
                             }
@@ -518,17 +534,21 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                             token_index++;
                             for (k = 0; k < array_tok->size; k++)
                             {
-                                res = process_token(parser, token_index, desc + 1, desc_size, &nodes_populated, data, data_size, &_data_offset);
+                                res = process_token(parser, token_index, desc + 1, desc_size - 1, &nodes_populated, data, data_size, &_data_offset);
                                 if (res >= 0)
                                 {
                                     token_index += res;
                                     if (k < array_tok->size - 1)
                                         token_index++;
                                     desc += nodes_populated;
+                                    desc_size -= nodes_populated;
                                     *desc_nodes_populated += nodes_populated;
                                     data = (char*)data + _data_offset;
+                                    data_size -= _data_offset;
                                     *data_offset += _data_offset;
                                 }
+                                else
+                                    return res;
                             }
                         }
                         if (parent_array_index < parent_array_size - 1)
@@ -541,6 +561,11 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
         if (token_is_branch)
         {
             desc++;
+            desc_size--;
+
+            if (desc_size < 1)
+                return -2;
+
             desc->type = KOW_BRANCH_END;
             desc->symbol = desc->symbol;
             (*desc_nodes_populated)++;
@@ -552,7 +577,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
 
 int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size)
 {
-    int desc_nodes_populated, data_offset;
+    int desc_nodes_populated, data_offset, result;
     jsmn_parser parser;
     jsmntok_t* tokens = (jsmntok_t*)scratch;
     int token_count = scratch_size / sizeof(jsmntok_t);
@@ -568,13 +593,17 @@ int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kow
             return KOW_STATUS_SCRATCH_TOO_SMALL;
     }
 
-    //
-    // TODO: !!!
-    //   - Check the descriptor buffer size and bail out if we run out of slots
-    //   - Check the data buffer size and bail out if we run out of space
-    //
-    process_token(&parser, 0, descriptor, descriptor_size, &desc_nodes_populated, data, data_size, &data_offset);
+    result = process_token(&parser, 0, descriptor, *descriptor_size, &desc_nodes_populated, data, *data_size, &data_offset);
+    switch (result)
+    {
+        case -1:
+            return KOW_STATUS_BUFFER_INVALID;
+        case -2:
+        case -3:
+            return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
+    }
     *descriptor_size = desc_nodes_populated;
+    *data_size = data_offset;
 
     return KOW_STATUS_OK;
 }

@@ -366,18 +366,37 @@ int main(int argc, char* argv[])
     // test serialization
     printf("test kowhai_serialize/kowhai_deserialize...\n");
     {
-        int dat_size = 0x1000;
-        char* dat = (char*)malloc(dat_size);
-        assert(dat != NULL);
-        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, &dat_size, get_symbol_name) == KOW_STATUS_OK);
+        // kowhai_serialize
+        int buf_size = 0x1000;
+        int desc_size = buf_size;
+        int data_size = buf_size;
+        char* js = (char*)malloc(buf_size);
+        char* scratch = (char*)malloc(buf_size);
+        struct kowhai_node_t* desc = (struct kowhai_node_t*)malloc(desc_size);
+        char* data = (char*)malloc(data_size);
+        assert(js != NULL && scratch != NULL && desc != NULL && data != NULL);
+        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), js, &buf_size, get_symbol_name) == KOW_STATUS_OK);
         printf("---\n");
-        printf(dat);
-        printf("\n---\n");
-        dat_size = 100;
-        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, &dat_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
-        printf(" passed!\n");
+        printf(js);
+        printf("\n***\n");
+        printf("js length: %d\n", strlen(js));
+        printf("---\n");
+        buf_size = 100;
+        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), js, &buf_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+        // kowhai_deserialize
+        buf_size = 0x1000;
+        desc_size = 10;
+        data_size = 10;
+        assert(kowhai_deserialize(js, scratch, 100, desc, &desc_size, data, &data_size) == KOW_STATUS_SCRATCH_TOO_SMALL);
+        assert(kowhai_deserialize(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+        desc_size = buf_size / sizeof(struct kowhai_node_t);
+        assert(kowhai_deserialize(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+        data_size = buf_size;
+        assert(kowhai_deserialize(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_OK);
+        assert(desc_size == sizeof(settings_descriptor) / sizeof(struct kowhai_node_t));
+        assert(data_size == sizeof(settings));
 
-        //TODO: test deserialization here
+        printf(" passed!\n");
     }
 
     // test server protocol
