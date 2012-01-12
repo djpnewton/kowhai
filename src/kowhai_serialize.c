@@ -372,6 +372,10 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
     {
         int token_is_branch = 0;
         jsmntok_t* parent_tok = &parser->tokens[token_index];
+
+        token_index = initial_token_index;
+        desc = initial_desc;
+
         for (i = 0; i < parent_tok->size; i++)
         {
             jsmntok_t* tok;
@@ -475,29 +479,47 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                     }
                     continue;
                 }
-                else if (token_string_match(parser, tok, CHILDREN))
+                else if (token_string_match(parser, tok, CHILDREN) ||
+                            token_string_match(parser, tok, ARRAY))
                 {
+                    int parent_array_index;
+                    int parent_array_size = 1, start_nodes_populated = *desc_nodes_populated;
                     int k, nodes_populated, _data_offset;
                     jsmntok_t* array_tok = tok + 1;
                     i++;
                     token_index++;
-                    if (array_tok->size > 0)
+
+                    if (token_string_match(parser, tok, ARRAY))
                     {
+                        parent_array_size = array_tok->size;
+                        array_tok = array_tok + 1;
                         token_index++;
-                        for (k = 0; k < array_tok->size; k++)
+                    }
+                    for (parent_array_index = 0; parent_array_index < parent_array_size; parent_array_index++)
+                    {
+                        desc = initial_desc;
+                        *desc_nodes_populated = start_nodes_populated;
+
+                        if (array_tok->size > 0)
                         {
-                            res = process_token(parser, token_index, desc + 1, desc_size, &nodes_populated, data, data_size, &_data_offset);
-                            if (res >= 0)
+                            token_index++;
+                            for (k = 0; k < array_tok->size; k++)
                             {
-                                token_index += res;
-                                if (k < array_tok->size - 1)
-                                    token_index++;
-                                desc += nodes_populated;
-                                *desc_nodes_populated += nodes_populated;
-                                (char*)data += _data_offset;
-                                *data_offset += _data_offset;
+                                res = process_token(parser, token_index, desc + 1, desc_size, &nodes_populated, data, data_size, &_data_offset);
+                                if (res >= 0)
+                                {
+                                    token_index += res;
+                                    if (k < array_tok->size - 1)
+                                        token_index++;
+                                    desc += nodes_populated;
+                                    *desc_nodes_populated += nodes_populated;
+                                    (char*)data += _data_offset;
+                                    *data_offset += _data_offset;
+                                }
                             }
                         }
+                        if (parent_array_index < parent_array_size - 1)
+                            token_index++;
                     }
                 }
             }
@@ -515,7 +537,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
     return token_index - initial_token_index;
 }
 
-int deserialize_node(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* desc, int* desc_size, void* data, int* data_size)
+int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size)
 {
     int desc_nodes_populated, data_offset;
     jsmn_parser parser;
@@ -538,14 +560,8 @@ int deserialize_node(char* buffer, void* scratch, int scratch_size, struct kowha
     //   - Check the descriptor buffer size and bail out if we run out of slots
     //   - Check the data buffer size and bail out if we run out of space
     //
-    process_token(&parser, 0, desc, desc_size, &desc_nodes_populated, data, data_size, &data_offset);
-    *desc_size = desc_nodes_populated;
+    process_token(&parser, 0, descriptor, descriptor_size, &desc_nodes_populated, data, data_size, &data_offset);
+    *descriptor_size = desc_nodes_populated;
 
     return KOW_STATUS_OK;
-}
-
-int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size)
-{
-    int result = deserialize_node(buffer, scratch, scratch_size, descriptor, descriptor_size, data, data_size);
-    return result;
 }

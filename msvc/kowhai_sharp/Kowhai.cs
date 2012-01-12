@@ -48,6 +48,10 @@ namespace kowhai_sharp
             public uint16_t symbol;
             public uint16_t count;
             public uint16_t tag;
+            public override string ToString()
+            {
+                return string.Format("kowhai_node_t - type: {0}, symbol: {1}, count: {2}, tag: {3}", type, symbol, count, tag);
+            }
         }
 
         public const int BRANCH = 0;
