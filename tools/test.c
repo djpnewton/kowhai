@@ -376,6 +376,8 @@ int main(int argc, char* argv[])
         dat_size = 100;
         assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), dat, &dat_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
         printf(" passed!\n");
+
+        //TODO: test deserialization here
     }
 
     // test server protocol

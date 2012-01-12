@@ -1,6 +1,5 @@
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
-#define snprintf _snprintf
 #endif
 
 #include "kowhai_serialize.h"
@@ -17,7 +16,7 @@ int debug_printf(char* buf, size_t buf_size, char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    return printf(format, args);
+    return vprintf(format, args);
     va_end(args);
 }
 
@@ -30,9 +29,23 @@ int debug_printf(char* buf, size_t buf_size, char* format, ...)
 #define ARRAY "array"
 #define CHILDREN "children"
 
+int write_string(char* buffer, size_t buffer_size, const char* format, ...)
+{
+    int result;
+    va_list args;
+    va_start(args, format);
+    result = vsnprintf(buffer, buffer_size, format, args);
+    va_end(args);
+
+    // we want to abort in the case of a truncated result
+    if (result > (long long)buffer_size)
+        return -1000;
+    return result;
+}
+
 int add_header(char** dest, size_t* dest_size, int* current_offset, struct kowhai_node_t* node, kowhai_get_symbol_name_t get_name)
 {
-    int chars = snprintf(*dest, *dest_size,
+    int chars = write_string(*dest, *dest_size,
             "{\""NAME"\": \"%s\", \""TYPE"\": %d, \""SYMBOL"\": %d, \""COUNT"\": %d, \""TAG"\": %d",
             get_name(node->symbol), node->type, node->symbol, node->count, node->tag);
     if (chars >= 0)
@@ -46,7 +59,7 @@ int add_header(char** dest, size_t* dest_size, int* current_offset, struct kowha
 
 int add_string(char** dest, size_t* dest_size, int* current_offset, char* string)
 {
-    int chars = snprintf(*dest, *dest_size, string);
+    int chars = write_string(*dest, *dest_size, string);
     if (chars >= 0)
     {
         *dest += chars;
@@ -75,25 +88,25 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     switch (node_type)
     {
         case KOW_INT8:
-            chars = snprintf(*dest, *dest_size, "%d", *((int8_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", *((int8_t*)data));
             break;
         case KOW_INT16:
-            chars = snprintf(*dest, *dest_size, "%d", *((int16_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", *((int16_t*)data));
             break;
         case KOW_INT32:
-            chars = snprintf(*dest, *dest_size, "%d", *((int32_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", *((int32_t*)data));
             break;
         case KOW_UINT8:
-            chars = snprintf(*dest, *dest_size, "%d", *((uint8_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", *((uint8_t*)data));
             break;
         case KOW_UINT16:
-            chars = snprintf(*dest, *dest_size, "%d", *((uint16_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", *((uint16_t*)data));
             break;
         case KOW_UINT32:
-            chars = snprintf(*dest, *dest_size, "%d", *((uint32_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", *((uint32_t*)data));
             break;
         case KOW_FLOAT:
-            chars = snprintf(*dest, *dest_size, "%f", *((float*)data));
+            chars = write_string(*dest, *dest_size, "%f", *((float*)data));
             break;
         default:
             return -1;
@@ -435,7 +448,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 if (res != KOW_STATUS_OK)
                                     return -1;
                                 *((uint8_t*)data) = value;
-                                (char*)data += sizeof(uint8_t);
+                                data = (char*)data + sizeof(uint8_t);
                                 *data_offset += sizeof(uint8_t);
                                 break;
                             }
@@ -448,7 +461,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 if (res != KOW_STATUS_OK)
                                     return -1;
                                 *((uint16_t*)data) = value;
-                                (char*)data += sizeof(uint16_t);
+                                data = (char*)data + sizeof(uint16_t);
                                 *data_offset += sizeof(uint16_t);
                                 break;
                             }
@@ -460,7 +473,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 if (res != KOW_STATUS_OK)
                                     return -1;
                                 *((uint32_t*)data) = value;
-                                (char*)data += sizeof(uint32_t);
+                                data = (char*)data + sizeof(uint32_t);
                                 *data_offset += sizeof(uint32_t);
                                 break;
                             }
@@ -471,7 +484,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 if (res != KOW_STATUS_OK)
                                     return -1;
                                 *((float*)data) = value;
-                                (char*)data += sizeof(float);
+                                data = (char*)data + sizeof(float);
                                 *data_offset += sizeof(float);
                                 break;
                             }
@@ -513,7 +526,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                         token_index++;
                                     desc += nodes_populated;
                                     *desc_nodes_populated += nodes_populated;
-                                    (char*)data += _data_offset;
+                                    data = (char*)data + _data_offset;
                                     *data_offset += _data_offset;
                                 }
                             }
