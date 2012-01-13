@@ -375,14 +375,15 @@ int main(int argc, char* argv[])
         struct kowhai_node_t* desc = (struct kowhai_node_t*)malloc(desc_size);
         char* data = (char*)malloc(data_size);
         assert(js != NULL && scratch != NULL && desc != NULL && data != NULL);
+        buf_size = 100;
+        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), js, &buf_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+        buf_size = 0x1000;
         assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), js, &buf_size, get_symbol_name) == KOW_STATUS_OK);
         printf("---\n");
         printf(js);
         printf("\n***\n");
         printf("js length: %d\n", strlen(js));
         printf("---\n");
-        buf_size = 100;
-        assert(kowhai_serialize(settings_descriptor, &settings, sizeof(settings), js, &buf_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
         // kowhai_deserialize
         buf_size = 0x1000;
         desc_size = 10;
