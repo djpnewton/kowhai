@@ -12,7 +12,7 @@ namespace kowhai_sharp
         public delegate string kowhai_get_symbol_name_t(UInt16 value);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int kowhai_serialize(IntPtr descriptor, byte[] data, int data_size, byte[] target_buffer, ref int target_size, kowhai_get_symbol_name_t get_name);
+        public static extern int kowhai_serialize(Kowhai.kowhai_tree_t tree, byte[] target_buffer, ref int target_size, kowhai_get_symbol_name_t get_name);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_deserialize(string buffer, byte[] scratch, int scratch_size, IntPtr descriptor, ref int descriptor_size, byte[] data, ref int data_size);
@@ -20,8 +20,11 @@ namespace kowhai_sharp
         public static int Serialize(Kowhai.kowhai_node_t[] descriptor, byte[] data, out string target, int targetBufferSize, kowhai_get_symbol_name_t getName)
         {
             byte[] targetBuf = new byte[targetBufferSize];
+            Kowhai.kowhai_tree_t tree;
             GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
-            int result = kowhai_serialize(h.AddrOfPinnedObject(), data, data.Length, targetBuf, ref targetBufferSize, getName);
+            tree.desc = h.AddrOfPinnedObject();
+            tree.data = data;
+            int result = kowhai_serialize(tree, targetBuf, ref targetBufferSize, getName);
             h.Free();
             ASCIIEncoding enc = new ASCIIEncoding();
             target = enc.GetString(targetBuf, 0, targetBufferSize);

@@ -54,6 +54,13 @@ namespace kowhai_sharp
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_tree_t
+        {
+            public IntPtr desc;
+            public byte[] data;
+        }
+
         public const int BRANCH = 0;
         public const int BRANCH_END = 1;
 
