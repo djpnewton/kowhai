@@ -46,6 +46,7 @@
     <Compile Include="KowhaiProtocol.cs" />
     <Compile Include="KowhaiSerialize.cs" />
     <Compile Include="KowhaiServer.cs" />
+    <Compile Include="KowhaiUtils.cs" />
     <Compile Include="NodeEditForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -28,13 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.btnRefreshTrees = new System.Windows.Forms.Button();
-            this.kowhaiTreeScope = new kowhai_sharp.KowhaiTree();
-            this.kowhaiTreeActions = new kowhai_sharp.KowhaiTree();
-            this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
-            this.kowhaiTreeSettings = new kowhai_sharp.KowhaiTree();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnLoad = new System.Windows.Forms.Button();
@@ -43,6 +39,11 @@
             this.rbActions = new System.Windows.Forms.RadioButton();
             this.rbShadow = new System.Windows.Forms.RadioButton();
             this.rbSettings = new System.Windows.Forms.RadioButton();
+            this.kowhaiTreeScope = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeActions = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeSettings = new kowhai_sharp.KowhaiTree();
+            this.btnMerge = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
@@ -58,54 +59,18 @@
             this.btnRefreshTrees.UseVisualStyleBackColor = true;
             this.btnRefreshTrees.Click += new System.EventHandler(this.btnRefreshTrees_Click);
             // 
-            // kowhaiTreeScope
-            // 
-            this.kowhaiTreeScope.ContextMenuEnabled = true;
-            this.kowhaiTreeScope.Location = new System.Drawing.Point(726, 52);
-            this.kowhaiTreeScope.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTreeScope.Name = "kowhaiTreeScope";
-            this.kowhaiTreeScope.Size = new System.Drawing.Size(233, 403);
-            this.kowhaiTreeScope.TabIndex = 4;
-            // 
-            // kowhaiTreeActions
-            // 
-            this.kowhaiTreeActions.ContextMenuEnabled = true;
-            this.kowhaiTreeActions.Location = new System.Drawing.Point(487, 52);
-            this.kowhaiTreeActions.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTreeActions.Name = "kowhaiTreeActions";
-            this.kowhaiTreeActions.Size = new System.Drawing.Size(233, 511);
-            this.kowhaiTreeActions.TabIndex = 3;
-            // 
-            // kowhaiTreeShadow
-            // 
-            this.kowhaiTreeShadow.ContextMenuEnabled = true;
-            this.kowhaiTreeShadow.Location = new System.Drawing.Point(250, 52);
-            this.kowhaiTreeShadow.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTreeShadow.Name = "kowhaiTreeShadow";
-            this.kowhaiTreeShadow.Size = new System.Drawing.Size(231, 511);
-            this.kowhaiTreeShadow.TabIndex = 2;
-            // 
-            // kowhaiTreeSettings
-            // 
-            this.kowhaiTreeSettings.ContextMenuEnabled = true;
-            this.kowhaiTreeSettings.Location = new System.Drawing.Point(12, 52);
-            this.kowhaiTreeSettings.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTreeSettings.Name = "kowhaiTreeSettings";
-            this.kowhaiTreeSettings.Size = new System.Drawing.Size(232, 511);
-            this.kowhaiTreeSettings.TabIndex = 1;
-            // 
             // chart1
             // 
-            chartArea1.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea1.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea1.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea1);
+            chartArea2.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
+            chartArea2.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
+            chartArea2.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea2);
             this.chart1.Location = new System.Drawing.Point(726, 460);
             this.chart1.Name = "chart1";
-            series1.ChartArea = "ChartArea1";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
-            series1.Name = "Series1";
-            this.chart1.Series.Add(series1);
+            series2.ChartArea = "ChartArea1";
+            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
+            series2.Name = "Series1";
+            this.chart1.Series.Add(series2);
             this.chart1.Size = new System.Drawing.Size(233, 100);
             this.chart1.TabIndex = 5;
             this.chart1.Text = "chart1";
@@ -133,6 +98,7 @@
             // panel1
             // 
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(this.btnMerge);
             this.panel1.Controls.Add(this.rbScope);
             this.panel1.Controls.Add(this.rbActions);
             this.panel1.Controls.Add(this.rbShadow);
@@ -141,13 +107,13 @@
             this.panel1.Controls.Add(this.btnLoad);
             this.panel1.Location = new System.Drawing.Point(134, 12);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(494, 34);
+            this.panel1.Size = new System.Drawing.Size(347, 66);
             this.panel1.TabIndex = 8;
             // 
             // rbScope
             // 
             this.rbScope.AutoSize = true;
-            this.rbScope.Location = new System.Drawing.Point(417, 6);
+            this.rbScope.Location = new System.Drawing.Point(251, 38);
             this.rbScope.Name = "rbScope";
             this.rbScope.Size = new System.Drawing.Size(69, 21);
             this.rbScope.TabIndex = 11;
@@ -158,7 +124,7 @@
             // rbActions
             // 
             this.rbActions.AutoSize = true;
-            this.rbActions.Location = new System.Drawing.Point(336, 6);
+            this.rbActions.Location = new System.Drawing.Point(165, 38);
             this.rbActions.Name = "rbActions";
             this.rbActions.Size = new System.Drawing.Size(75, 21);
             this.rbActions.TabIndex = 10;
@@ -189,6 +155,52 @@
             this.rbSettings.Tag = "0";
             this.rbSettings.Text = "Settings";
             this.rbSettings.UseVisualStyleBackColor = true;
+            // 
+            // kowhaiTreeScope
+            // 
+            this.kowhaiTreeScope.ContextMenuEnabled = true;
+            this.kowhaiTreeScope.Location = new System.Drawing.Point(726, 83);
+            this.kowhaiTreeScope.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.kowhaiTreeScope.Name = "kowhaiTreeScope";
+            this.kowhaiTreeScope.Size = new System.Drawing.Size(233, 372);
+            this.kowhaiTreeScope.TabIndex = 4;
+            // 
+            // kowhaiTreeActions
+            // 
+            this.kowhaiTreeActions.ContextMenuEnabled = true;
+            this.kowhaiTreeActions.Location = new System.Drawing.Point(487, 83);
+            this.kowhaiTreeActions.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.kowhaiTreeActions.Name = "kowhaiTreeActions";
+            this.kowhaiTreeActions.Size = new System.Drawing.Size(233, 480);
+            this.kowhaiTreeActions.TabIndex = 3;
+            // 
+            // kowhaiTreeShadow
+            // 
+            this.kowhaiTreeShadow.ContextMenuEnabled = true;
+            this.kowhaiTreeShadow.Location = new System.Drawing.Point(250, 83);
+            this.kowhaiTreeShadow.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.kowhaiTreeShadow.Name = "kowhaiTreeShadow";
+            this.kowhaiTreeShadow.Size = new System.Drawing.Size(231, 480);
+            this.kowhaiTreeShadow.TabIndex = 2;
+            // 
+            // kowhaiTreeSettings
+            // 
+            this.kowhaiTreeSettings.ContextMenuEnabled = true;
+            this.kowhaiTreeSettings.Location = new System.Drawing.Point(12, 83);
+            this.kowhaiTreeSettings.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.kowhaiTreeSettings.Name = "kowhaiTreeSettings";
+            this.kowhaiTreeSettings.Size = new System.Drawing.Size(232, 480);
+            this.kowhaiTreeSettings.TabIndex = 1;
+            // 
+            // btnMerge
+            // 
+            this.btnMerge.Location = new System.Drawing.Point(3, 35);
+            this.btnMerge.Name = "btnMerge";
+            this.btnMerge.Size = new System.Drawing.Size(156, 26);
+            this.btnMerge.TabIndex = 12;
+            this.btnMerge.Text = "Merge Left Box To..";
+            this.btnMerge.UseVisualStyleBackColor = true;
+            this.btnMerge.Click += new System.EventHandler(this.btnMerge_Click);
             // 
             // MainForm
             // 
@@ -229,5 +241,6 @@
         private System.Windows.Forms.RadioButton rbActions;
         private System.Windows.Forms.RadioButton rbShadow;
         private System.Windows.Forms.RadioButton rbSettings;
+        private System.Windows.Forms.Button btnMerge;
     }
 }

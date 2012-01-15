@@ -255,6 +255,18 @@ namespace kowhai_test
             }
         }
 
+        private void btnMerge_Click(object sender, EventArgs e)
+        {
+            KowhaiTree destTree = GetTreeFromRadioButtonSelection();
+            if (KowhaiUtils.Merge(new Kowhai.Tree(destTree.GetDescriptor(), destTree.GetData()),
+                new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData())) == Kowhai.STATUS_OK)
+            {
+                destTree.Update();
+            }
+            else
+                MessageBox.Show("Merge Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
         {
             if (treeId == TREE_ID_SETTINGS)

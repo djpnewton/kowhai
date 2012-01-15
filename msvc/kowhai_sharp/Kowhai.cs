@@ -61,6 +61,17 @@ namespace kowhai_sharp
             public byte[] data;
         }
 
+        public struct Tree
+        {
+            public kowhai_node_t[] Descriptor;
+            public byte[] Data;
+            public Tree(kowhai_node_t[] desc, byte[] data)
+            {
+                Descriptor = desc;
+                Data = data;
+            }
+        }
+
         public const int BRANCH = 0;
         public const int BRANCH_END = 1;
 

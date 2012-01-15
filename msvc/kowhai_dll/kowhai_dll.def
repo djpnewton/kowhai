@@ -20,3 +20,5 @@ EXPORTS
 	kowhai_server_process_packet
 	kowhai_serialize
 	kowhai_deserialize
+	kowhai_diff
+	kowhai_merge
