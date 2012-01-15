@@ -49,7 +49,7 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
     if (node->type != KOW_BRANCH_START)
     {
         _size = kowhai_get_node_type_size(node->type) * node->count;
-        *num_nodes_processed = 1;
+        *num_nodes_processed = 0;
         goto done;
     }
     
@@ -100,18 +100,26 @@ int kowhai_get_node_size(const struct kowhai_node_t *node, int *size)
     return get_node_size(node, size, &num_nodes_processed);
 }
 
+int kowhai_get_node_count(const struct kowhai_node_t *node, int *count)
+{
+    int size, ret;
+    ret = get_node_size(node, &size, count);
+    (*count)++;
+    return ret;
+}
+
 /**
  * @brief find a item in the tree given its path
  * @param node to start searching from for the given item
  * @param num_symbols number of items in the path (@todo should we just terminate the path instead)
  * @param symbols the path of the item to seek
- * @param offset set to number of bytes from the current branch to the item
+ * @param offset set to number of bytes from the current node to the requested symbol
  * @param target_node placeholder for the result of the node search
  * @param num_nodes_processed how many nodes were iterated over during this function call
  * @return < 0 on failure
  * @todo find the correct index (always 0 atm)
  */
-static int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch)
+int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch)
 {
     int i = 0;
     uint16_t _offset = 0;
@@ -166,9 +174,7 @@ static int get_node(const struct kowhai_node_t *node, int num_symbols, const uni
             // propagate the error
             return ret;
         _offset += skip_size;
-        if (node[i].type == KOW_BRANCH_START)
-            i++;
-        i += skip_nodes;
+        i += skip_nodes + 1;
     }
 
 done:
@@ -196,7 +202,7 @@ int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const uni
     return get_node(node, num_symbols, symbols, offset, target_node, 1);
 }
 
-int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size)
+int kowhai_read(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
@@ -204,7 +210,7 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
     int size;
 
     // find this node
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (read_offset < 0)
@@ -218,11 +224,11 @@ int kowhai_read(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_
         return KOW_STATUS_NODE_DATA_TOO_SMALL;
 
     // do read
-    memcpy(result, (char*)tree_data + offset + read_offset, read_size);
+    memcpy(result, (char*)tree->data + offset + read_offset, read_size);
     return status;
 }
 
-int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size)
+int kowhai_write(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
@@ -230,7 +236,7 @@ int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num
     int size;
     
     // find this node
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (write_offset < 0)
@@ -244,136 +250,136 @@ int kowhai_write(struct kowhai_node_t* tree_descriptor, void* tree_data, int num
         return KOW_STATUS_NODE_DATA_TOO_SMALL;
     
     // do write
-    memcpy((char*)tree_data + offset + write_offset, value, write_size);
+    memcpy((char*)tree->data + offset + write_offset, value, write_size);
     return status;
 }
 
-int kowhai_get_int8(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result)
+int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
-        *result = *((char*)((char*)tree_data + offset));
+        *result = *((char*)((char*)tree->data + offset));
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_get_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result)
+int kowhai_get_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT16 || node->type == KOW_UINT16)
     {
-        *result = *((int16_t*)((char*)tree_data + offset));
+        *result = *((int16_t*)((char*)tree->data + offset));
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_get_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int32_t* result)
+int kowhai_get_int32(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int32_t* result)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT32 || node->type == KOW_UINT32)
     {
-        *result = *((uint32_t*)((char*)tree_data + offset));
+        *result = *((uint32_t*)((char*)tree->data + offset));
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_get_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, float* result)
+int kowhai_get_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, float* result)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_FLOAT)
     {
-        *result = *((float*)((char*)tree_data + offset));
+        *result = *((float*)((char*)tree->data + offset));
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_set_char(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, char value)
+int kowhai_set_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
-        char* target_address = (char*)((char*)tree_data + offset);
+        char* target_address = (char*)((char*)tree->data + offset);
         *target_address = value;
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_set_int16(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int16_t value)
+int kowhai_set_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t value)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT16 || node->type == KOW_UINT16)
     {
-        int16_t* target_address = (int16_t*)((char*)tree_data + offset);
+        int16_t* target_address = (int16_t*)((char*)tree->data + offset);
         *target_address = value;
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_set_int32(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, int32_t value)
+int kowhai_set_int32(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int32_t value)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT32 || node->type == KOW_UINT32)
     {
-        uint32_t* target_address = (uint32_t*)((char*)tree_data + offset);
+        uint32_t* target_address = (uint32_t*)((char*)tree->data + offset);
         *target_address = value;
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_set_float(struct kowhai_node_t* tree_descriptor, void* tree_data, int num_symbols, union kowhai_symbol_t* symbols, float value)
+int kowhai_set_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, float value)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
     int status;
-    status = kowhai_get_node(tree_descriptor, num_symbols, symbols, &offset, &node);
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_FLOAT)
     {
-        float* target_address = (float*)((char*)tree_data + offset);
+        float* target_address = (float*)((char*)tree->data + offset);
         *target_address = value;
         return status;
     }

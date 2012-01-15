@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.btnRefreshTrees = new System.Windows.Forms.Button();
             this.kowhaiTreeScope = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeActions = new kowhai_sharp.KowhaiTree();
@@ -39,10 +39,10 @@
             this.btnSave = new System.Windows.Forms.Button();
             this.btnLoad = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.rbSettings = new System.Windows.Forms.RadioButton();
-            this.rbShadow = new System.Windows.Forms.RadioButton();
-            this.rbActions = new System.Windows.Forms.RadioButton();
             this.rbScope = new System.Windows.Forms.RadioButton();
+            this.rbActions = new System.Windows.Forms.RadioButton();
+            this.rbShadow = new System.Windows.Forms.RadioButton();
+            this.rbSettings = new System.Windows.Forms.RadioButton();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
@@ -96,16 +96,16 @@
             // 
             // chart1
             // 
-            chartArea2.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea2.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea2.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea2);
+            chartArea1.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
+            chartArea1.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
+            chartArea1.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea1);
             this.chart1.Location = new System.Drawing.Point(726, 460);
             this.chart1.Name = "chart1";
-            series2.ChartArea = "ChartArea1";
-            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
-            series2.Name = "Series1";
-            this.chart1.Series.Add(series2);
+            series1.ChartArea = "ChartArea1";
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
+            series1.Name = "Series1";
+            this.chart1.Series.Add(series1);
             this.chart1.Size = new System.Drawing.Size(233, 100);
             this.chart1.TabIndex = 5;
             this.chart1.Text = "chart1";
@@ -144,29 +144,16 @@
             this.panel1.Size = new System.Drawing.Size(494, 34);
             this.panel1.TabIndex = 8;
             // 
-            // rbSettings
+            // rbScope
             // 
-            this.rbSettings.AutoSize = true;
-            this.rbSettings.Checked = true;
-            this.rbSettings.Location = new System.Drawing.Point(165, 6);
-            this.rbSettings.Name = "rbSettings";
-            this.rbSettings.Size = new System.Drawing.Size(80, 21);
-            this.rbSettings.TabIndex = 8;
-            this.rbSettings.TabStop = true;
-            this.rbSettings.Tag = "0";
-            this.rbSettings.Text = "Settings";
-            this.rbSettings.UseVisualStyleBackColor = true;
-            // 
-            // rbShadow
-            // 
-            this.rbShadow.AutoSize = true;
-            this.rbShadow.Location = new System.Drawing.Point(251, 6);
-            this.rbShadow.Name = "rbShadow";
-            this.rbShadow.Size = new System.Drawing.Size(79, 21);
-            this.rbShadow.TabIndex = 9;
-            this.rbShadow.Tag = "1";
-            this.rbShadow.Text = "Shadow";
-            this.rbShadow.UseVisualStyleBackColor = true;
+            this.rbScope.AutoSize = true;
+            this.rbScope.Location = new System.Drawing.Point(417, 6);
+            this.rbScope.Name = "rbScope";
+            this.rbScope.Size = new System.Drawing.Size(69, 21);
+            this.rbScope.TabIndex = 11;
+            this.rbScope.Tag = "3";
+            this.rbScope.Text = "Scope";
+            this.rbScope.UseVisualStyleBackColor = true;
             // 
             // rbActions
             // 
@@ -179,16 +166,29 @@
             this.rbActions.Text = "Actions";
             this.rbActions.UseVisualStyleBackColor = true;
             // 
-            // rbScope
+            // rbShadow
             // 
-            this.rbScope.AutoSize = true;
-            this.rbScope.Location = new System.Drawing.Point(417, 6);
-            this.rbScope.Name = "rbScope";
-            this.rbScope.Size = new System.Drawing.Size(69, 21);
-            this.rbScope.TabIndex = 11;
-            this.rbScope.Tag = "3";
-            this.rbScope.Text = "Scope";
-            this.rbScope.UseVisualStyleBackColor = true;
+            this.rbShadow.AutoSize = true;
+            this.rbShadow.Location = new System.Drawing.Point(251, 6);
+            this.rbShadow.Name = "rbShadow";
+            this.rbShadow.Size = new System.Drawing.Size(79, 21);
+            this.rbShadow.TabIndex = 9;
+            this.rbShadow.Tag = "1";
+            this.rbShadow.Text = "Shadow";
+            this.rbShadow.UseVisualStyleBackColor = true;
+            // 
+            // rbSettings
+            // 
+            this.rbSettings.AutoSize = true;
+            this.rbSettings.Checked = true;
+            this.rbSettings.Location = new System.Drawing.Point(165, 6);
+            this.rbSettings.Name = "rbSettings";
+            this.rbSettings.Size = new System.Drawing.Size(80, 21);
+            this.rbSettings.TabIndex = 8;
+            this.rbSettings.TabStop = true;
+            this.rbSettings.Tag = "0";
+            this.rbSettings.Text = "Settings";
+            this.rbSettings.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 

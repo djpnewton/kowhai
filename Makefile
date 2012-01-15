@@ -15,7 +15,7 @@ all: jsmn kowhai test
 test: tools/test.o tools/xpsocket.o tools/beep.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -lkowhai -ljsmn
 
-kowhai: src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o
+kowhai: src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o src/kowhai_utils.o
 	ar rs lib$@.a $?
 
 jsmn: 3rdparty/jsmn/jsmn.o
@@ -34,6 +34,9 @@ src/kowhai_protocol_server.o: src/kowhai_protocol_server.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/kowhai_serialize.o: src/kowhai_serialize.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/kowhai_utils.o: src/kowhai_utils.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/test.o: tools/test.c
