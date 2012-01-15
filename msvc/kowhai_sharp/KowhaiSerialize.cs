@@ -23,8 +23,10 @@ namespace kowhai_sharp
             Kowhai.kowhai_tree_t tree;
             GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
             tree.desc = h.AddrOfPinnedObject();
-            tree.data = data;
+            GCHandle h2 = GCHandle.Alloc(data, GCHandleType.Pinned);
+            tree.data = h2.AddrOfPinnedObject();
             int result = kowhai_serialize(tree, targetBuf, ref targetBufferSize, getName);
+            h2.Free();
             h.Free();
             ASCIIEncoding enc = new ASCIIEncoding();
             target = enc.GetString(targetBuf, 0, targetBufferSize);

@@ -58,7 +58,7 @@ namespace kowhai_sharp
         public struct kowhai_tree_t
         {
             public IntPtr desc;
-            public byte[] data;
+            public IntPtr data;
         }
 
         public struct Tree

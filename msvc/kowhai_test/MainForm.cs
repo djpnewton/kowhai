@@ -260,9 +260,7 @@ namespace kowhai_test
             KowhaiTree destTree = GetTreeFromRadioButtonSelection();
             if (KowhaiUtils.Merge(new Kowhai.Tree(destTree.GetDescriptor(), destTree.GetData()),
                 new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData())) == Kowhai.STATUS_OK)
-            {
                 destTree.Update();
-            }
             else
                 MessageBox.Show("Merge Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
