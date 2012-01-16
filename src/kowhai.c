@@ -258,7 +258,7 @@ int kowhai_get_int8(struct kowhai_node_t* tree_descriptor, void* tree_data, int 
         return status;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
-        *result = *((char*)((char*)tree_data + offset));
+        *result = *((int8_t*)((uint8_t*)tree_data + offset));
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
