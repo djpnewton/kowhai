@@ -122,9 +122,10 @@ namespace kowhai_sharp
                     case Kowhai.UINT8:
                         return data[info.Offset];
                     case Kowhai.CHAR:
-						// convert byte array to string
+                        // convert byte array to string
                         string result = "";
-                        for (int i = info.Offset; i < info.Offset + info.KowhaiNode.count && data[i] != 0; i++)
+                        int max = Math.Min(data.Length, info.Offset + info.KowhaiNode.count);
+                        for (int i = info.Offset; i < max && data[i] != 0; i++)
                            result += (char)data[i];
                         return result;
                     case Kowhai.INT16:
