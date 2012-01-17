@@ -458,5 +458,26 @@ namespace kowhai_sharp
             foreach (TreeNode childNode in node.Nodes)
                 BlankNodes(childNode);
         }
+
+        public void DiffAt(Kowhai.kowhai_node_t kowhaiNode, int dataOffset)
+        {
+            treeView1.BeginUpdate();
+            foreach (TreeNode childNode in treeView1.Nodes)
+                _diffAt(childNode, kowhaiNode, dataOffset);
+            treeView1.EndUpdate();
+        }
+
+        //TODO: make this work properly :)
+        public void _diffAt(TreeNode node, Kowhai.kowhai_node_t kowhaiNode, int dataOffset)
+        {
+            int size = Kowhai.kowhai_get_node_type_size(kowhaiNode.type);
+            KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
+            if (info.Offset >= dataOffset && info.Offset <= dataOffset + size)
+            {
+                node.BackColor = Color.Red;
+            }
+            foreach (TreeNode childNode in node.Nodes)
+                _diffAt(childNode, kowhaiNode, dataOffset);
+        }
     }
 }

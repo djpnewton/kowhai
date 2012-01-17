@@ -255,6 +255,22 @@ namespace kowhai_test
             }
         }
 
+        int onSettingsDiff(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int right_offset, int index, int depth)
+        {
+            if (left_data.ToInt32() != 0)
+                kowhaiTreeSettings.DiffAt(left_node, left_offset);
+            return Kowhai.STATUS_OK;
+        }
+
+        private void btnDiff_Click(object sender, EventArgs e)
+        {
+            KowhaiTree rightTree = GetTreeFromRadioButtonSelection();
+            if (KowhaiUtils.Diff(new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData()),
+                new Kowhai.Tree(rightTree.GetDescriptor(), rightTree.GetData()),
+                onSettingsDiff) != Kowhai.STATUS_OK)
+                MessageBox.Show("Diff Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         private void btnMerge_Click(object sender, EventArgs e)
         {
             KowhaiTree destTree = GetTreeFromRadioButtonSelection();
