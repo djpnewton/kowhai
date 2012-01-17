@@ -9,7 +9,7 @@ namespace kowhai_sharp
     public class KowhaiUtils
     {
         [UnmanagedFunctionPointerAttribute(CallingConvention.Cdecl, CharSet=CharSet.Ansi)]
-        public delegate int kowhai_on_diff_t(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int right_offset, int index, int depth);
+        public delegate int kowhai_on_diff_t(ref Kowhai.kowhai_node_t left_node, int left_node_index, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, int right_node_index, IntPtr right_data, int right_offset, int index, int depth);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_diff(ref Kowhai.kowhai_tree_t left, ref Kowhai.kowhai_tree_t right, kowhai_on_diff_t on_diff);

@@ -255,10 +255,10 @@ namespace kowhai_test
             }
         }
 
-        int onSettingsDiff(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int right_offset, int index, int depth)
+        int onSettingsDiff(ref Kowhai.kowhai_node_t left_node, int left_node_index, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, int right_node_index, IntPtr right_data, int right_offset, int index, int depth)
         {
             if (left_data.ToInt32() != 0)
-                kowhaiTreeSettings.DiffAt(left_node, left_offset);
+                kowhaiTreeSettings.DiffAt(left_node, left_node_index);
             return Kowhai.STATUS_OK;
         }
 

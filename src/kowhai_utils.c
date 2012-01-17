@@ -22,13 +22,15 @@ int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowh
  * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
  * @note unique items on the right tree are ignored
  * @param left, diff this tree against right
+ * @param left_node_index, the index of the left node in the original descriptor (used in recursive calls, original caller should pass 0)
  * @param right, diff this tree against left
+ * @param right_node_index, the index of the right node in the original descriptor (used in recursive calls, original caller should pass 0)
  * @param on_unique, call this when a unique node is found in the left tree
  * @param on_diff, call this when a common node is found in both left and right trees and the values do not match
  * @param swap_cb_param, change the order of swap_cb_param so right if first then left, otherwise it is left then right
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
+static int diff_l2r(struct kowhai_tree_t *left, int left_node_index, struct kowhai_tree_t *right, int right_node_index, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
 {
     int ret;
     uint16_t offset;
@@ -64,7 +66,9 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                 {
                     // diff all the common array items one by one
                     struct kowhai_tree_t __left = *left;
+                    int __left_index = left_node_index;
                     struct kowhai_tree_t __right;
+                    int __right_index;
                     for (i = 0; i < MIN2(left->desc->count, right_node->count); i++)
                     {
                         // get the offset into right for the branch array item to update
@@ -73,14 +77,16 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                         if (ret != KOW_STATUS_OK)
                             return ret;
                         __right.desc = &right_node[1];
+                        __right_index = right_node_index + (__right.desc - right->desc);
                         __right.data = ((uint8_t *)right->data + offset);
                         __left.desc = left->desc + 1;
+                        __left_index++;
 
                         // diff this branch array item (drill). NB recursive call to diff_l2r increments __left.data for each array item
                         #ifdef KOWHAI_DBG
                         printf(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
                         #endif
-                        ret = diff_l2r(&__left, &__right, on_unique, on_diff, swap_cb_param, depth + 1);
+                        ret = diff_l2r(&__left, __left_index, &__right, __right_index, on_unique, on_diff, swap_cb_param, depth + 1);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                     }
@@ -108,11 +114,11 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                         ret = get_node(left->desc, 1, symbol, &left_offset, NULL, 0);
                         if (ret != KOW_STATUS_OK)
                             return ret;
-                        left_data = (char*)left->data + left_offset;
+                        left_data = (uint8_t*)left->data + left_offset;
                         ret = get_node(right_node, 1, symbol, &right_offset, NULL, 0);
                         if (ret != KOW_STATUS_OK)
                             return ret;
-                        right_data = (char*)right->data + offset + right_offset;
+                        right_data = (uint8_t*)right->data + offset + right_offset;
                         
                         // these array elements differ is the sizes dont match or the values dont match
                         if (left_size != right_size)
@@ -124,11 +130,13 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                         if (run_on_diff && (on_diff != NULL))
                         {
                             struct kowhai_node_t left_node = *left->desc;
+                            int right_index = right_node_index + (right_node - right->desc);
+
                             void *right_data = (char*)right->data + offset;
                             if (!swap_cb_param)
-                                ret = on_diff(&left_node, left->data, left_offset, right_node, right_data, right_offset, i, depth);
+                                ret = on_diff(&left_node, left_node_index, left->data, left_offset, right_node, right_index, right_data, right_offset, i, depth);
                             else
-                                ret = on_diff(right_node, right_data, right_offset, &left_node, left->data, left_offset, i, depth);
+                                ret = on_diff(right_node, right_index, right_data, right_offset, &left_node, left_node_index, left->data, left_offset, i, depth);
                             if (ret != KOW_STATUS_OK)
                                 return ret;
                         }
@@ -150,11 +158,10 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                     // call on unique
                     if (on_unique != NULL)
                     {
-                        struct kowhai_node_t left_node = *left->desc;
                         if (!swap_cb_param)
-                            ret = on_unique(&left_node, left->data, offset, NULL, NULL, 0, i, depth);
+                            ret = on_unique(left->desc, left_node_index, left->data, offset, NULL, 0, NULL, 0, i, depth);
                         else
-                            ret = on_unique(NULL, NULL, 0, &left_node, left->data, offset, i, depth);
+                            ret = on_unique(NULL, 0, NULL, 0, left->desc, left_node_index, left->data, offset, i, depth);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                     }
@@ -176,6 +183,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
             return ret;
         left->data = (uint8_t *)left->data + size;
         left->desc += skip_nodes;
+        left_node_index += skip_nodes;
 
         // if this tree is not nicely formed (ie wrapped in a branch start/end) then the next item may not be a 
         // branch end, instead we might just run off the end of the buffer so force a stop
@@ -204,7 +212,7 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
     #endif
     _left = *left;
     _right = *right;
-    ret = diff_l2r(&_left, &_right, on_diff, on_diff, 0, 0);
+    ret = diff_l2r(&_left, 0, &_right, 0, on_diff, on_diff, 0, 0);
     if (ret != KOW_STATUS_OK)
         return ret;
 
@@ -215,7 +223,7 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
     #endif
     _left = *left;
     _right = *right;
-    ret = diff_l2r(&_right, &_left, on_diff, NULL, 1, 0);
+    ret = diff_l2r(&_right, 0, &_left, 0, on_diff, NULL, 1, 0);
 
     return ret;
 }
@@ -226,7 +234,7 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
  * @param src this is the source node to merge into common destination nodes, or NULL if node is unique to dst
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int on_diff_merge(const struct kowhai_node_t *dst_node, void *dst_data, int dst_offset, const struct kowhai_node_t *src_node, void *src_data, int src_offset, int index, int depth)
+static int on_diff_merge(const struct kowhai_node_t *dst_node, int dst_node_index, void *dst_data, int dst_offset, const struct kowhai_node_t *src_node, int src_node_index, void *src_data, int src_offset, int index, int depth)
 {
     int size;
 
