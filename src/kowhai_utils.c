@@ -123,7 +123,7 @@ static int diff_l2r(struct kowhai_tree_t *left, int left_node_index, struct kowh
                         // these array elements differ is the sizes dont match or the values dont match
                         if (left_size != right_size)
                             run_on_diff = 1;
-                        if (memcmp(left_data, right_data, left_size) != 0)
+                        if (memcmp(left_data, right_data, left_size / left->desc->count) != 0)
                             run_on_diff = 1;
 
                         // if a difference is detected then run on_diff

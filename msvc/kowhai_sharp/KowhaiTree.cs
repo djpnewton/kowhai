@@ -459,24 +459,24 @@ namespace kowhai_sharp
                 BlankNodes(childNode);
         }
 
-        public void DiffAt(Kowhai.kowhai_node_t kowhaiNode, int kowhaiNodeIndex)
+        public void DiffAt(Kowhai.kowhai_node_t kowhaiNode, int kowhaiNodeIndex, int kowhaiNodeArrayIndex)
         {
             treeView1.BeginUpdate();
             foreach (TreeNode childNode in treeView1.Nodes)
-                _diffAt(childNode, kowhaiNode, kowhaiNodeIndex);
+                _diffAt(childNode, kowhaiNode, kowhaiNodeIndex, kowhaiNodeArrayIndex);
             treeView1.EndUpdate();
         }
 
         //TODO: make this work properly :)
-        public void _diffAt(TreeNode node, Kowhai.kowhai_node_t kowhaiNode, int kowhaiNodeIndex)
+        public void _diffAt(TreeNode node, Kowhai.kowhai_node_t kowhaiNode, int kowhaiNodeIndex, int kowhaiNodeArrayIndex)
         {
             KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-            if (info.NodeIndex == kowhaiNodeIndex)
+            if (info.NodeIndex == kowhaiNodeIndex && info.ArrayIndex == kowhaiNodeArrayIndex)
             {
                 node.BackColor = Color.Red;
             }
             foreach (TreeNode childNode in node.Nodes)
-                _diffAt(childNode, kowhaiNode, kowhaiNodeIndex);
+                _diffAt(childNode, kowhaiNode, kowhaiNodeIndex, kowhaiNodeArrayIndex);
         }
     }
 }
