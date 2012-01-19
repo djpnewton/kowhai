@@ -145,7 +145,7 @@ namespace kowhai_sharp
 
         private byte[] TextToData(string text, ushort dataType)
         {
-			byte[] result = new byte[text.Length + 1];  // +1 for NULL
+            byte[] result = new byte[text.Length + 1];  // +1 for NULL
             switch (dataType)
             {
                 case Kowhai.INT8:
@@ -259,7 +259,7 @@ namespace kowhai_sharp
                             }
                         }
                         else
-							offset += (ushort)(Kowhai.kowhai_get_node_type_size(descNode.type) * descNode.count);
+                            offset += (ushort)(Kowhai.kowhai_get_node_type_size(descNode.type) * descNode.count);
                         break;
                 }
                 index++;
