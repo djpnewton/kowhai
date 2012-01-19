@@ -87,9 +87,9 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     int chars;
     switch (node_type)
     {
-		case KOW_CHAR:
-			chars = write_string(*dest, *dest_size, "%d", *((char *)data));
-			break;
+        case KOW_CHAR:
+            chars = write_string(*dest, *dest_size, "%d", *((char *)data));
+            break;
         case KOW_INT8:
             chars = write_string(*dest, *dest_size, "%d", *((int8_t*)data));
             break;
