@@ -1,0 +1,52 @@
+namespace KowhaiSymbols
+{
+    public static class Symbols
+    {
+        public static string[] Strings =
+        {
+            "Settings",
+            "Shadow",
+            "Actions",
+            "Scope",
+            "Start",
+            "Stop",
+            "Running",
+            "FluxCapacitor",
+            "Frequency",
+            "Coefficient",
+            "Gain",
+            "Oven",
+            "Temp",
+            "Timeout",
+            "Delay",
+            "Status",
+            "Beep",
+            "Duration",
+            "Pixels",
+            "Owner",
+        };
+        public enum Constants
+        {
+            Settings,
+            Shadow,
+            Actions,
+            Scope,
+            Start,
+            Stop,
+            Running,
+            FluxCapacitor,
+            Frequency,
+            Coefficient,
+            Gain,
+            Oven,
+            Temp,
+            Timeout,
+            Delay,
+            Status,
+            Beep,
+            Duration,
+            Pixels,
+            Owner,
+        };
+    }
+}

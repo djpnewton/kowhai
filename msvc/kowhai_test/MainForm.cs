@@ -213,6 +213,58 @@ namespace kowhai_test
             sock.Send(buffer, 2);
         }
 
+        string getSymbolName(UInt16 value)
+        {
+            return KowhaiSymbols.Symbols.Strings[value];
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            KowhaiTree tree = GetTreeFromRadioButtonSelection();
+            string text;
+            if (KowhaiSerialize.Serialize(tree.GetDescriptor(), tree.GetData(), out text, 0x1000, getSymbolName) == Kowhai.STATUS_OK)
+            {
+                SaveFileDialog d = new SaveFileDialog();
+                d.Filter = "Kowhai Files | *.kowhai";
+                d.DefaultExt = "kowhai";
+                if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    System.IO.StreamWriter sw = System.IO.File.CreateText(d.FileName);
+                    sw.Write(text);
+                    sw.Close();
+                }
+            }
+        }
+
+        private void btnLoad_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog d = new OpenFileDialog();
+            d.Filter = "Kowhai Files | *.kowhai";
+            d.DefaultExt = "kowhai";
+            if (d.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string text = System.IO.File.ReadAllText(d.FileName);
+                Kowhai.kowhai_node_t[] descriptor;
+                byte[] data;
+                KowhaiTree tree = GetTreeFromRadioButtonSelection();
+                if (KowhaiSerialize.Deserialize(text, out descriptor, out data) == Kowhai.STATUS_OK)
+                {
+                    tree.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
+                    tree.UpdateData(data, 0);
+                }
+            }
+        }
+
+        private void btnMerge_Click(object sender, EventArgs e)
+        {
+            KowhaiTree destTree = GetTreeFromRadioButtonSelection();
+            if (KowhaiUtils.Merge(new Kowhai.Tree(destTree.GetDescriptor(), destTree.GetData()),
+                new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData())) == Kowhai.STATUS_OK)
+                destTree.Update();
+            else
+                MessageBox.Show("Merge Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
         private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
         {
             if (treeId == TREE_ID_SETTINGS)
@@ -250,6 +302,19 @@ namespace kowhai_test
             if (sender == kowhaiTreeScope)
                 return TREE_ID_SCOPE;
             return 255;
+        }
+
+        KowhaiTree GetTreeFromRadioButtonSelection()
+        {
+            if (rbSettings.Checked)
+                return kowhaiTreeSettings;
+            if (rbShadow.Checked)
+                return kowhaiTreeShadow;
+            if (rbActions.Checked)
+                return kowhaiTreeActions;
+            if (rbScope.Checked)
+                return kowhaiTreeScope;
+            return null;
         }
 
         private Kowhai.kowhai_node_t[] GetDescriptor(object sender)

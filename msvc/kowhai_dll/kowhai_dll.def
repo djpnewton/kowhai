@@ -18,3 +18,7 @@ EXPORTS
 	kowhai_protocol_create
 	kowhai_protocol_get_overhead
 	kowhai_server_process_packet
+	kowhai_serialize
+	kowhai_deserialize
+	kowhai_diff
+	kowhai_merge

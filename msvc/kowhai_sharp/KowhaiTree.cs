@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -145,7 +145,7 @@ namespace kowhai_sharp
 
         private byte[] TextToData(string text, ushort dataType)
         {
-            byte[] result = new byte[text.Length + 1];  // +1 for NULL
+			byte[] result = new byte[text.Length + 1];  // +1 for NULL
             switch (dataType)
             {
                 case Kowhai.INT8:
@@ -259,7 +259,7 @@ namespace kowhai_sharp
                             }
                         }
                         else
-                            offset += (ushort)(Kowhai.kowhai_get_node_type_size(descNode.type) * descNode.count);
+							offset += (ushort)(Kowhai.kowhai_get_node_type_size(descNode.type) * descNode.count);
                         break;
                 }
                 index++;
@@ -306,6 +306,17 @@ namespace kowhai_sharp
             treeView1.BeginUpdate();
             UpdateTreeNodeData(treeView1.Nodes);
             treeView1.EndUpdate();
+        }
+
+        public new void Update()
+        {
+            UpdateDescriptor(descriptor, symbols, null);
+            UpdateData(data, 0);
+        }
+
+        public Kowhai.kowhai_node_t[] GetDescriptor()
+        {
+            return descriptor;
         }
 
         public byte[] GetData()

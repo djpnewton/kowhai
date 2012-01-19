@@ -11,14 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\3rdparty\jsmn\jsmn.c" />
     <ClCompile Include="..\src\kowhai.c" />
     <ClCompile Include="..\src\kowhai_protocol.c" />
     <ClCompile Include="..\src\kowhai_protocol_server.c" />
+    <ClCompile Include="..\src\kowhai_serialize.c" />
+    <ClCompile Include="..\src\kowhai_utils.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\3rdparty\jsmn\jsmn.h" />
     <ClInclude Include="..\src\kowhai.h" />
     <ClInclude Include="..\src\kowhai_protocol.h" />
     <ClInclude Include="..\src\kowhai_protocol_server.h" />
+    <ClInclude Include="..\src\kowhai_serialize.h" />
+    <ClInclude Include="..\src\kowhai_utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FBF87C77-B9AA-4151-99D2-2BDCAEF1D5C0}</ProjectGuid>

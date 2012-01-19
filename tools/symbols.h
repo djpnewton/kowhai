@@ -1,6 +1,29 @@
 #ifndef _SYMBOLS_H_
 #define _SYMBOLS_H_
 
+char* symbols[] = {
+	"Settings",
+	"Shadow",
+	"Actions",
+	"Scope",
+	"Start",
+	"Stop",
+	"Running",
+	"FluxCapacitor",
+	"Frequency",
+	"Coefficient",
+	"Gain",
+	"Oven",
+	"Temp",
+	"Timeout",
+	"Delay",
+	"Status",
+	"Beep",
+	"Duration",
+	"Pixels",
+	"Owner",
+};
+
 #define SYM_SETTINGS		0
 #define SYM_SHADOW		1
 #define SYM_ACTIONS		2

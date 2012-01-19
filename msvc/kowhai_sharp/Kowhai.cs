@@ -48,6 +48,28 @@ namespace kowhai_sharp
             public uint16_t symbol;
             public uint16_t count;
             public uint16_t tag;
+            public override string ToString()
+            {
+                return string.Format("kowhai_node_t - type: {0}, symbol: {1}, count: {2}, tag: {3}", type, symbol, count, tag);
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_tree_t
+        {
+            public IntPtr desc;
+            public IntPtr data;
+        }
+
+        public struct Tree
+        {
+            public kowhai_node_t[] Descriptor;
+            public byte[] Data;
+            public Tree(kowhai_node_t[] desc, byte[] data)
+            {
+                Descriptor = desc;
+                Data = data;
+            }
         }
 
         public const int BRANCH = 0;
@@ -77,6 +99,9 @@ namespace kowhai_sharp
         public const int STATUS_PACKET_BUFFER_TOO_SMALL = 6;
         public const int STATUS_INVALID_PROTOCOL_COMMAND = 7;
         public const int STATUS_PACKET_BUFFER_TOO_BIG = 8;
+        public const int STATUS_TARGET_BUFFER_TOO_SMALL = 9;
+        public const int STATUS_BUFFER_INVALID = 10;
+        public const int STATUS_SCRATCH_TOO_SMALL = 11;
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node_type_size(uint16_t type);

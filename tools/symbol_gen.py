@@ -6,6 +6,11 @@ syms = f.read().split()
 f = open("symbols.h", "w")
 f.write("#ifndef _SYMBOLS_H_\n")
 f.write("#define _SYMBOLS_H_\n\n")
+f.write("char* symbols[] = {\n")
+for i in range(len(syms)):
+    sym = syms[i]
+    f.write("\t\"%s\",\n" % sym)
+f.write("};\n\n")
 for i in range(len(syms)):
     sym = syms[i]
     f.write("#define SYM_%s\t\t%d\n" % (sym.upper(), i))
