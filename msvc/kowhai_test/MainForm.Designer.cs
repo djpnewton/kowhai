@@ -43,6 +43,7 @@
             this.kowhaiTreeActions = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeSettings = new kowhai_sharp.KowhaiTree();
+            this.btnDiff = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -95,7 +96,7 @@
             // 
             // btnMerge
             // 
-            this.btnMerge.Location = new System.Drawing.Point(296, 11);
+            this.btnMerge.Location = new System.Drawing.Point(458, 11);
             this.btnMerge.Name = "btnMerge";
             this.btnMerge.Size = new System.Drawing.Size(156, 26);
             this.btnMerge.TabIndex = 12;
@@ -185,11 +186,22 @@
             this.kowhaiTreeSettings.Size = new System.Drawing.Size(232, 480);
             this.kowhaiTreeSettings.TabIndex = 1;
             // 
+            // btnDiff
+            // 
+            this.btnDiff.Location = new System.Drawing.Point(296, 11);
+            this.btnDiff.Name = "btnDiff";
+            this.btnDiff.Size = new System.Drawing.Size(156, 26);
+            this.btnDiff.TabIndex = 13;
+            this.btnDiff.Text = "Diff Settings To..";
+            this.btnDiff.UseVisualStyleBackColor = true;
+            this.btnDiff.Click += new System.EventHandler(this.btnDiff_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(966, 572);
+            this.Controls.Add(this.btnDiff);
             this.Controls.Add(this.btnLoad);
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.rbShadow);
@@ -229,5 +241,6 @@
         private System.Windows.Forms.RadioButton rbShadow;
         private System.Windows.Forms.RadioButton rbSettings;
         private System.Windows.Forms.Button btnMerge;
+        private System.Windows.Forms.Button btnDiff;
     }
 }
