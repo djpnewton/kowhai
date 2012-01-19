@@ -517,7 +517,6 @@ int main(int argc, char* argv[])
 
     // test serialization
     printf("test kowhai_serialize/kowhai_deserialize...\n");
-	if (0)
     {
         // kowhai_serialize
         int buf_size = 0x1000;
