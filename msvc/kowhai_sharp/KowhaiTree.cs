@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -126,7 +126,10 @@ namespace kowhai_sharp
                         string result = "";
                         int max = Math.Min(data.Length, info.Offset + info.KowhaiNode.count) - info.Offset;
                         result = System.Text.Encoding.ASCII.GetString(data, info.Offset, max);
-                        return result.TrimEnd((char)0);
+                        int nullLocation = result.IndexOf((char)0);
+                        if (nullLocation > -1)
+                            return result.Substring(0, nullLocation);
+                        return result;
                     case Kowhai.INT16:
                         return BitConverter.ToInt16(data, info.Offset);
                     case Kowhai.UINT16:
