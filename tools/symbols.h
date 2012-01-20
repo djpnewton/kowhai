@@ -21,6 +21,7 @@ char* symbols[] = {
 	"Beep",
 	"Duration",
 	"Pixels",
+	"Owner",
 };
 
 #define SYM_SETTINGS		0
@@ -42,5 +43,6 @@ char* symbols[] = {
 #define SYM_BEEP		16
 #define SYM_DURATION		17
 #define SYM_PIXELS		18
+#define SYM_OWNER		19
 
 #endif
