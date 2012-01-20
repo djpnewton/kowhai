@@ -124,10 +124,9 @@ namespace kowhai_sharp
                     case Kowhai.CHAR:
                         // convert byte array to string
                         string result = "";
-                        int max = Math.Min(data.Length, info.Offset + info.KowhaiNode.count);
-                        for (int i = info.Offset; i < max && data[i] != 0; i++)
-                           result += (char)data[i];
-                        return result;
+                        int max = Math.Min(data.Length, info.Offset + info.KowhaiNode.count) - info.Offset;
+                        result = System.Text.Encoding.ASCII.GetString(data, info.Offset, max);
+                        return result.TrimEnd((char)0);
                     case Kowhai.INT16:
                         return BitConverter.ToInt16(data, info.Offset);
                     case Kowhai.UINT16:
@@ -145,7 +144,7 @@ namespace kowhai_sharp
 
         private byte[] TextToData(string text, ushort dataType)
         {
-            byte[] result = new byte[text.Length + 1];  // +1 for NULL
+            byte[] result = new byte[text.Length];
             switch (dataType)
             {
                 case Kowhai.INT8:
@@ -164,9 +163,10 @@ namespace kowhai_sharp
                     return BitConverter.GetBytes(Convert.ToSingle(text));
                 case Kowhai.CHAR:
                     // convert string to a byte array
-                    for (int i = 0; i < text.Length; i++)
-                        result[i] = (byte)text[i];
-                    result[text.Length] = 0;
+                    result = new byte[text.Length + 1];  // +1 for NULL
+                    ASCIIEncoding enc = new ASCIIEncoding();
+                    result = enc.GetBytes(text);
+                    result[text.Length] = 0;    // ensure last char is a null
                     return result;
             }
             return null;

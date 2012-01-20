@@ -21,7 +21,7 @@ int kowhai_get_node_type_size(uint16_t type)
         // normal types to describe a buffer
         case KOW_INT8:
         case KOW_UINT8:
-		case KOW_CHAR:
+        case KOW_CHAR:
             return 1;
         case KOW_INT16:
         case KOW_UINT16:

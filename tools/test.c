@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
     uint32_t gain;
     float coeff;
     char owner_initial;
-    struct flux_capacitor_t flux_capacitor = {"empty\n", 1, 2, 10, 20, 30, 40, 50, 60};
+    struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
 #ifdef KOWHAI_DBG
     printf("kowhai debugging enabled!\n");
@@ -508,8 +508,8 @@ int main(int argc, char* argv[])
     assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
     assert(kowhai_get_float(&settings_tree, 3, symbols7, &coeff) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
-    sprintf(settings.flux_capacitor[0].owner, "Dr brown\n");
-    sprintf(settings.flux_capacitor[1].owner, "Marty McFly\n");
+    sprintf(settings.flux_capacitor[0].owner, "Dr brown");
+    sprintf(settings.flux_capacitor[1].owner, "Marty McFly");
     assert(kowhai_set_char(&settings_tree, 3, symbols13, 'B') == KOW_STATUS_OK);
     assert(kowhai_get_char(&settings_tree, 3, symbols13, &owner_initial) == KOW_STATUS_OK);
     assert(owner_initial == 'B');
