@@ -23,6 +23,7 @@ namespace KowhaiSymbols
             "Beep",
             "Duration",
             "Pixels",
+            "Owner",
         };
         public enum Constants
         {
@@ -45,6 +46,7 @@ namespace KowhaiSymbols
             Beep,
             Duration,
             Pixels,
+            Owner,
         };
     }
 }

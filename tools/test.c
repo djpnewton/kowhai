@@ -23,12 +23,14 @@
 
 #define FLUX_CAP_COUNT 2
 #define COEFF_COUNT    6
+#define OWNER_MAX_LEN  12
 
 struct kowhai_node_t settings_descriptor[] =
 {
     { KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
 
     { KOW_BRANCH_START,     SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+    { KOW_CHAR,             SYM_OWNER,          OWNER_MAX_LEN,    0 },
     { KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
     { KOW_UINT32,           SYM_GAIN,           1,                0 },
     { KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
@@ -98,6 +100,7 @@ struct kowhai_node_t scope_descriptor[] =
 
 struct flux_capacitor_t
 {
+    char owner[OWNER_MAX_LEN];
     uint32_t frequency;
     uint32_t gain;
     float coefficient[COEFF_COUNT];
@@ -378,6 +381,7 @@ int main(int argc, char* argv[])
     union kowhai_symbol_t symbols10[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, KOWHAI_SYMBOL(SYM_COEFFICIENT, 3)};
     union kowhai_symbol_t symbols11[] = {SYM_SETTINGS, SYM_OVEN};
     union kowhai_symbol_t symbols12[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1)};
+    union kowhai_symbol_t symbols13[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 0), KOWHAI_SYMBOL(SYM_OWNER, 3)};
 
     uint16_t offset;
     int size;
@@ -389,7 +393,8 @@ int main(int argc, char* argv[])
     uint16_t timeout;
     uint32_t gain;
     float coeff;
-    struct flux_capacitor_t flux_capacitor = {1, 2, 10, 20, 30, 40, 50, 60};
+    char owner_initial;
+    struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
 #ifdef KOWHAI_DBG
     printf("kowhai debugging enabled!\n");
@@ -407,30 +412,31 @@ int main(int argc, char* argv[])
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
     assert(kowhai_get_node(settings_tree.desc, 3, symbols1, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 64);
-    assert(node == &settings_tree.desc[7]);
+    assert(offset == offsetof(struct settings_data_t, oven.temp));
+    assert(node == &settings_descriptor[8]);
     assert(kowhai_get_node(settings_tree.desc, 3, symbols2, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 66);
-    assert(node == &settings_tree.desc[8]);
+    assert(offset == offsetof(struct settings_data_t, oven.timeout));
+    assert(node == &settings_descriptor[9]);
     assert(kowhai_get_node(settings_tree.desc, 2, symbols3, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 0);
-    assert(node == &settings_tree.desc[1]);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor));
+    assert(node == &settings_descriptor[1]);
     assert(kowhai_get_node(settings_tree.desc, 2, symbols4, &offset, &node) == KOW_STATUS_INVALID_SYMBOL_PATH);
     assert(kowhai_get_node(settings_tree.desc, 3, symbols6, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 4);
-    assert(node == &settings_tree.desc[3]);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[0].gain));
+    assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_tree.desc, 3, symbols8, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == sizeof(struct flux_capacitor_t) + 4);
-    assert(node == &settings_tree.desc[3]);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[1].gain));
+    assert(node == &settings_descriptor[4]);
     assert(kowhai_get_node(settings_tree.desc, 3, symbols9, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == sizeof(struct flux_capacitor_t) + 8 + 3 * 4);
-    assert(node == &settings_tree.desc[4]);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[1].coefficient[3]));
+    assert(node == &settings_descriptor[5]);
     assert(kowhai_get_node(settings_tree.desc, 3, symbols10, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == 8 + 3 * 4);
-    assert(node == &settings_tree.desc[4]);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[0].coefficient[3]));
+    assert(node == &settings_descriptor[5]);
     assert(kowhai_get_node(settings_tree.desc, 2, symbols12, &offset, &node) == KOW_STATUS_OK);
-    assert(offset == sizeof(struct flux_capacitor_t));
-    assert(node == &settings_tree.desc[1]);
+    assert(offset == offsetof(struct settings_data_t, flux_capacitor[1]));
+    assert(node == &settings_descriptor[1]);
+
     printf(" passed!\n");
 
     // test get node size
@@ -478,7 +484,7 @@ int main(int argc, char* argv[])
     // test set/get settings
     printf("test kowhai_get_xxx/kowhai_set_xxx...\t");
     shadow.status = 0;
-    assert(kowhai_set_char(&shadow_tree, 2, symbols5, 255) == KOW_STATUS_OK);
+    assert(kowhai_set_int8(&shadow_tree, 2, symbols5, 255) == KOW_STATUS_OK);
     assert(shadow.status == 255);
     assert(kowhai_get_int8(&shadow_tree, 2, symbols5, &status) == KOW_STATUS_OK);
     assert(status == 255);
@@ -502,6 +508,11 @@ int main(int argc, char* argv[])
     assert(settings.flux_capacitor[0].coefficient[0] ==  999.9f);
     assert(kowhai_get_float(&settings_tree, 3, symbols7, &coeff) == KOW_STATUS_OK);
     assert(coeff == 999.9f);
+    sprintf(settings.flux_capacitor[0].owner, "Dr brown");
+    sprintf(settings.flux_capacitor[1].owner, "Marty McFly");
+    assert(kowhai_set_char(&settings_tree, 3, symbols13, 'B') == KOW_STATUS_OK);
+    assert(kowhai_get_char(&settings_tree, 3, symbols13, &owner_initial) == KOW_STATUS_OK);
+    assert(owner_initial == 'B');
     printf(" passed!\n");
 
     // test serialization
@@ -574,7 +585,7 @@ int main(int argc, char* argv[])
             int overhead;
             char value;
             struct oven_t oven = {0x0102, 321};
-            struct flux_capacitor_t flux_cap[2] = {{100, 200, {1, 2, 3, 4, 5, 6}}, {110, 210, {11, 12, 13, 14, 15, 16}}};
+            struct flux_capacitor_t flux_cap[2] = {{{"Marty Mc Fly"}, 100, 200, {1, 2, 3, 4, 5, 6}}, {{"Dr Brown"}, 110, 210, {11, 12, 13, 14, 15, 16}}};
             // write oven.temp
             temp = 25;
             POPULATE_PROTOCOL_WRITE(prot, TREE_ID_SETTINGS, KOW_CMD_WRITE_DATA, 3, symbols1, KOW_INT16, 0, sizeof(uint16_t), &temp);

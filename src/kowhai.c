@@ -21,6 +21,7 @@ int kowhai_get_node_type_size(uint16_t type)
         // normal types to describe a buffer
         case KOW_INT8:
         case KOW_UINT8:
+        case KOW_CHAR:
             return 1;
         case KOW_INT16:
         case KOW_UINT16:
@@ -270,6 +271,22 @@ int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_sy
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
+int kowhai_get_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result)
+{
+    struct kowhai_node_t* node;
+    uint16_t offset;
+    int status;
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
+    if (status != KOW_STATUS_OK)
+        return status;
+    if (node->type == KOW_CHAR)
+    {
+        *result = *((char*)((char*)tree->data + offset));
+        return status;
+    }
+    return KOW_STATUS_INVALID_NODE_TYPE;
+}
+
 int kowhai_get_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result)
 {
     struct kowhai_node_t* node;
@@ -318,7 +335,7 @@ int kowhai_get_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_s
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_set_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value)
+int kowhai_set_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
@@ -327,6 +344,23 @@ int kowhai_set_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_sy
     if (status != KOW_STATUS_OK)
         return status;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
+    {
+        char* target_address = (char*)((char*)tree->data + offset);
+        *target_address = value;
+        return status;
+    }
+    return KOW_STATUS_INVALID_NODE_TYPE;
+}
+
+int kowhai_set_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value)
+{
+    struct kowhai_node_t* node;
+    uint16_t offset;
+    int status;
+    status = kowhai_get_node(tree->desc, num_symbols, symbols, &offset, &node);
+    if (status != KOW_STATUS_OK)
+        return status;
+    if (node->type == KOW_CHAR)
     {
         char* target_address = (char*)((char*)tree->data + offset);
         *target_address = value;
