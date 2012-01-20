@@ -163,10 +163,8 @@ namespace kowhai_sharp
                     return BitConverter.GetBytes(Convert.ToSingle(text));
                 case Kowhai.CHAR:
                     // convert string to a byte array
-                    result = new byte[text.Length + 1];  // +1 for NULL
                     ASCIIEncoding enc = new ASCIIEncoding();
-                    result = enc.GetBytes(text);
-                    result[text.Length] = 0;    // ensure last char is a null
+                    result = enc.GetBytes(text + char.MinValue);
                     return result;
             }
             return null;
