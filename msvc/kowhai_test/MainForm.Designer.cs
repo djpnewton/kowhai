@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea3 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series3 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.btnRefreshTrees = new System.Windows.Forms.Button();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.btnSave = new System.Windows.Forms.Button();
@@ -60,17 +60,17 @@
             // 
             // chart1
             // 
-            chartArea1.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea1.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea1.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea1);
-            this.chart1.Location = new System.Drawing.Point(726, 460);
+            chartArea3.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
+            chartArea3.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
+            chartArea3.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea3);
+            this.chart1.Location = new System.Drawing.Point(729, 460);
             this.chart1.Name = "chart1";
-            series1.ChartArea = "ChartArea1";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
-            series1.Name = "Series1";
-            this.chart1.Series.Add(series1);
-            this.chart1.Size = new System.Drawing.Size(233, 100);
+            series3.ChartArea = "ChartArea1";
+            series3.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
+            series3.Name = "Series1";
+            this.chart1.Series.Add(series3);
+            this.chart1.Size = new System.Drawing.Size(200, 100);
             this.chart1.TabIndex = 5;
             this.chart1.Text = "chart1";
             // 
@@ -107,7 +107,7 @@
             // rbScope
             // 
             this.rbScope.AutoSize = true;
-            this.rbScope.Location = new System.Drawing.Point(809, 57);
+            this.rbScope.Location = new System.Drawing.Point(788, 43);
             this.rbScope.Name = "rbScope";
             this.rbScope.Size = new System.Drawing.Size(69, 21);
             this.rbScope.TabIndex = 11;
@@ -118,7 +118,7 @@
             // rbActions
             // 
             this.rbActions.AutoSize = true;
-            this.rbActions.Location = new System.Drawing.Point(562, 57);
+            this.rbActions.Location = new System.Drawing.Point(585, 43);
             this.rbActions.Name = "rbActions";
             this.rbActions.Size = new System.Drawing.Size(75, 21);
             this.rbActions.TabIndex = 10;
@@ -129,7 +129,7 @@
             // rbShadow
             // 
             this.rbShadow.AutoSize = true;
-            this.rbShadow.Location = new System.Drawing.Point(323, 57);
+            this.rbShadow.Location = new System.Drawing.Point(373, 43);
             this.rbShadow.Name = "rbShadow";
             this.rbShadow.Size = new System.Drawing.Size(79, 21);
             this.rbShadow.TabIndex = 9;
@@ -141,7 +141,7 @@
             // 
             this.rbSettings.AutoSize = true;
             this.rbSettings.Checked = true;
-            this.rbSettings.Location = new System.Drawing.Point(89, 57);
+            this.rbSettings.Location = new System.Drawing.Point(120, 43);
             this.rbSettings.Name = "rbSettings";
             this.rbSettings.Size = new System.Drawing.Size(80, 21);
             this.rbSettings.TabIndex = 8;
@@ -153,37 +153,37 @@
             // kowhaiTreeScope
             // 
             this.kowhaiTreeScope.ContextMenuEnabled = true;
-            this.kowhaiTreeScope.Location = new System.Drawing.Point(726, 83);
+            this.kowhaiTreeScope.Location = new System.Drawing.Point(729, 69);
             this.kowhaiTreeScope.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeScope.Name = "kowhaiTreeScope";
-            this.kowhaiTreeScope.Size = new System.Drawing.Size(233, 372);
+            this.kowhaiTreeScope.Size = new System.Drawing.Size(200, 386);
             this.kowhaiTreeScope.TabIndex = 4;
             // 
             // kowhaiTreeActions
             // 
             this.kowhaiTreeActions.ContextMenuEnabled = true;
-            this.kowhaiTreeActions.Location = new System.Drawing.Point(487, 83);
+            this.kowhaiTreeActions.Location = new System.Drawing.Point(523, 69);
             this.kowhaiTreeActions.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeActions.Name = "kowhaiTreeActions";
-            this.kowhaiTreeActions.Size = new System.Drawing.Size(233, 480);
+            this.kowhaiTreeActions.Size = new System.Drawing.Size(200, 494);
             this.kowhaiTreeActions.TabIndex = 3;
             // 
             // kowhaiTreeShadow
             // 
             this.kowhaiTreeShadow.ContextMenuEnabled = true;
-            this.kowhaiTreeShadow.Location = new System.Drawing.Point(250, 83);
+            this.kowhaiTreeShadow.Location = new System.Drawing.Point(317, 69);
             this.kowhaiTreeShadow.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeShadow.Name = "kowhaiTreeShadow";
-            this.kowhaiTreeShadow.Size = new System.Drawing.Size(231, 480);
+            this.kowhaiTreeShadow.Size = new System.Drawing.Size(200, 494);
             this.kowhaiTreeShadow.TabIndex = 2;
             // 
             // kowhaiTreeSettings
             // 
             this.kowhaiTreeSettings.ContextMenuEnabled = true;
-            this.kowhaiTreeSettings.Location = new System.Drawing.Point(12, 83);
+            this.kowhaiTreeSettings.Location = new System.Drawing.Point(12, 69);
             this.kowhaiTreeSettings.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.kowhaiTreeSettings.Name = "kowhaiTreeSettings";
-            this.kowhaiTreeSettings.Size = new System.Drawing.Size(232, 480);
+            this.kowhaiTreeSettings.Size = new System.Drawing.Size(299, 494);
             this.kowhaiTreeSettings.TabIndex = 1;
             // 
             // btnDiff
@@ -200,7 +200,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(966, 572);
+            this.ClientSize = new System.Drawing.Size(940, 572);
             this.Controls.Add(this.btnDiff);
             this.Controls.Add(this.btnLoad);
             this.Controls.Add(this.btnSave);
