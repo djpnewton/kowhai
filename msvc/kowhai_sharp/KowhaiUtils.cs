@@ -17,6 +17,12 @@ namespace kowhai_sharp
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_merge(ref Kowhai.kowhai_tree_t dst, ref Kowhai.kowhai_tree_t src);
 
+        [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int kowhai_create_symbol_path(ref Kowhai.kowhai_node_t[] descriptor, ref Kowhai.kowhai_node_t node, ref Kowhai.kowhai_symbol_t[] target, ref int target_size);
+
+        [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern int kowhai_create_symbol_path2(ref Kowhai.kowhai_tree_t tree, IntPtr target_location, ref Kowhai.kowhai_symbol_t[] target, ref int target_size);
+
         public static int Diff(Kowhai.Tree left, Kowhai.Tree right, kowhai_on_diff_t onDiff)
         {
             Kowhai.kowhai_tree_t l, r;
@@ -52,6 +58,26 @@ namespace kowhai_sharp
             h3.Free();
             h2.Free();
             h1.Free();
+            return result;
+        }
+
+        public static int CreateSymbolPath(Kowhai.Tree tree, IntPtr targetLocation, out Kowhai.kowhai_symbol_t[] symbolPath)
+        {
+            int result, symbolPathLength = 5;
+            Kowhai.kowhai_tree_t _tree;
+            GCHandle hTreeDesc = GCHandle.Alloc(tree.Descriptor, GCHandleType.Pinned);
+            _tree.desc = hTreeDesc.AddrOfPinnedObject();
+            GCHandle hTreeData = GCHandle.Alloc(tree.Data, GCHandleType.Pinned);
+            _tree.data = hTreeData.AddrOfPinnedObject();
+            do
+            {
+                symbolPath = new Kowhai.kowhai_symbol_t[symbolPathLength];
+                result = kowhai_create_symbol_path2(ref _tree, targetLocation, ref symbolPath, ref symbolPathLength);
+                symbolPathLength *= 2;
+            }
+            while (result == Kowhai.STATUS_TARGET_BUFFER_TOO_SMALL);
+            hTreeData.Free();
+            hTreeDesc.Free();
             return result;
         }
     }

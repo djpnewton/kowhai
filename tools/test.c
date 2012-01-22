@@ -338,12 +338,14 @@ void create_symbol_path_tests()
 {
 #define SYM_PATH_SIZE 5
 #define SYM_PATH_SIZE_RESULT 3
-    union kowhai_symbol_t symbol_path[SYM_PATH_SIZE];
+    union kowhai_symbol_t symbol_path[SYM_PATH_SIZE] = {0};
     union kowhai_symbol_t symbol_path_settings_oven_temp[SYM_PATH_SIZE] = {SYM_SETTINGS, SYM_OVEN, SYM_TEMP};
     union kowhai_symbol_t symbol_path_settings_fluxcap_gain[SYM_PATH_SIZE] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, SYM_GAIN};
     int symbol_path_size;
     int result;
+
     printf("kowhai_create_symbol_path* tests!\n");
+
     symbol_path_size = 2;
     result = kowhai_create_symbol_path(settings_descriptor, &settings_descriptor[8] /* settings.oven.temp */, symbol_path, &symbol_path_size);
     assert(result == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
@@ -357,6 +359,28 @@ void create_symbol_path_tests()
     assert(result == KOW_STATUS_OK);
     assert(memcmp(symbol_path, symbol_path_settings_fluxcap_gain, SYM_PATH_SIZE_RESULT * sizeof(union kowhai_symbol_t)) == 0);
     assert(symbol_path_size == SYM_PATH_SIZE_RESULT);
+
+    symbol_path_size = 2;
+    result = kowhai_create_symbol_path2(&settings_tree, &settings.oven.temp, symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    symbol_path_size = SYM_PATH_SIZE;
+    result = kowhai_create_symbol_path2(&settings_tree, &settings.oven.temp, symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_OK);
+    assert(memcmp(symbol_path, symbol_path_settings_oven_temp, SYM_PATH_SIZE_RESULT * sizeof(union kowhai_symbol_t)) == 0);
+    assert(symbol_path_size == SYM_PATH_SIZE_RESULT);
+    symbol_path_size = SYM_PATH_SIZE;
+    symbol_path_settings_fluxcap_gain[1].symbol = KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1);
+    result = kowhai_create_symbol_path2(&settings_tree, &settings.flux_capacitor[1].gain, symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_OK);
+    assert(memcmp(symbol_path, symbol_path_settings_fluxcap_gain, SYM_PATH_SIZE_RESULT * sizeof(union kowhai_symbol_t)) == 0);
+    assert(symbol_path_size == SYM_PATH_SIZE_RESULT);
+    symbol_path_size = SYM_PATH_SIZE;
+    symbol_path_settings_fluxcap_gain[2].symbol = KOWHAI_SYMBOL(SYM_COEFFICIENT, 4);
+    result = kowhai_create_symbol_path2(&settings_tree, &settings.flux_capacitor[1].coefficient[4], symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_OK);
+    assert(memcmp(symbol_path, symbol_path_settings_fluxcap_gain, SYM_PATH_SIZE_RESULT * sizeof(union kowhai_symbol_t)) == 0);
+    assert(symbol_path_size == SYM_PATH_SIZE_RESULT);
+
     printf(" passed!\n");
 }
 

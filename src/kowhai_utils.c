@@ -343,7 +343,7 @@ int _create_symbol_path2(struct kowhai_tree_t* tree, void* target_location, unio
 {
     if (*target_size < symbol_path_length)
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
-    while (tree->data < target_location)
+    while (tree->data <= target_location)
     {
         int ret;
         switch (tree->desc->type)
@@ -354,7 +354,7 @@ int _create_symbol_path2(struct kowhai_tree_t* tree, void* target_location, unio
                 struct kowhai_node_t* node = tree->desc;
                 for (i = 0; i < node->count; i++)
                 {
-                    target[symbol_path_length].symbol = KOWHAI_SYMBOL(tree->desc->symbol, i);
+                    target[symbol_path_length - 1].symbol = KOWHAI_SYMBOL(tree->desc->symbol, i);
                     tree->desc = node + 1;
                     ret = _create_symbol_path2(tree, target_location, target, target_size, symbol_path_length + 1);
                     if (ret == KOW_STATUS_OK)
@@ -369,17 +369,18 @@ int _create_symbol_path2(struct kowhai_tree_t* tree, void* target_location, unio
             default:
             {
                 int i;
+                ret = kowhai_get_node_type_size(tree->desc->type);
                 for (i = 0; i < tree->desc->count; i++)
                 {
-                    target[symbol_path_length].symbol = KOWHAI_SYMBOL(tree->desc->symbol, i);
-                    ret = kowhai_get_node_type_size(tree->desc->type);
+                    target[symbol_path_length - 1].symbol = KOWHAI_SYMBOL(tree->desc->symbol, i);
                     tree->data = (char*)tree->data + ret;
-                    if (tree->data >= target_location)
+                    if (tree->data > target_location)
                         break;
                 }
                 break;
             }
         }
+        tree->desc++;
     }
     *target_size = symbol_path_length;
     return KOW_STATUS_OK;
