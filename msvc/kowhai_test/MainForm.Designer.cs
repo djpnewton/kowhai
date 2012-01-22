@@ -28,10 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea3 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series3 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.btnRefreshTrees = new System.Windows.Forms.Button();
-            this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.btnSave = new System.Windows.Forms.Button();
             this.btnLoad = new System.Windows.Forms.Button();
             this.btnMerge = new System.Windows.Forms.Button();
@@ -44,7 +41,6 @@
             this.kowhaiTreeShadow = new kowhai_sharp.KowhaiTree();
             this.kowhaiTreeSettings = new kowhai_sharp.KowhaiTree();
             this.btnDiff = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
             // btnRefreshTrees
@@ -57,22 +53,6 @@
             this.btnRefreshTrees.Text = "Refresh Trees";
             this.btnRefreshTrees.UseVisualStyleBackColor = true;
             this.btnRefreshTrees.Click += new System.EventHandler(this.btnRefreshTrees_Click);
-            // 
-            // chart1
-            // 
-            chartArea3.AxisX.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea3.AxisY.Enabled = System.Windows.Forms.DataVisualization.Charting.AxisEnabled.False;
-            chartArea3.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea3);
-            this.chart1.Location = new System.Drawing.Point(729, 460);
-            this.chart1.Name = "chart1";
-            series3.ChartArea = "ChartArea1";
-            series3.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.FastLine;
-            series3.Name = "Series1";
-            this.chart1.Series.Add(series3);
-            this.chart1.Size = new System.Drawing.Size(200, 100);
-            this.chart1.TabIndex = 5;
-            this.chart1.Text = "chart1";
             // 
             // btnSave
             // 
@@ -208,7 +188,6 @@
             this.Controls.Add(this.btnMerge);
             this.Controls.Add(this.rbActions);
             this.Controls.Add(this.rbScope);
-            this.Controls.Add(this.chart1);
             this.Controls.Add(this.kowhaiTreeScope);
             this.Controls.Add(this.kowhaiTreeActions);
             this.Controls.Add(this.rbSettings);
@@ -220,7 +199,6 @@
             this.Text = "MainForm";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
             this.Load += new System.EventHandler(this.MainForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -233,7 +211,6 @@
         private kowhai_sharp.KowhaiTree kowhaiTreeShadow;
         private kowhai_sharp.KowhaiTree kowhaiTreeActions;
         private kowhai_sharp.KowhaiTree kowhaiTreeScope;
-        private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnLoad;
         private System.Windows.Forms.RadioButton rbScope;

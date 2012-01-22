@@ -85,24 +85,6 @@ namespace kowhai_test
                         {
                             KowhaiTree tree = GetKowhaiTree(prot.header.tree_id);
                             tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
-                            if (tree == kowhaiTreeScope)
-                            {
-                                for (int i = 0; i < data.Length / 2; i++)
-                                {
-                                    UInt16 value = BitConverter.ToUInt16(data, i * 2);
-                                    int arrayIndex = 0;
-                                    if (symbols.Length == 2)
-                                        arrayIndex = symbols[1].parts.array_index;
-                                    int x = (arrayIndex * 2 + prot.payload.spec.data.memory.offset) / 2 + i;
-                                    if (chart1.Series[0].Points.Count > x)
-                                        chart1.Series[0].Points[x].SetValueY(value);
-                                    else
-                                        chart1.Series[0].Points.AddXY(x, value);
-                                }
-                                // force repaint
-                                chart1.Series[0] = chart1.Series[0];
-                                chart1.ChartAreas[0].RecalculateAxesScale();
-                            }
                         }
                         break;
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK:
