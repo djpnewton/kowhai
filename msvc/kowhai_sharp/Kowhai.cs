@@ -122,6 +122,9 @@ namespace kowhai_sharp
         public static extern int kowhai_get_int8(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out byte result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int kowhai_get_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out sbyte result);
+
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out int16_t result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -134,7 +137,7 @@ namespace kowhai_sharp
         public static extern int kowhai_set_int8(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, byte value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_set_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, char value);
+        public static extern int kowhai_set_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, sbyte value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_set_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int16_t value);
