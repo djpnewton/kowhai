@@ -36,5 +36,15 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
  */
 int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src);
 
+/**
+ * Create a symbol path using a tree descriptor and a node within that tree
+ * @param descriptor, the tree descriptor that we are making a symbol path from
+ * @param node, the node in the tree that we want our symbol path to point to
+ * @param target, the target buffer for our created symbol path
+ * @param size, the size of target buffer
+ * @return KOW_STATUS_OK on success (also update size param to actual size of symbol path created)
+ */
+int kowhai_create_symbol_path(struct kowhai_node_t* descriptor, struct kowhai_node_t* node, union kowhai_symbol_t* target, int* size);
+
 #endif
 
