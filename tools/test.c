@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "../src/kowhai.h"
 #include "../src/kowhai_utils.h"
 #include "../src/kowhai_protocol.h"
@@ -178,8 +182,30 @@ struct scope_data_t
 #define TREE_ID_SCOPE    3
 
 //
-// merge tests
+// test trees
 //
+
+struct settings_data_t settings;
+struct kowhai_tree_t settings_tree = {settings_descriptor, &settings};
+struct shadow_data_t shadow;
+struct kowhai_tree_t shadow_tree = {shadow_descriptor, &shadow};
+struct action_data_t action = { 100, 500, 100 };
+struct kowhai_tree_t action_tree = {action_descriptor, &action};
+struct scope_data_t scope;
+struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
+
+//
+// test functions
+//
+
+void diff_tests()
+{
+    printf("kowhai_diff tests!\n");
+    printf("  TODO: implement me!!!!\n");
+    getc(stdin);
+    printf(" passed!\n");
+}
+
 void merge_tests(void)
 {
     #pragma pack(1)
@@ -284,7 +310,7 @@ void merge_tests(void)
 
     #pragma pack()
 
-    printf("test kowhai utils...\t");
+    printf("test kowhai kowhai_merge...\t");
 
     // test the merge of old into new
     assert(kowhai_merge(&new_settings_tree, &old_settings_tree) == KOW_STATUS_OK);
@@ -308,18 +334,35 @@ void merge_tests(void)
     printf(" passed!\n");
 }
 
+void create_symbol_path_tests()
+{
+#define SYM_PATH_SIZE 5
+#define SYM_PATH_SIZE_RESULT 3
+    union kowhai_symbol_t symbol_path[SYM_PATH_SIZE];
+    union kowhai_symbol_t symbol_path_settings_oven_temp[SYM_PATH_SIZE] = {SYM_SETTINGS, SYM_OVEN, SYM_TEMP};
+    union kowhai_symbol_t symbol_path_settings_fluxcap_gain[SYM_PATH_SIZE] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, SYM_GAIN};
+    int symbol_path_size;
+    int result;
+    printf("kowhai_create_symbol_path* tests!\n");
+    symbol_path_size = 2;
+    result = kowhai_create_symbol_path(settings_descriptor, &settings_descriptor[8] /* settings.oven.temp */, symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    symbol_path_size = SYM_PATH_SIZE;
+    result = kowhai_create_symbol_path(settings_descriptor, &settings_descriptor[8] /* settings.oven.temp */, symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_OK);
+    assert(memcmp(symbol_path, symbol_path_settings_oven_temp, SYM_PATH_SIZE_RESULT * sizeof(union kowhai_symbol_t)) == 0);
+    assert(symbol_path_size == SYM_PATH_SIZE_RESULT);
+    symbol_path_size = SYM_PATH_SIZE;
+    result = kowhai_create_symbol_path(settings_descriptor, &settings_descriptor[4] /* settings.fluxcap.gain */, symbol_path, &symbol_path_size);
+    assert(result == KOW_STATUS_OK);
+    assert(memcmp(symbol_path, symbol_path_settings_fluxcap_gain, SYM_PATH_SIZE_RESULT * sizeof(union kowhai_symbol_t)) == 0);
+    assert(symbol_path_size == SYM_PATH_SIZE_RESULT);
+    printf(" passed!\n");
+}
+
 //
 // main
 //
-
-struct settings_data_t settings;
-struct kowhai_tree_t settings_tree = {settings_descriptor, &settings};
-struct shadow_data_t shadow;
-struct kowhai_tree_t shadow_tree = {shadow_descriptor, &shadow};
-struct action_data_t action = { 100, 500, 100 };
-struct kowhai_tree_t action_tree = {action_descriptor, &action};
-struct scope_data_t scope;
-struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 
 #define MAX_PACKET_SIZE 0x40
 
@@ -553,7 +596,9 @@ int main(int argc, char* argv[])
     }
 
     // test utils
+    diff_tests();
     merge_tests();
+    create_symbol_path_tests();
 
     // test server protocol
     if (test_command == TEST_PROTOCOL_SERVER)

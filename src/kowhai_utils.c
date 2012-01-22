@@ -316,26 +316,26 @@ int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 
 int kowhai_create_symbol_path(struct kowhai_node_t* descriptor, struct kowhai_node_t* node, union kowhai_symbol_t* target, int* target_size)
 {
-    int symbol_path_length = 0;
+    int symbol_path_index = 0;
     while (descriptor <= node)
     {
-        if (symbol_path_length >= *target_size)
+        if (symbol_path_index >= *target_size)
             return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
-        target[symbol_path_length].symbol = descriptor->symbol;
+        target[symbol_path_index].symbol = descriptor->symbol;
         switch (descriptor->type)
         {
             case KOW_BRANCH_START:
-                symbol_path_length++;
+                symbol_path_index++;
                 break;
             case KOW_BRANCH_END:
-                symbol_path_length--;
+                symbol_path_index--;
                 break;
             default:
                 break;
         }
         descriptor++;
     }
-    *target_size = symbol_path_length;
+    *target_size = symbol_path_index + 1;
     return KOW_STATUS_OK;
 }
 
