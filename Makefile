@@ -1,5 +1,6 @@
 CC 	   = gcc
-CFLAGS = -g -DKOWHAI_DBG
+CFLAGS = -g -DKOWHAI_DBG -fPIC
+KOWHAI_VER = 0.0.1
 
 SOCKET_LIB = 
 TEST_EXECUTABLE = test
@@ -13,10 +14,12 @@ endif
 all: jsmn kowhai test
 
 test: tools/test.o tools/xpsocket.o tools/beep.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -lkowhai -ljsmn
+	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -Wl,-Bstatic -lkowhai -Wl,-Bdynamic
 
-kowhai: src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o src/kowhai_utils.o
+kowhai: src/kowhai.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o src/kowhai_utils.o 3rdparty/jsmn/jsmn.o
 	ar rs lib$@.a $?
+	# make a shared library for linux/mac (@todo versioning)
+	$(CC) $(CFLAGS) -shared -Wl,-soname,lib$@.so -o lib$@.so $?
 
 jsmn: 3rdparty/jsmn/jsmn.o
 	ar rs lib$@.a $?
