@@ -11,7 +11,11 @@ namespace kowhai_sharp
 
     public class Kowhai
     {
-        public const string dllname = "kowhai_dll.dll";
+#if (WIN32 || WIN64)
+    public const string dllname = "kowhai_dll.dll";
+#else
+    public const string dllname = "libkowhai.so";
+#endif
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_symbol_parts_t
