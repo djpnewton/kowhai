@@ -18,14 +18,18 @@ namespace kowhai_sharp
         public static extern int kowhai_merge(ref Kowhai.kowhai_tree_t dst, ref Kowhai.kowhai_tree_t src);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int kowhai_create_symbol_path(ref Kowhai.kowhai_node_t[] descriptor, ref Kowhai.kowhai_node_t node, ref Kowhai.kowhai_symbol_t[] target, ref int target_size);
+        public static extern int kowhai_create_symbol_path(ref Kowhai.kowhai_node_t[] descriptor, ref Kowhai.kowhai_node_t node, IntPtr target, ref int target_size);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int kowhai_create_symbol_path2(ref Kowhai.kowhai_tree_t tree, IntPtr target_location, ref Kowhai.kowhai_symbol_t[] target, ref int target_size);
+        public static extern int kowhai_create_symbol_path2(ref Kowhai.kowhai_tree_t tree, IntPtr target_location, IntPtr target, ref int target_size);
 
-        public static int Diff(Kowhai.Tree left, Kowhai.Tree right, kowhai_on_diff_t onDiff)
+        public delegate void OnDiff(Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath);
+
+        public static int Diff(Kowhai.Tree left, Kowhai.Tree right, OnDiff onDiffLeft, OnDiff onDiffRight)
         {
+            int result;
             Kowhai.kowhai_tree_t l, r;
+
             GCHandle h1 = GCHandle.Alloc(left.Descriptor, GCHandleType.Pinned);
             l.desc = h1.AddrOfPinnedObject();
             GCHandle h2 = GCHandle.Alloc(left.Data, GCHandleType.Pinned);
@@ -34,7 +38,27 @@ namespace kowhai_sharp
             r.desc = h3.AddrOfPinnedObject();
             GCHandle h4 = GCHandle.Alloc(right.Data, GCHandleType.Pinned);
             r.data = h4.AddrOfPinnedObject();
-            int result = kowhai_diff(ref l, ref r, onDiff);
+
+            kowhai_on_diff_t _onDiff = delegate(ref Kowhai.kowhai_node_t left_node, int left_node_index, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, int right_node_index, IntPtr right_data, int right_offset, int index, int depth)
+            {
+                Kowhai.kowhai_symbol_t[] symbolPath;
+                if (onDiffLeft != null && left_data.ToInt32() != 0)
+                {
+                    result = _CreateSymbolPath(ref l, new IntPtr(left_data.ToInt64() + left_offset), out symbolPath);
+                    if (result == Kowhai.STATUS_OK)
+                        onDiffLeft(left, symbolPath);
+                }
+                if (onDiffRight != null && right_data.ToInt32() != 0)
+                {
+                    result = _CreateSymbolPath(ref r, new IntPtr(right_data.ToInt64() + right_offset), out symbolPath);
+                    if (result == Kowhai.STATUS_OK)
+                        onDiffRight(right, symbolPath);
+                }
+                return Kowhai.STATUS_OK;
+            };
+
+            result = kowhai_diff(ref l, ref r, _onDiff);
+
             h4.Free();
             h3.Free();
             h2.Free();
@@ -63,21 +87,32 @@ namespace kowhai_sharp
 
         public static int CreateSymbolPath(Kowhai.Tree tree, IntPtr targetLocation, out Kowhai.kowhai_symbol_t[] symbolPath)
         {
-            int result, symbolPathLength = 5;
+            int result;
             Kowhai.kowhai_tree_t _tree;
             GCHandle hTreeDesc = GCHandle.Alloc(tree.Descriptor, GCHandleType.Pinned);
             _tree.desc = hTreeDesc.AddrOfPinnedObject();
             GCHandle hTreeData = GCHandle.Alloc(tree.Data, GCHandleType.Pinned);
             _tree.data = hTreeData.AddrOfPinnedObject();
+            result = _CreateSymbolPath(ref _tree, targetLocation, out symbolPath);
+            hTreeData.Free();
+            hTreeDesc.Free();
+            return result;
+        }
+
+        private static int _CreateSymbolPath(ref Kowhai.kowhai_tree_t tree, IntPtr targetLocation, out Kowhai.kowhai_symbol_t[] symbolPath)
+        {
+            int result, symbolPathLength = 5;
             do
             {
                 symbolPath = new Kowhai.kowhai_symbol_t[symbolPathLength];
-                result = kowhai_create_symbol_path2(ref _tree, targetLocation, ref symbolPath, ref symbolPathLength);
+                GCHandle h = GCHandle.Alloc(symbolPath, GCHandleType.Pinned);
+                result = kowhai_create_symbol_path2(ref tree, targetLocation, h.AddrOfPinnedObject(), ref symbolPathLength);
+                h.Free();
+                if (result == Kowhai.STATUS_OK)
+                    Array.Resize<Kowhai.kowhai_symbol_t>(ref symbolPath, symbolPathLength);
                 symbolPathLength *= 2;
             }
             while (result == Kowhai.STATUS_TARGET_BUFFER_TOO_SMALL);
-            hTreeData.Free();
-            hTreeDesc.Free();
             return result;
         }
     }
