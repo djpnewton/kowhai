@@ -9,7 +9,7 @@ namespace kowhai_sharp
     public class KowhaiUtils
     {
         [UnmanagedFunctionPointerAttribute(CallingConvention.Cdecl, CharSet=CharSet.Ansi)]
-        public delegate int kowhai_on_diff_t(ref Kowhai.kowhai_node_t left_node, int left_node_index, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, int right_node_index, IntPtr right_data, int right_offset, int index, int depth);
+        public delegate int kowhai_on_diff_t(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_diff(ref Kowhai.kowhai_tree_t left, ref Kowhai.kowhai_tree_t right, kowhai_on_diff_t on_diff);
@@ -39,18 +39,18 @@ namespace kowhai_sharp
             GCHandle h4 = GCHandle.Alloc(right.Data, GCHandleType.Pinned);
             r.data = h4.AddrOfPinnedObject();
 
-            kowhai_on_diff_t _onDiff = delegate(ref Kowhai.kowhai_node_t left_node, int left_node_index, IntPtr left_data, int left_offset, ref Kowhai.kowhai_node_t right_node, int right_node_index, IntPtr right_data, int right_offset, int index, int depth)
+            kowhai_on_diff_t _onDiff = delegate(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth)
             {
                 Kowhai.kowhai_symbol_t[] symbolPath;
                 if (onDiffLeft != null && left_data.ToInt32() != 0)
                 {
-                    result = _CreateSymbolPath(ref l, new IntPtr(left_data.ToInt64() + left_offset), out symbolPath);
+                    result = _CreateSymbolPath(ref l, left_data, out symbolPath);
                     if (result == Kowhai.STATUS_OK)
                         onDiffLeft(left, symbolPath);
                 }
                 if (onDiffRight != null && right_data.ToInt32() != 0)
                 {
-                    result = _CreateSymbolPath(ref r, new IntPtr(right_data.ToInt64() + right_offset), out symbolPath);
+                    result = _CreateSymbolPath(ref r, right_data, out symbolPath);
                     if (result == Kowhai.STATUS_OK)
                         onDiffRight(right, symbolPath);
                 }

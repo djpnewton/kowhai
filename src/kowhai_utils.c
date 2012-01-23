@@ -127,7 +127,6 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                         {
                             struct kowhai_node_t left_node = *left->desc;
 
-                            void *right_data = (char*)right->data + offset;
                             if (!swap_cb_param)
                                 ret = on_diff(&left_node, left_data, right_node, right_data, i, depth);
                             else
@@ -266,7 +265,7 @@ static int on_diff_merge(const struct kowhai_node_t *dst_node, void *dst_data, c
 
     // if array size's are not the same then do not merge
     ///@todo maybe we should merge as much as possible
-    if (dst_node->type != src_node->type)
+    if (dst_node->count != src_node->count)
     {
         #ifdef KOWHAI_DBG
         printf(KOWHAI_UTILS_INFO "(%d)%.*s cannot merge arrays off different sizes [dst.count = %d, src.count = %d]\n", depth, depth, KOWHAI_TABS, dst_node->count, src_node->count);
