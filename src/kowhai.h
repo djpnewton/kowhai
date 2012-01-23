@@ -144,7 +144,7 @@ int kowhai_write(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbo
  * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
-int kowhai_get_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
+int kowhai_get_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char* result);
 
 /**
  * @brief Get a 16 bit integer setting specified by a symbol path from a settings buffer
