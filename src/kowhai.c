@@ -265,13 +265,13 @@ int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_sy
         return status;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
-        *result = *((char*)((char*)tree->data + offset));
+        *result = *((int8_t*)((int8_t*)tree->data + offset));
         return status;
     }
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_get_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result)
+int kowhai_get_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char* result)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
@@ -335,7 +335,7 @@ int kowhai_get_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_s
     return KOW_STATUS_INVALID_NODE_TYPE;
 }
 
-int kowhai_set_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value)
+int kowhai_set_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, uint8_t value)
 {
     struct kowhai_node_t* node;
     uint16_t offset;
@@ -345,7 +345,7 @@ int kowhai_set_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_sy
         return status;
     if (node->type == KOW_INT8 || node->type == KOW_UINT8)
     {
-        char* target_address = (char*)((char*)tree->data + offset);
+        uint8_t* target_address = (uint8_t*)((uint8_t*)tree->data + offset);
         *target_address = value;
         return status;
     }

@@ -22,3 +22,5 @@ EXPORTS
 	kowhai_deserialize
 	kowhai_diff
 	kowhai_merge
+	kowhai_create_symbol_path
+	kowhai_create_symbol_path2
