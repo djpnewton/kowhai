@@ -74,6 +74,7 @@ union kowhai_symbol_t
 #define KOW_STATUS_TARGET_BUFFER_TOO_SMALL  9
 #define KOW_STATUS_BUFFER_INVALID          10
 #define KOW_STATUS_SCRATCH_TOO_SMALL       11
+#define KOW_STATUS_NOT_FOUND               12
 
 /**
  * @brief return the size for a given node type
@@ -143,6 +144,7 @@ int kowhai_write(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbo
  * @return kowhia status value, ie KOW_STATUS_OK on success or other on error
  */
 int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
+int kowhai_get_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char* result);
 
 /**
  * @brief Get a 16 bit integer setting specified by a symbol path from a settings buffer
@@ -182,6 +184,7 @@ int kowhai_get_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_s
  * @param value, the new value to change the node to
  * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
+int kowhai_set_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, uint8_t value);
 int kowhai_set_char(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, char value);
 
 /**

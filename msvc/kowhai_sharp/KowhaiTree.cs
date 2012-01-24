@@ -478,24 +478,52 @@ namespace kowhai_sharp
                 BlankNodes(childNode);
         }
 
-        public void DiffAt(Kowhai.kowhai_node_t kowhaiNode, int kowhaiNodeIndex, int kowhaiNodeArrayIndex)
+        public void DiffAt(Kowhai.kowhai_symbol_t[] symbolPath)
         {
             treeView1.BeginUpdate();
             foreach (TreeNode childNode in treeView1.Nodes)
-                _diffAt(childNode, kowhaiNode, kowhaiNodeIndex, kowhaiNodeArrayIndex);
+                _diffAt(symbolPath, new bool[symbolPath.Length], 0, childNode);
             treeView1.EndUpdate();
         }
 
-        //TODO: make this work properly :)
-        public void _diffAt(TreeNode node, Kowhai.kowhai_node_t kowhaiNode, int kowhaiNodeIndex, int kowhaiNodeArrayIndex)
+        public void _diffAt(Kowhai.kowhai_symbol_t[] symbolPath, bool[] symbolPathMatchesArrayIndex, int symbolPathIndex, TreeNode node)
         {
             KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-            if (info.NodeIndex == kowhaiNodeIndex && info.ArrayIndex == kowhaiNodeArrayIndex)
+            bool isBranchArrayItem = info.IsArrayItem && info.KowhaiNode.type == Kowhai.BRANCH;
+            bool isLeafArrayParent = node.Nodes.Count > 0 && info.KowhaiNode.type != Kowhai.BRANCH;
+            // poplulate symbolPathMatchesArrayIndex to ensure we are on the correct branch of the treeview
+            if (isBranchArrayItem)
+                symbolPathMatchesArrayIndex[symbolPathIndex - 1] = info.ArrayIndex == symbolPath[symbolPathIndex - 1].parts.array_index;
+            else
             {
-                node.BackColor = Color.Red;
+                if (info.KowhaiNode.symbol != symbolPath[symbolPathIndex].parts.name)
+                    return;
+                symbolPathMatchesArrayIndex[symbolPathIndex] = info.ArrayIndex == symbolPath[symbolPathIndex].parts.array_index;
             }
+            // color treeview node red is match is found
+            if (!isLeafArrayParent && symbolPathIndex == symbolPath.Length - 1 && !symbolPathMatchesArrayIndex.Contains(false))
+                node.BackColor = Color.Red;
+            // increment symbol path index and check next level of treeview
+            if (!isBranchArrayItem && !isLeafArrayParent)
+                symbolPathIndex++;
             foreach (TreeNode childNode in node.Nodes)
-                _diffAt(childNode, kowhaiNode, kowhaiNodeIndex, kowhaiNodeArrayIndex);
+                _diffAt(symbolPath, symbolPathMatchesArrayIndex, symbolPathIndex, childNode);
+        }
+
+        public void ResetNodesBackColor()
+        {
+            treeView1.BeginUpdate();
+            foreach (TreeNode childNode in treeView1.Nodes)
+                _resetNodesBackColor(childNode);
+            treeView1.EndUpdate();
+        }
+
+        private void _resetNodesBackColor(TreeNode node)
+        {
+            if (node.Nodes.Count == 0)
+                node.BackColor = Color.White;
+            foreach (TreeNode childNode in node.Nodes)
+                _resetNodesBackColor(childNode);
         }
     }
 }
