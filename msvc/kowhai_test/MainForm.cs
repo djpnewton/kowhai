@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Collections;
 using kowhai_sharp;
 
 namespace kowhai_test
@@ -63,6 +64,8 @@ namespace kowhai_test
             });
         }
 
+        private ArrayList ScopePoints = new ArrayList();
+        UInt16 ScopeMinVal = UInt16.MaxValue, ScopeMaxVal = UInt16.MinValue;
         private void ProcessPacket(byte[] buffer)
         {
             KowhaiProtocol.kowhai_protocol_t prot;
@@ -85,6 +88,44 @@ namespace kowhai_test
                         {
                             KowhaiTree tree = GetKowhaiTree(prot.header.tree_id);
                             tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
+                            if (tree == kowhaiTreeScope)
+                            {
+                                //Kowhai.GetNode(tree.GetDescriptor(), symbolsPath, out nodeOffset, out node);
+                                // update the scope points the the new data
+                                for (int i = 0; i < data.Length / 2; i++)
+                                {
+                                    UInt16 value = BitConverter.ToUInt16(data, i * 2);
+                                    if (value > ScopeMaxVal)
+                                        ScopeMaxVal = value;
+                                    if (value < ScopeMinVal)
+                                        ScopeMinVal = value;
+                                    int arrayIndex = 0;
+                                    if (symbols.Length == 2)
+                                        arrayIndex = symbols[1].parts.array_index;
+                                    int k = (arrayIndex * 2 + prot.payload.spec.data.memory.offset) / 2 + i;
+                                    if (ScopePoints.Count > k)
+                                        ScopePoints[k] = value;
+                                    else
+                                        ScopePoints.Add(value);
+                                }
+                                // repaint the scope points
+                                Graphics g = pnlScope.CreateGraphics();
+                                int w = pnlScope.Width;
+                                int h = pnlScope.Height;
+                                float x = 0, dx = w / (data.Length - 1);
+                                PointF last = new PointF(x, 0), next;
+                                g.Clear(Color.Gray);
+                                System.Diagnostics.Trace.WriteLine("Count: " + ScopePoints.Count.ToString());
+                                for (int i = 0; i < ScopePoints.Count; i++, x += dx)
+                                {
+                                    // build the next point
+                                    UInt16 y = (UInt16)ScopePoints[i];
+                                    float yf = h * (y - ScopeMinVal) / (ScopeMaxVal - ScopeMinVal);
+                                    next = new PointF(x, yf);
+                                    g.DrawLine(Pens.Blue, next, last);
+                                    last = next;
+                                }
+                            }
                         }
                         break;
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK:

@@ -43,6 +43,7 @@
             this.btnDiff = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.pnlScope = new System.Windows.Forms.Panel();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
@@ -222,6 +223,7 @@
             // 
             // panel1
             // 
+            this.panel1.Controls.Add(this.pnlScope);
             this.panel1.Controls.Add(this.kowhaiTreeScope);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(510, 20);
@@ -229,6 +231,15 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(171, 398);
             this.panel1.TabIndex = 12;
+            // 
+            // pnlScope
+            // 
+            this.pnlScope.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.pnlScope.Location = new System.Drawing.Point(3, 316);
+            this.pnlScope.Name = "pnlScope";
+            this.pnlScope.Size = new System.Drawing.Size(165, 79);
+            this.pnlScope.TabIndex = 5;
             // 
             // MainForm
             // 
@@ -270,5 +281,6 @@
         private System.Windows.Forms.Button btnDiff;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel pnlScope;
     }
 }
