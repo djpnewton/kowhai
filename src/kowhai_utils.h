@@ -5,6 +5,7 @@
 
 /**
  * @brief called when a difference is found between two tree's
+ * @param param, application specific parameter passed through
  * @param left_node, points to the left node where the difference was found, or NULL if right node is unique
  * @param left_data, point to the start of the difference in the left node, or NULL if right node is unique
  * @param right_node, points to the right node where the difference was found, or NULL if left node is unique
@@ -12,7 +13,7 @@
  * @param index, the array index of this node where the difference starts
  * @param depth number of parent nodes from the root node that this difference was found
  */
-typedef int (*kowhai_on_diff_t)(const struct kowhai_node_t *left_node, void *left_data, const struct kowhai_node_t *right_node, void *right_data, int index, int depth);
+typedef int (*kowhai_on_diff_t)(void* param, const struct kowhai_node_t *left_node, void *left_data, const struct kowhai_node_t *right_node, void *right_data, int index, int depth);
 
 /**
  * @brief diff left and right tree
@@ -20,9 +21,10 @@ typedef int (*kowhai_on_diff_t)(const struct kowhai_node_t *left_node, void *lef
  * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
  * @param left, diff this tree against right
  * @param right, diff this tree against left
+ * @param on_diff_param, application specific parameter passed through the on_diff callback
  * @param on_diff, call this when a unique node or common nodes that have different values are found
  */
-int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_diff);
+int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_diff);
 
 /**
  * @brief merge nodes that are common to src and dst from src into dst leaving unique nodes unchanged

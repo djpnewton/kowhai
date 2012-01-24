@@ -43,11 +43,11 @@ int write_string(char* buffer, size_t buffer_size, const char* format, ...)
     return result;
 }
 
-int add_header(char** dest, size_t* dest_size, int* current_offset, struct kowhai_node_t* node, kowhai_get_symbol_name_t get_name)
+int add_header(char** dest, size_t* dest_size, int* current_offset, struct kowhai_node_t* node, void* get_name_param, kowhai_get_symbol_name_t get_name)
 {
     int chars = write_string(*dest, *dest_size,
             "{\""NAME"\": \"%s\", \""TYPE"\": %d, \""SYMBOL"\": %d, \""COUNT"\": %d, \""TAG"\": %d",
-            get_name(node->symbol), node->type, node->symbol, node->count, node->tag);
+            get_name(get_name_param, node->symbol), node->type, node->symbol, node->count, node->tag);
     if (chars >= 0)
     {
         *dest += chars;
@@ -123,7 +123,7 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     return chars;
 }
 
-int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer, size_t target_size, int level, kowhai_get_symbol_name_t get_name)
+int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer, size_t target_size, int level, void* get_name_param, kowhai_get_symbol_name_t get_name)
 {
     int target_offset = 0;
     struct kowhai_node_t* node;
@@ -151,7 +151,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
             case KOW_BRANCH_START:
             {
                 // write header
-                chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name);
+                chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name_param, get_name);
                 if (chars < 0)
                     return chars;
                 if (node->count > 1)
@@ -175,7 +175,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         if (chars < 0)
                             return chars;
                         // write branch children
-                        chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name);
+                        chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name);
                         if (chars < 0)
                             return chars;
                         target_offset += chars;
@@ -211,7 +211,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         return chars;
                     // write branch children
                     (*desc) += 1;
-                    chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name);
+                    chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name);
                     if (chars < 0)
                         return chars;
                     target_offset += chars;
@@ -236,7 +236,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
             {
                 int value_size = kowhai_get_node_type_size(node->type);
                 // write header
-                chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name);
+                chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name_param, get_name);
                 if (chars < 0)
                     return chars;
                 // write value identifier
@@ -297,9 +297,9 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
     }
 }
 
-int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, kowhai_get_symbol_name_t get_name)
+int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name)
 {
-    int chars = serialize_node(&tree.desc, &tree.data, target_buffer, *target_size, 0, get_name);
+    int chars = serialize_node(&tree.desc, &tree.data, target_buffer, *target_size, 0, get_name_param, get_name);
     if (chars < 0)
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
     *target_size = chars;

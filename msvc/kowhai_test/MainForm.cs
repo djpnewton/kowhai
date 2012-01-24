@@ -213,7 +213,7 @@ namespace kowhai_test
             sock.Send(buffer, 2);
         }
 
-        string getSymbolName(UInt16 value)
+        string getSymbolName(Object param, UInt16 value)
         {
             return KowhaiSymbols.Symbols.Strings[value];
         }
@@ -222,7 +222,7 @@ namespace kowhai_test
         {
             KowhaiTree tree = GetTreeFromRadioButtonSelection();
             string text;
-            if (KowhaiSerialize.Serialize(tree.GetDescriptor(), tree.GetData(), out text, 0x1000, getSymbolName) == Kowhai.STATUS_OK)
+            if (KowhaiSerialize.Serialize(tree.GetDescriptor(), tree.GetData(), out text, 0x1000, null, getSymbolName) == Kowhai.STATUS_OK)
             {
                 SaveFileDialog d = new SaveFileDialog();
                 d.Filter = "Kowhai Files | *.kowhai";
@@ -255,7 +255,7 @@ namespace kowhai_test
             }
         }
 
-        void onSettingsDiffLeft(Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath)
+        void onSettingsDiffLeft(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath)
         {
             kowhaiTreeSettings.DiffAt(symbolPath);
         }
@@ -266,7 +266,7 @@ namespace kowhai_test
             KowhaiTree rightTree = GetTreeFromRadioButtonSelection();
             Kowhai.Tree left = new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData());
             Kowhai.Tree right = new Kowhai.Tree(rightTree.GetDescriptor(), rightTree.GetData());
-            if (KowhaiUtils.Diff(left, right, onSettingsDiffLeft, null) != Kowhai.STATUS_OK)
+            if (KowhaiUtils.Diff(left, right, null, onSettingsDiffLeft, null) != Kowhai.STATUS_OK)
                 MessageBox.Show("Diff Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 

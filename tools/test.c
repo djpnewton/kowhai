@@ -340,7 +340,7 @@ void core_tests()
     printf(" passed!\n");
 }
 
-char* get_symbol_name(uint16_t symbol)
+char* get_symbol_name(void* param, uint16_t symbol)
 {
     return symbols[symbol];
 }
@@ -360,9 +360,9 @@ void serialization_tests()
     // kowhai_serialize
     assert(js != NULL && scratch != NULL && desc != NULL && data != NULL);
     buf_size = 100;
-    assert(kowhai_serialize(settings_tree, js, &buf_size, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
     buf_size = 0x1000;
-    assert(kowhai_serialize(settings_tree, js, &buf_size, get_symbol_name) == KOW_STATUS_OK);
+    assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_OK);
     printf("---\n");
     printf(js);
     printf("\n***\n");

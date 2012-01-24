@@ -25,12 +25,13 @@ int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowh
  * @param left_node_index, the index of the left node in the original descriptor (used in recursive calls, original caller should pass 0)
  * @param right, diff this tree against left
  * @param right_node_index, the index of the right node in the original descriptor (used in recursive calls, original caller should pass 0)
+ * @param on_diff_param, application specific parameter passed through the on_diff callback
  * @param on_unique, call this when a unique node is found in the left tree
  * @param on_diff, call this when a common node is found in both left and right trees and the values do not match
  * @param swap_cb_param, change the order of swap_cb_param so right if first then left, otherwise it is left then right
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
+static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
 {
     int ret;
     uint16_t offset;
@@ -82,7 +83,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                         #ifdef KOWHAI_DBG
                         printf(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
                         #endif
-                        ret = diff_l2r(&__left, &__right, on_unique, on_diff, swap_cb_param, depth + 1);
+                        ret = diff_l2r(&__left, &__right, on_diff_param, on_unique, on_diff, swap_cb_param, depth + 1);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                     }
@@ -128,9 +129,9 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                             struct kowhai_node_t left_node = *left->desc;
 
                             if (!swap_cb_param)
-                                ret = on_diff(&left_node, left_data, right_node, right_data, i, depth);
+                                ret = on_diff(on_diff_param, &left_node, left_data, right_node, right_data, i, depth);
                             else
-                                ret = on_diff(right_node, right_data, &left_node, left_data, i, depth);
+                                ret = on_diff(on_diff_param, right_node, right_data, &left_node, left_data, i, depth);
                             if (ret != KOW_STATUS_OK)
                                 return ret;
                         }
@@ -155,9 +156,9 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
                     if (on_unique != NULL)
                     {
                         if (!swap_cb_param)
-                            ret = on_unique(left->desc, left_data, NULL, NULL, i, depth);
+                            ret = on_unique(on_diff_param, left->desc, left_data, NULL, NULL, i, depth);
                         else
-                            ret = on_unique(NULL, NULL, left->desc, left_data, i, depth);
+                            ret = on_unique(on_diff_param, NULL, NULL, left->desc, left_data, i, depth);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                     }
@@ -194,9 +195,10 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kow
  * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
  * @param left, diff this tree against right
  * @param right, diff this tree against left
+ * @param on_diff_param, application specific parameter passed through the on_diff callback
  * @param on_diff, call this when a unique node or common nodes that have different values are found
  */
-int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_on_diff_t on_diff)
+int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_diff)
 {
     struct kowhai_tree_t _left, _right;
     int ret;
@@ -207,7 +209,7 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
     #endif
     _left = *left;
     _right = *right;
-    ret = diff_l2r(&_left, &_right, on_diff, on_diff, 0, 0);
+    ret = diff_l2r(&_left, &_right, on_diff_param, on_diff, on_diff, 0, 0);
     if (ret != KOW_STATUS_OK)
         return ret;
 
@@ -218,18 +220,19 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, kowhai_
     #endif
     _left = *left;
     _right = *right;
-    ret = diff_l2r(&_right, &_left, on_diff, NULL, 1, 0);
+    ret = diff_l2r(&_right, &_left, on_diff_param, on_diff, NULL, 1, 0);
 
     return ret;
 }
 
 /**
- * @brief called by diff when merging 
+ * @brief called by diff when merging
+ * @param param unused parameter
  * @param dst this is the destination node to merge common source nodes into, or NULL if node is unique to src
  * @param src this is the source node to merge into common destination nodes, or NULL if node is unique to dst
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int on_diff_merge(const struct kowhai_node_t *dst_node, void *dst_data, const struct kowhai_node_t *src_node, void *src_data, int index, int depth)
+static int on_diff_merge(void* param, const struct kowhai_node_t *dst_node, void *dst_data, const struct kowhai_node_t *src_node, void *src_data, int index, int depth)
 {
     int size;
 
@@ -304,7 +307,7 @@ int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
         return KOW_STATUS_INVALID_DESCRIPTOR;
     
     // update all the notes in dst that are common to dst and src
-    return kowhai_diff(_dst, src, on_diff_merge);
+    return kowhai_diff(_dst, src, NULL, on_diff_merge);
 }
 
 int kowhai_create_symbol_path(struct kowhai_node_t* descriptor, struct kowhai_node_t* node, union kowhai_symbol_t* target, int* target_size)

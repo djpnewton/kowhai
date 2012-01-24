@@ -9,10 +9,10 @@ namespace kowhai_sharp
     public class KowhaiUtils
     {
         [UnmanagedFunctionPointerAttribute(CallingConvention.Cdecl, CharSet=CharSet.Ansi)]
-        public delegate int kowhai_on_diff_t(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth);
+        public delegate int kowhai_on_diff_t(IntPtr param, ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern int kowhai_diff(ref Kowhai.kowhai_tree_t left, ref Kowhai.kowhai_tree_t right, kowhai_on_diff_t on_diff);
+        public static extern int kowhai_diff(ref Kowhai.kowhai_tree_t left, ref Kowhai.kowhai_tree_t right, IntPtr on_diff_param, kowhai_on_diff_t on_diff);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_merge(ref Kowhai.kowhai_tree_t dst, ref Kowhai.kowhai_tree_t src);
@@ -23,9 +23,9 @@ namespace kowhai_sharp
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_create_symbol_path2(ref Kowhai.kowhai_tree_t tree, IntPtr target_location, IntPtr target, ref int target_size);
 
-        public delegate void OnDiff(Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath);
+        public delegate void OnDiff(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath);
 
-        public static int Diff(Kowhai.Tree left, Kowhai.Tree right, OnDiff onDiffLeft, OnDiff onDiffRight)
+        public static int Diff(Kowhai.Tree left, Kowhai.Tree right, Object onDiffParam, OnDiff onDiffLeft, OnDiff onDiffRight)
         {
             int result;
             Kowhai.kowhai_tree_t l, r;
@@ -39,25 +39,25 @@ namespace kowhai_sharp
             GCHandle h4 = GCHandle.Alloc(right.Data, GCHandleType.Pinned);
             r.data = h4.AddrOfPinnedObject();
 
-            kowhai_on_diff_t _onDiff = delegate(ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth)
+            kowhai_on_diff_t _onDiff = delegate(IntPtr param_, ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth)
             {
                 Kowhai.kowhai_symbol_t[] symbolPath;
                 if (onDiffLeft != null && left_data.ToInt32() != 0)
                 {
                     result = _CreateSymbolPath(ref l, left_data, out symbolPath);
                     if (result == Kowhai.STATUS_OK)
-                        onDiffLeft(left, symbolPath);
+                        onDiffLeft(onDiffParam, left, symbolPath);
                 }
                 if (onDiffRight != null && right_data.ToInt32() != 0)
                 {
                     result = _CreateSymbolPath(ref r, right_data, out symbolPath);
                     if (result == Kowhai.STATUS_OK)
-                        onDiffRight(right, symbolPath);
+                        onDiffRight(onDiffParam, right, symbolPath);
                 }
                 return Kowhai.STATUS_OK;
             };
 
-            result = kowhai_diff(ref l, ref r, _onDiff);
+            result = kowhai_diff(ref l, ref r, IntPtr.Zero, _onDiff);
 
             h4.Free();
             h3.Free();

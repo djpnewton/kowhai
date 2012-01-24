@@ -3,7 +3,13 @@
 
 #include "kowhai.h"
 
-typedef char* (*kowhai_get_symbol_name_t)(uint16_t symbol);
+/**
+ * @brief callback used to convert a kowhai symbol id to its string representation
+ * @param param application specific parameter passed through
+ * @param symbol the symbol id to convert
+ * @return the string representation of the symbol id
+ */
+typedef char* (*kowhai_get_symbol_name_t)(void* param, uint16_t symbol);
 
 /**
  * Convert a kowhai tree to a json ascii string
@@ -11,10 +17,11 @@ typedef char* (*kowhai_get_symbol_name_t)(uint16_t symbol);
  * @param tree, the kowhai tree
  * @param target_buffer, the ascii string to write the json representation to
  * @param target_size, the size of the target buffer (upon success the number of characters written to target_buffer are returned to the caller via this parameter)
+ * @param get_name_param application specific parameter passed through the get_name callback
  * @param get_name, a pointer to a function that resolves kowhai symbol integers to strings
  * @return KOW_STATUS_OK if the function was successfull
  */
-int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, kowhai_get_symbol_name_t get_name);
+int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name);
 
 /**
  * Convert a json ascii string to a kowhai tree
