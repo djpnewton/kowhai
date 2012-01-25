@@ -240,6 +240,7 @@
             this.pnlScope.Name = "pnlScope";
             this.pnlScope.Size = new System.Drawing.Size(165, 79);
             this.pnlScope.TabIndex = 5;
+            this.pnlScope.Paint += new System.Windows.Forms.PaintEventHandler(this.OnPaint);
             // 
             // MainForm
             // 

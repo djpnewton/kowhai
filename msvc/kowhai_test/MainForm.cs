@@ -108,23 +108,7 @@ namespace kowhai_test
                                     else
                                         ScopePoints.Add(value);
                                 }
-                                // repaint the scope points
-                                Graphics g = pnlScope.CreateGraphics();
-                                int w = pnlScope.Width;
-                                int h = pnlScope.Height;
-                                float x = 0, dx = w / (data.Length - 1);
-                                PointF last = new PointF(x, 0), next;
-                                g.Clear(Color.Gray);
-                                System.Diagnostics.Trace.WriteLine("Count: " + ScopePoints.Count.ToString());
-                                for (int i = 0; i < ScopePoints.Count; i++, x += dx)
-                                {
-                                    // build the next point
-                                    UInt16 y = (UInt16)ScopePoints[i];
-                                    float yf = h * (y - ScopeMinVal) / (ScopeMaxVal - ScopeMinVal);
-                                    next = new PointF(x, yf);
-                                    g.DrawLine(Pens.Blue, next, last);
-                                    last = next;
-                                }
+                                pnlScope.Invalidate();
                             }
                         }
                         break;
@@ -358,6 +342,26 @@ namespace kowhai_test
         private Kowhai.kowhai_node_t[] GetDescriptor(object sender)
         {
             return descriptors[GetTreeId(sender)];
+        }
+
+        private void OnPaint(object sender, PaintEventArgs e)
+        {
+            // repaint the scope points
+            Graphics g = pnlScope.CreateGraphics();
+            int w = pnlScope.Width;
+            int h = pnlScope.Height;
+            float x = 0, dx = (float)w / (ScopePoints.Count - 1);
+            PointF last = new PointF(x, 0), next;
+            g.Clear(Color.Gray);
+            for (int i = 0; i < ScopePoints.Count; i++, x += dx)
+            {
+                // build the next point
+                UInt16 y = (UInt16)ScopePoints[i];
+                float yf = h * (y - ScopeMinVal) / (ScopeMaxVal - ScopeMinVal);
+                next = new PointF(x, yf);
+                g.DrawLine(Pens.Blue, next, last);
+                last = next;
+            }
         }
     }
 }
