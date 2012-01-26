@@ -501,7 +501,8 @@ namespace kowhai_sharp
                 symbolPathMatchesArrayIndex[symbolPathIndex] = info.ArrayIndex == symbolPath[symbolPathIndex].parts.array_index;
             }
             // color treeview node red is match is found
-            if (!isLeafArrayParent && symbolPathIndex == symbolPath.Length - 1 && !symbolPathMatchesArrayIndex.Contains(false))
+            if (symbolPathIndex == symbolPath.Length - 1 && !symbolPathMatchesArrayIndex.Contains(false) &&
+                !isLeafArrayParent && !isBranchArrayItem)
                 node.BackColor = Color.Red;
             // increment symbol path index and check next level of treeview
             if (!isBranchArrayItem && !isLeafArrayParent)
