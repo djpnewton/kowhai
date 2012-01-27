@@ -11,10 +11,10 @@ namespace kowhai_sharp
 
     public class Kowhai
     {
-#if (WIN32 || WIN64)
-    public const string dllname = "kowhai_dll.dll";
+#if (LINUX)
+        public const string dllname = "libkowhai.so";
 #else
-    public const string dllname = "libkowhai.so";
+        public const string dllname = "kowhai_dll.dll";
 #endif
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
