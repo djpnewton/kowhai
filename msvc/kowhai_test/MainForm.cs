@@ -64,7 +64,7 @@ namespace kowhai_test
             });
         }
 
-        private ArrayList ScopePoints = new ArrayList();
+        private List<UInt16> ScopePoints = new List<UInt16>();
         UInt16 ScopeMinVal = UInt16.MaxValue, ScopeMaxVal = UInt16.MinValue;
         private void ProcessPacket(byte[] buffer)
         {
@@ -347,18 +347,18 @@ namespace kowhai_test
         private void OnPaint(object sender, PaintEventArgs e)
         {
             // repaint the scope points
-            Graphics g = pnlScope.CreateGraphics();
+            Graphics g = e.Graphics;
             int w = pnlScope.Width;
             int h = pnlScope.Height;
             float x = 0, dx = (float)w / (ScopePoints.Count - 1);
-            PointF last = new PointF(x, 0), next;
-            g.Clear(Color.Gray);
+            PointF last = new PointF(x, h), next;
+            g.Clear(Color.LightGray);
             for (int i = 0; i < ScopePoints.Count; i++, x += dx)
             {
                 // build the next point
-                UInt16 y = (UInt16)ScopePoints[i];
+                UInt16 y = ScopePoints[i];
                 float yf = h * (y - ScopeMinVal) / (ScopeMaxVal - ScopeMinVal);
-                next = new PointF(x, yf);
+                next = new PointF(x, h - yf);
                 g.DrawLine(Pens.Blue, next, last);
                 last = next;
             }
