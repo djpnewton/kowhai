@@ -348,19 +348,26 @@ namespace kowhai_test
         {
             // repaint the scope points
             Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             int w = pnlScope.Width;
             int h = pnlScope.Height;
-            float x = 0, dx = (float)w / (ScopePoints.Count - 1);
-            PointF last = new PointF(x, h), next;
-            g.Clear(Color.LightGray);
-            for (int i = 0; i < ScopePoints.Count; i++, x += dx)
+            const int border = 10;
+            float x = border, dx = (float)(w - border * 2) / (ScopePoints.Count - 1);
+            PointF last = new PointF(x, h - border), next;
+            PointF[] points = new PointF[ScopePoints.Count];
+            g.Clear(Color.White);
+            if (ScopePoints.Count > 1)
             {
-                // build the next point
-                UInt16 y = ScopePoints[i];
-                float yf = h * (y - ScopeMinVal) / (ScopeMaxVal - ScopeMinVal);
-                next = new PointF(x, h - yf);
-                g.DrawLine(Pens.Blue, next, last);
-                last = next;
+                for (int i = 0; i < ScopePoints.Count; i++, x += dx)
+                {
+                    // build the next point
+                    UInt16 y = ScopePoints[i];
+                    float yf = (h - border * 2) * (y - ScopeMinVal) / (ScopeMaxVal - ScopeMinVal);
+                    next = new PointF(x, h - border - yf);
+                    points[i] = last;
+                    last = next;
+                }
+                g.DrawLines(Pens.CornflowerBlue, points);
             }
         }
     }
