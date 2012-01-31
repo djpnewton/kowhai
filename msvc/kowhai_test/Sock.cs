@@ -76,16 +76,26 @@ namespace kowhai_test
 
         void ReceiveCallback(IAsyncResult ar)
         {
-            StateObj state = (StateObj)ar.AsyncState;
-            int read = sock.EndReceive(ar);
-            if (read > 0)
+            try
             {
-                if (SockBufferReceived != null)
-                    SockBufferReceived(this, new SockReceiveEventArgs(state.Buffer, read));
-                sock.BeginReceive(state.Buffer, 0, state.Size, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
+                StateObj state = (StateObj)ar.AsyncState;
+                int read = sock.EndReceive(ar);
+                if (read > 0)
+                {
+                    if (SockBufferReceived != null)
+                        SockBufferReceived(this, new SockReceiveEventArgs(state.Buffer, read));
+                    sock.BeginReceive(state.Buffer, 0, state.Size, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
+                }
+                else
+                    sock.Close();
             }
-            else
-                sock.Close();
+            catch (SocketException e)
+            {
+                if (e.ErrorCode == 10054) // Error code for Connection reset by peer
+                    sock.Close();
+                else
+                    throw e;
+            }
         }
 
         public void StartAsyncReceives(byte[] buffer, int size)
