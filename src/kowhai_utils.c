@@ -350,7 +350,7 @@ int _create_symbol_path2(struct kowhai_tree_t* tree, void* target_location, unio
                 struct kowhai_node_t* node = tree->desc;
                 for (i = 0; i < node->count; i++)
                 {
-                    target[symbol_path_length - 1].symbol = KOWHAI_SYMBOL(tree->desc->symbol, i);
+                    target[symbol_path_length - 1].symbol = KOWHAI_SYMBOL(node->symbol, i);
                     tree->desc = node + 1;
                     ret = _create_symbol_path2(tree, target_location, target, target_size, symbol_path_length + 1);
                     if (ret == KOW_STATUS_OK)
