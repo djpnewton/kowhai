@@ -64,7 +64,8 @@ namespace kowhai_test
             });
         }
 
-        private List<UInt16> ScopePoints = new List<UInt16>();
+        byte[] ScopePointData = null;
+        List<UInt16> ScopePoints = new List<UInt16>();
         UInt16 ScopeMinVal = UInt16.MaxValue, ScopeMaxVal = UInt16.MinValue;
         private void ProcessPacket(byte[] buffer)
         {
@@ -90,25 +91,33 @@ namespace kowhai_test
                             tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
                             if (tree == kowhaiTreeScope)
                             {
-                                //Kowhai.GetNode(tree.GetDescriptor(), symbolsPath, out nodeOffset, out node);
-                                // update the scope points the the new data
-                                for (int i = 0; i < data.Length / 2; i++)
+                                Kowhai.kowhai_symbol_t[] symbolPath = new Kowhai.kowhai_symbol_t[] {
+                                    new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Scope),
+                                    new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Pixels)
+                                };
+                                if (Kowhai.GetNode(tree.GetDescriptor(), symbolPath, out nodeOffset, out node) == Kowhai.STATUS_OK)
                                 {
-                                    UInt16 value = BitConverter.ToUInt16(data, i * 2);
-                                    if (value > ScopeMaxVal)
-                                        ScopeMaxVal = value;
-                                    if (value < ScopeMinVal)
-                                        ScopeMinVal = value;
+                                    // update the scope points the the new data
+                                    if (ScopePointData == null || ScopePointData.Length != node.count * 2)
+                                        Array.Resize(ref ScopePointData, node.count * 2);
                                     int arrayIndex = 0;
                                     if (symbols.Length == 2)
                                         arrayIndex = symbols[1].parts.array_index;
-                                    int k = (arrayIndex * 2 + prot.payload.spec.data.memory.offset) / 2 + i;
-                                    if (ScopePoints.Count > k)
-                                        ScopePoints[k] = value;
-                                    else
-                                        ScopePoints.Add(value);
+                                    Array.Copy(data, 0, ScopePointData, arrayIndex * 2 + prot.payload.spec.data.memory.offset, data.Length);
+                                    for (int i = 0; i < ScopePointData.Length / 2; i++)
+                                    {
+                                        UInt16 value = BitConverter.ToUInt16(ScopePointData, i * 2);
+                                        if (value > ScopeMaxVal)
+                                            ScopeMaxVal = value;
+                                        if (value < ScopeMinVal)
+                                            ScopeMinVal = value;
+                                        if (ScopePoints.Count > i)
+                                            ScopePoints[i] = value;
+                                        else
+                                            ScopePoints.Add(value);
+                                    }
+                                    pnlScope.Invalidate();
                                 }
-                                pnlScope.Invalidate();
                             }
                         }
                         break;
