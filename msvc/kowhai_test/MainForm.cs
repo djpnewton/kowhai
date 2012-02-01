@@ -245,6 +245,12 @@ namespace kowhai_test
 
         private void btnLoad_Click(object sender, EventArgs e)
         {
+            KowhaiTree tree = GetTreeFromRadioButtonSelection();
+            LoadTree(tree);
+        }
+
+        private void LoadTree(KowhaiTree tree)
+        {
             OpenFileDialog d = new OpenFileDialog();
             d.Filter = "Kowhai Files | *.kowhai";
             d.DefaultExt = "kowhai";
@@ -253,7 +259,6 @@ namespace kowhai_test
                 string text = System.IO.File.ReadAllText(d.FileName);
                 Kowhai.kowhai_node_t[] descriptor;
                 byte[] data;
-                KowhaiTree tree = GetTreeFromRadioButtonSelection();
                 if (KowhaiSerialize.Deserialize(text, out descriptor, out data) == Kowhai.STATUS_OK)
                 {
                     tree.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
@@ -262,27 +267,33 @@ namespace kowhai_test
             }
         }
 
-        void onSettingsDiffLeft(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath)
+        private void btnLoadScratch_Click(object sender, EventArgs e)
         {
-            kowhaiTreeSettings.DiffAt(symbolPath);
+            LoadTree(kowhaiTreeScratch);
+        }
+
+        void onSettingsDiffRight(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath)
+        {
+            kowhaiTreeScratch.DiffAt(symbolPath);
         }
 
         private void btnDiff_Click(object sender, EventArgs e)
         {
-            kowhaiTreeSettings.ResetNodesBackColor();
-            KowhaiTree rightTree = GetTreeFromRadioButtonSelection();
-            Kowhai.Tree left = new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData());
-            Kowhai.Tree right = new Kowhai.Tree(rightTree.GetDescriptor(), rightTree.GetData());
-            if (KowhaiUtils.Diff(left, right, null, onSettingsDiffLeft, null) != Kowhai.STATUS_OK)
+            KowhaiTree leftTree = GetTreeFromRadioButtonSelection();
+            Kowhai.Tree left = new Kowhai.Tree(leftTree.GetDescriptor(), leftTree.GetData());
+            kowhaiTreeScratch.ResetNodesBackColor();
+            Kowhai.Tree right = new Kowhai.Tree(kowhaiTreeScratch.GetDescriptor(), kowhaiTreeScratch.GetData());
+            if (KowhaiUtils.Diff(left, right, null, null, onSettingsDiffRight) != Kowhai.STATUS_OK)
                 MessageBox.Show("Diff Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         private void btnMerge_Click(object sender, EventArgs e)
         {
-            KowhaiTree destTree = GetTreeFromRadioButtonSelection();
-            if (KowhaiUtils.Merge(new Kowhai.Tree(destTree.GetDescriptor(), destTree.GetData()),
-                new Kowhai.Tree(kowhaiTreeSettings.GetDescriptor(), kowhaiTreeSettings.GetData())) == Kowhai.STATUS_OK)
-                destTree.Update();
+            KowhaiTree srcTree = GetTreeFromRadioButtonSelection();
+            Kowhai.Tree src = new Kowhai.Tree(srcTree.GetDescriptor(), srcTree.GetData());
+            Kowhai.Tree dst = new Kowhai.Tree(kowhaiTreeScratch.GetDescriptor(), kowhaiTreeScratch.GetData());
+            if (KowhaiUtils.Merge(dst, src) == Kowhai.STATUS_OK)
+                kowhaiTreeScratch.Update();
             else
                 MessageBox.Show("Merge Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }

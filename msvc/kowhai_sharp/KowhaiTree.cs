@@ -394,7 +394,8 @@ namespace kowhai_sharp
                     MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-                DataChange(this, new DataChangeEventArgs(info, data));
+                if (DataChange != null)
+                    DataChange(this, new DataChangeEventArgs(info, data));
             }
             else
                 e.Node.Text = GetNodeName(info.KowhaiNode, info);
@@ -407,7 +408,8 @@ namespace kowhai_sharp
             {
                 BlankNodes(selectedNode);
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-                NodeRead(this, new NodeReadEventArgs(info));
+                if (NodeRead != null)
+                    NodeRead(this, new NodeReadEventArgs(info));
             }
         }
 

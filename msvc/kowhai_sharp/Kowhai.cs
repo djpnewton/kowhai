@@ -43,6 +43,11 @@ namespace kowhai_sharp
                 this.parts.name = name;
                 this.parts.array_index = array_index;
             }
+
+            public override string ToString()
+            {
+                return string.Format("name: {0}, array_index: {1}", parts.name, parts.array_index);
+            }
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
