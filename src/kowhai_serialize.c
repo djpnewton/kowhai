@@ -454,7 +454,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_uint8(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
-                                if ((*data_offset) + sizeof(uint8_t) > data_size)
+                                if ((*data_offset) + (int)sizeof(uint8_t) > data_size)
                                     return -3;
                                 *((uint8_t*)data) = value;
                                 data = (char*)data + sizeof(uint8_t);
@@ -470,7 +470,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_uint16(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
-                                if ((*data_offset) + sizeof(uint16_t) > data_size)
+                                if ((*data_offset) + (int)sizeof(uint16_t) > data_size)
                                     return -3;
                                 *((uint16_t*)data) = value;
                                 data = (char*)data + sizeof(uint16_t);
@@ -485,7 +485,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_uint32(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
-                                if ((*data_offset) + sizeof(uint32_t) > data_size)
+                                if ((*data_offset) + (int)sizeof(uint32_t) > data_size)
                                     return -3;
                                 *((uint32_t*)data) = value;
                                 data = (char*)data + sizeof(uint32_t);
@@ -499,7 +499,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = get_token_float(parser, tok, &value);
                                 if (res != KOW_STATUS_OK)
                                     return -1;
-                                if ((*data_offset) + sizeof(float) > data_size)
+                                if ((*data_offset) + (int)sizeof(float) > data_size)
                                     return -3;
                                 *((float*)data) = value;
                                 data = (char*)data + sizeof(float);

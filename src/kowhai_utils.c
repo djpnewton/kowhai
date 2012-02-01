@@ -9,9 +9,6 @@
 #define KOWHAI_TABS "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 #endif
 
-#define MIN2(a, b) (a < b ? a: b)
-#define MAX2(a, b) (a > b ? a: b)
-
 // forward decalre this to bring it in from kowhai.c as we need it
 ///@todo there should be a way to either use the public api or get at internal kowhia stuff more easily
 int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch);
@@ -38,7 +35,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
     struct kowhai_node_t *right_node;
     union kowhai_symbol_t symbol[1];
     int size;
-    unsigned int i;
+    int i;
     unsigned int skip_nodes;
 
     // go through all the left nodes and look for matches in right 
@@ -68,7 +65,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
                     // diff all the common array items one by one
                     struct kowhai_tree_t __left = *left;
                     struct kowhai_tree_t __right;
-                    for (i = 0; i < MIN2(left->desc->count, right_node->count); i++)
+                    for (i = 0; i < left->desc->count && i < right_node->count; i++)
                     {
                         // get the offset into right for the branch array item to update
                         symbol[0].parts.array_index = i;
@@ -100,7 +97,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
                         return ret;
 
                     // diff all the common elements in the array and call on_diff if the values do not match
-                    for (i = 0; i < MIN2(left->desc->count, right_node->count); i++)
+                    for (i = 0; i < left->desc->count && i < right_node->count; i++)
                     {
                         uint16_t left_offset, right_offset;
                         uint8_t *left_data, *right_data;
