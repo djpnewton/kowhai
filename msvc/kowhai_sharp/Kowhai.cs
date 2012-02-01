@@ -116,7 +116,7 @@ namespace kowhai_sharp
         public static extern int kowhai_get_node_type_size(uint16_t type);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_node(IntPtr tree_descriptor, int num_symbols, IntPtr symbols, out int offset, IntPtr target_node);
+        public static extern int kowhai_get_node(IntPtr tree_descriptor, int num_symbols, IntPtr symbols, out int offset, ref IntPtr target_node);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node_size(IntPtr tree_descriptor, out int size);
@@ -161,12 +161,11 @@ namespace kowhai_sharp
         {
             GCHandle hDesc = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
             GCHandle hSyms = GCHandle.Alloc(symbols, GCHandleType.Pinned);
-            node = new kowhai_node_t();
-            GCHandle hNode = GCHandle.Alloc(node, GCHandleType.Pinned);
-            int result = kowhai_get_node(hDesc.AddrOfPinnedObject(), symbols.Length, hSyms.AddrOfPinnedObject(), out offset, hNode.AddrOfPinnedObject());
-            hNode.Free();
+            IntPtr targetNode = IntPtr.Zero;
+            int result = kowhai_get_node(hDesc.AddrOfPinnedObject(), symbols.Length, hSyms.AddrOfPinnedObject(), out offset, ref targetNode);
             hSyms.Free();
             hDesc.Free();
+            node = (kowhai_node_t)Marshal.PtrToStructure(targetNode, typeof(kowhai_node_t));
             return result;
         }
 
