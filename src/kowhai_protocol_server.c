@@ -72,12 +72,17 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 uint16_t node_offset;
                 int size, overhead, max_payload_size;
                 struct kowhai_node_t* node;
+                struct kowhai_protocol_symbol_spec_t symbols = prot.payload.spec.data.symbols;
                 printf("    CMD read data\n");
                 // get node information
+
                 status = kowhai_get_node(tree.desc, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
                 if (status == KOW_STATUS_OK)
                 {
+                    union kowhai_symbol_t last_sym = symbols.array_[symbols.count-1];
                     kowhai_get_node_size(node, &size);
+                    if (node->count > 1)
+                        size = size - size / node->count * last_sym.parts.array_index;
                     // get protocol overhead
                     prot.header.command = KOW_CMD_READ_DATA_ACK;
                     kowhai_protocol_get_overhead(&prot, &overhead);
