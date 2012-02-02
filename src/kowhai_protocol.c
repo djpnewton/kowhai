@@ -4,7 +4,6 @@
 #include <string.h>
 
 #define TREE_ID_SIZE 1
-#define CMD_SIZE 1
 #define SYM_COUNT_SIZE 1
 
 int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tree_id)
@@ -137,19 +136,12 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
 {
     char* pkt = (char*)proto_packet;
 
-    // write tree id
-    *bytes_required = TREE_ID_SIZE;
+    // write protocol header
+    *bytes_required = sizeof(struct kowhai_protocol_header_t);
     if (packet_size < *bytes_required)
         return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-    *pkt = protocol->header.tree_id;
-    pkt += TREE_ID_SIZE;
-
-    // write protocol command
-    *bytes_required += CMD_SIZE;
-    if (packet_size < *bytes_required)
-        return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-    *pkt = protocol->header.command;
-    pkt += CMD_SIZE;
+    memcpy(pkt, &protocol->header, sizeof(struct kowhai_protocol_header_t));
+    pkt += sizeof(struct kowhai_protocol_header_t);
 
     // read descriptor command requires no more parameters
     if (protocol->header.command == KOW_CMD_READ_DESCRIPTOR)

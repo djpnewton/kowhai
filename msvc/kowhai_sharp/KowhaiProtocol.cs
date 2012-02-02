@@ -11,14 +11,24 @@ namespace kowhai_sharp
 
     public static class KowhaiProtocol
     {
-        public const int CMD_WRITE_DATA = 0x00;
-        public const int CMD_WRITE_DATA_ACK = 0x0F;
-        public const int CMD_READ_DATA = 0x10;
-        public const int CMD_READ_DATA_ACK = 0x1F;
-        public const int CMD_READ_DATA_ACK_END = 0x1E;
-        public const int CMD_READ_DESCRIPTOR = 0x20;
-        public const int CMD_READ_DESCRIPTOR_ACK = 0x2F;
-        public const int CMD_READ_DESCRIPTOR_ACK_END = 0x2E;
+        public const int CMD_GET_TREE_COUNT = 0x00;
+        public const int CMD_GET_TREE_COUNT_ACK = 0x0F;
+        public const int CMD_WRITE_DATA = 0x10;
+        public const int CMD_WRITE_DATA_ACK = 0x1F;
+        public const int CMD_READ_DATA = 0x20;
+        public const int CMD_READ_DATA_ACK = 0x2F;
+        public const int CMD_READ_DATA_ACK_END = 0x2E;
+        public const int CMD_READ_DESCRIPTOR = 0x30;
+        public const int CMD_READ_DESCRIPTOR_ACK = 0x3F;
+        public const int CMD_READ_DESCRIPTOR_ACK_END = 0x3E;
+        public const int KOW_CMD_GET_FUNCTION_COUNT = 0x40;
+        public const int CMD_GET_FUNCTION_COUNT_ACK = 0x4F;
+        public const int CMD_GET_FUNCTION_DETAILS = 0x50;
+        public const int CMD_GET_FUNCTION_DETAILS_ACK = 0x5F;
+        public const int CMD_CALL_FUNCTION = 0x60;
+        public const int CMD_CALL_FUNCTION_END = 0x61;
+        public const int CMD_CALL_FUNCTION_ACK = 0x6F;
+        public const int CMD_CALL_FUNCTION_ACK_END = 0x6E;
         public const int CMD_ERROR_INVALID_TREE_ID = 0xF0;
         public const int CMD_ERROR_INVALID_COMMAND = 0xF1;
         public const int CMD_ERROR_INVALID_SYMBOL_PATH = 0xF2;
@@ -29,8 +39,8 @@ namespace kowhai_sharp
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_protocol_header_t
         {
-            public uint8_t tree_id;
             public uint8_t command;
+            public uint8_t id;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

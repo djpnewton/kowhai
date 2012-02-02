@@ -19,11 +19,11 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
     if (status != KOW_STATUS_OK && status != KOW_STATUS_INVALID_PROTOCOL_COMMAND)
         return status;
 
-    if (prot.header.tree_id >= 0 && prot.header.tree_id < server->tree_count)
+    if (prot.header.id >= 0 && prot.header.id < server->tree_count)
     {
         struct kowhai_tree_t tree;
-        tree.desc = *(server->tree_descriptors + prot.header.tree_id);
-        tree.data = *(server->tree_data_buffers + prot.header.tree_id);
+        tree.desc = *(server->tree_descriptors + prot.header.id);
+        tree.data = *(server->tree_data_buffers + prot.header.id);
         switch (prot.header.command)
         {
             case KOW_CMD_WRITE_DATA:
@@ -48,19 +48,19 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     {
                         case KOW_STATUS_INVALID_SYMBOL_PATH:
                             printf("    invalid symbol path\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_SYMBOL_PATH, prot.header.id);
                             break;
                         case KOW_STATUS_INVALID_OFFSET:
                             printf("    invalid payload offset\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET, prot.header.id);
                             break;
                         case KOW_STATUS_NODE_DATA_TOO_SMALL:
                             printf("    invalid payload size\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE, prot.header.id);
                             break;
                         default:
                             printf("    unkown error\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_UNKNOWN);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_UNKNOWN, prot.header.id);
                             break;
                     }
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
@@ -119,19 +119,19 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     {
                         case KOW_STATUS_INVALID_SYMBOL_PATH:
                             printf("    invalid symbol path\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_SYMBOL_PATH, prot.header.id);
                             break;
                         case KOW_STATUS_INVALID_OFFSET:
                             printf("    invalid payload offset\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET, prot.header.id);
                             break;
                         case KOW_STATUS_NODE_DATA_TOO_SMALL:
                             printf("    invalid payload size\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE, prot.header.id);
                             break;
                         default:
                             printf("    unkown error\n");
-                            POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_UNKNOWN);
+                            POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_UNKNOWN, prot.header.id);
                             break;
                     }
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
@@ -144,7 +144,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 int size, overhead, max_payload_size;
                 printf("    CMD read descriptor\n");
                 // get descriptor size
-                size = *(server->tree_descriptor_sizes + prot.header.tree_id);
+                size = *(server->tree_descriptor_sizes + prot.header.id);
                 // get protocol overhead
                 prot.header.command = KOW_CMD_READ_DESCRIPTOR_ACK;
                 kowhai_protocol_get_overhead(&prot, &overhead);
@@ -178,7 +178,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             }
             default:
                 printf("    invalid command (%d)\n", prot.header.command);
-                POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_COMMAND);
+                POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_COMMAND, prot.header.id);
                 kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                 server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
                 break;
@@ -186,8 +186,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
     }
     else
     {
-        printf("    invalid tree id (%d)\n", prot.header.tree_id);
-        POPULATE_PROTOCOL_CMD(prot, prot.header.tree_id, KOW_CMD_ERROR_INVALID_TREE_ID);
+        printf("    invalid tree id (%d)\n", prot.header.id);
+        POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_TREE_ID, prot.header.id);
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
         server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
     }

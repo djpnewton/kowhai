@@ -7,28 +7,57 @@
 // Protocol commands
 //
 
+// Get the tree count
+#define KOW_CMD_GET_TREE_COUNT               0x00
+// Acknowledge get tree count command
+#define KOW_CMD_GET_TREE_COUNT_ACK           0x0F
+
 // Write tree data
-#define KOW_CMD_WRITE_DATA                   0x00
+#define KOW_CMD_WRITE_DATA                   0x10
 // Acknowledge write tree data command
-#define KOW_CMD_WRITE_DATA_ACK               0x0F
+#define KOW_CMD_WRITE_DATA_ACK               0x1F
+
 // Read tree data
-#define KOW_CMD_READ_DATA                    0x10
+#define KOW_CMD_READ_DATA                    0x20
 // Acknowledge read tree data command (and return the data)
-#define KOW_CMD_READ_DATA_ACK                0x1F
+#define KOW_CMD_READ_DATA_ACK                0x2F
 // Acknowledge read tree data command (this is the final packet)
-#define KOW_CMD_READ_DATA_ACK_END            0x1E
+#define KOW_CMD_READ_DATA_ACK_END            0x2E
+
 // Read the tree descriptor
-#define KOW_CMD_READ_DESCRIPTOR              0x20
+#define KOW_CMD_READ_DESCRIPTOR              0x30
 // Acknowledge read tree command (and return tree contents)
-#define KOW_CMD_READ_DESCRIPTOR_ACK          0x2F
+#define KOW_CMD_READ_DESCRIPTOR_ACK          0x3F
 // Acknowledge read tree command (this is the final packet)
-#define KOW_CMD_READ_DESCRIPTOR_ACK_END      0x2E
+#define KOW_CMD_READ_DESCRIPTOR_ACK_END      0x3E
+
+// Get the function count
+#define KOW_CMD_GET_FUNCTION_COUNT           0x40
+// Acknowledge get function count command
+#define KOW_CMD_GET_FUNCTION_COUNT_ACK       0x4F
+
+// Get function details
+#define KOW_CMD_GET_FUNCTION_DETAILS         0x50
+// Acknowledge get function details command
+#define KOW_CMD_GET_FUNCTION_DETAILS_ACK     0x5F
+
+// Call function
+#define KOW_CMD_CALL_FUNCTION                0x60
+// Call function (this is the final packet)
+#define KOW_CMD_CALL_FUNCTION_END            0x61
+// Acknowledge call function command
+#define KOW_CMD_CALL_FUNCTION_ACK            0x6F
+// Acknowledge call function command (this is the final packet)
+#define KOW_CMD_CALL_FUNCTION_ACK_END        0x6E
+
+
 // Error codes
-#define KOW_CMD_ERROR_INVALID_TREE_ID        0xF0
-#define KOW_CMD_ERROR_INVALID_COMMAND        0xF1
-#define KOW_CMD_ERROR_INVALID_SYMBOL_PATH    0xF2
-#define KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET 0xF3
-#define KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE   0xF4
+#define KOW_CMD_ERROR_INVALID_COMMAND        0xF0
+#define KOW_CMD_ERROR_INVALID_TREE_ID        0xF1
+#define KOW_CMD_ERROR_INVALID_FUNCTION_ID    0xF2
+#define KOW_CMD_ERROR_INVALID_SYMBOL_PATH    0xF3
+#define KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET 0xF4
+#define KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE   0xF5
 #define KOW_CMD_ERROR_UNKNOWN                0xFF
 
 //
@@ -42,8 +71,8 @@
  */
 struct kowhai_protocol_header_t
 {
-    uint8_t tree_id;
     uint8_t command;
+    uint8_t id;
 };
 
 /**
@@ -116,12 +145,12 @@ struct kowhai_protocol_t
 /**
  * @brief format protocol to request a operation on a given tree id
  * @param protocol, this is a kowhai_protocol_t struct used to make the request
- * @param tree_id_, the id of the tree to address this operation to
+ * @param id_, the id of the tree or function to address this operation to
  */
-#define POPULATE_PROTOCOL_CMD(protocol, tree_id_, cmd)           \
+#define POPULATE_PROTOCOL_CMD(protocol, cmd, id_)                \
     {                                                            \
-        protocol.header.tree_id = tree_id_;                      \
         protocol.header.command = cmd;                           \
+        protocol.header.id = id_;                                \
     }
 
 /**
@@ -131,9 +160,9 @@ struct kowhai_protocol_t
  * @param symbol_count_ the number of symbols in the symbols_ path
  * @param symbols_ a collection of symbols to identify the node to read
  */
-#define POPULATE_PROTOCOL_READ(protocol, tree_id_, cmd, symbol_count_, symbols_) \
+#define POPULATE_PROTOCOL_READ(protocol, cmd, tree_id_, symbol_count_, symbols_) \
     {                                                            \
-        POPULATE_PROTOCOL_CMD(protocol, tree_id_, cmd);          \
+        POPULATE_PROTOCOL_CMD(protocol, cmd, tree_id_);          \
         protocol.payload.spec.data.symbols.count = symbol_count_;\
         protocol.payload.spec.data.symbols.array_ = symbols_;    \
     }
@@ -145,9 +174,9 @@ struct kowhai_protocol_t
  * @param symbol_count_ the number of symbols in the symbols_ path
  * @param symbols_ a collection of symbols to identify the node to write
  */
-#define POPULATE_PROTOCOL_WRITE(protocol, tree_id_, cmd, symbol_count_, symbols_, data_type, data_offset, data_size, buffer_) \
+#define POPULATE_PROTOCOL_WRITE(protocol, cmd, tree_id_, symbol_count_, symbols_, data_type, data_offset, data_size, buffer_) \
     {                                                            \
-        POPULATE_PROTOCOL_READ(protocol, tree_id_, cmd, symbol_count_, symbols_);\
+        POPULATE_PROTOCOL_READ(protocol, cmd, tree_id_, symbol_count_, symbols_);\
         protocol.payload.spec.data.memory.type = data_type;      \
         protocol.payload.spec.data.memory.offset = data_offset;  \
         protocol.payload.spec.data.memory.size = data_size;      \
