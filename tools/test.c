@@ -388,7 +388,7 @@ void diff_tests()
 {
     printf("kowhai_diff tests!\n");
     printf("  TODO: implement me!!!!\n");
-    getc(stdin);
+    //getc(stdin);
     printf(" passed!\n");
 }
 
