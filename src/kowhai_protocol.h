@@ -216,6 +216,28 @@ struct kowhai_protocol_t
         protocol.payload.buffer = buffer_;                       \
     }
 
+/**
+ * @brief format protocol to request reading the function list
+ * @param protocol, this is a kowhai_protocol_t struct used to make the request
+ */
+#define POPULATE_PROTOCOL_GET_FUNCTION_LIST(protocol)        \
+    {                                                        \
+        protocol.header.command = KOW_CMD_GET_FUNCTION_LIST; \
+        protocol.header.id = 0;                              \
+    }
+
+#define POPULATE_PROTOCOL_GET_FUNCTION_DETAILS(protocol, symbol)  \
+    {                                                             \
+        protocol.header.command = KOW_CMD_GET_FUNCTION_DETAILS;   \
+        protocol.header.id = symbol;                              \
+    }
+
+#define POPULATE_PROTOCOL_CALL_FUNCTION(protocol, symbol)   \
+    {                                                       \
+        protocol.header.command = KOW_CMD_CALL_FUNCTION;    \
+        protocol.header.id = symbol;                        \
+    }
+
 //
 // Functions
 //

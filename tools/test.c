@@ -165,6 +165,17 @@ struct scope_data_t
 #pragma pack()
 
 //
+// function list
+//
+
+uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_BEEP};
+struct kowhai_protocol_function_details_t function_details[] = {
+    {SYM_START, -1},
+    {SYM_STOP, -1},
+    {SYM_BEEP, -1}
+};
+
+//
 // test commands
 //
 
@@ -839,6 +850,44 @@ void test_client_protocol()
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(prot.header.id == TREE_ID_SETTINGS);
         assert(prot.header.command == KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
+
+        // test get function list
+        POPULATE_PROTOCOL_GET_FUNCTION_LIST(prot);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_GET_FUNCTION_LIST_ACK_END);
+        assert(prot.header.id == 0);
+        assert(prot.payload.spec.function_list.list_count == sizeof(function_list) / sizeof(function_list[0]));
+        assert(prot.payload.spec.function_list.offset == 0);
+        assert(prot.payload.spec.function_list.size == sizeof(function_list));
+
+        // test get function details
+        POPULATE_PROTOCOL_GET_FUNCTION_DETAILS(prot, SYM_BEEP);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_GET_FUNCTION_DETAILS_ACK);
+        assert(prot.header.id == SYM_BEEP);
+        assert(prot.payload.spec.function_details.tree_in_id == SYM_BEEP);
+        assert(prot.payload.spec.function_details.tree_out_id == -1);
+
+        // test call function
+        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BEEP);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_GET_FUNCTION_DETAILS_ACK);
+        assert(prot.header.id == SYM_BEEP);
+        assert(prot.payload.spec.function_call.offset == 0);
+        assert(prot.payload.spec.function_call.size == 0);
+        assert(prot.payload.buffer == 7337 /*TODO*/);
 
         xpsocket_free_client(conn);
     }
