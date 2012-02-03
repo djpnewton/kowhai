@@ -211,22 +211,22 @@ namespace kowhai_test
 
         private void btnRefreshTrees_Click(object sender, EventArgs e)
         {
-            byte[] buffer = new byte[2];
+            byte[] buffer = new byte[3];
             buffer[0] = KowhaiProtocol.CMD_READ_DESCRIPTOR;
             buffer[1] = TREE_ID_SETTINGS;
-            sock.Send(buffer, 2);
+            sock.Send(buffer, buffer.Length);
             System.Threading.Thread.Sleep(100);
             Application.DoEvents();
             buffer[1] = TREE_ID_SHADOW;
-            sock.Send(buffer, 2);
+            sock.Send(buffer, buffer.Length);
             System.Threading.Thread.Sleep(100);
             Application.DoEvents();
             buffer[1] = TREE_ID_ACTIONS;
-            sock.Send(buffer, 2);
+            sock.Send(buffer, buffer.Length);
             System.Threading.Thread.Sleep(100);
             Application.DoEvents();
             buffer[1] = TREE_ID_SCOPE;
-            sock.Send(buffer, 2);
+            sock.Send(buffer, buffer.Length);
         }
 
         string getSymbolName(Object param, UInt16 value)
@@ -307,7 +307,7 @@ namespace kowhai_test
                 MessageBox.Show("Merge Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
+        private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(ushort treeId)
         {
             if (treeId == TREE_ID_SETTINGS)
                 return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Settings) };
@@ -320,7 +320,7 @@ namespace kowhai_test
             return null;
         }
 
-        private KowhaiTree GetKowhaiTree(byte treeId)
+        private KowhaiTree GetKowhaiTree(ushort treeId)
         {
             if (treeId == TREE_ID_SETTINGS)
                 return kowhaiTreeSettings;

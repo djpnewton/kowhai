@@ -21,8 +21,9 @@ namespace kowhai_sharp
         public const int CMD_READ_DESCRIPTOR = 0x30;
         public const int CMD_READ_DESCRIPTOR_ACK = 0x3F;
         public const int CMD_READ_DESCRIPTOR_ACK_END = 0x3E;
-        public const int KOW_CMD_GET_FUNCTION_COUNT = 0x40;
-        public const int CMD_GET_FUNCTION_COUNT_ACK = 0x4F;
+        public const int CMD_GET_FUNCTION_LIST = 0x40;
+        public const int CMD_GET_FUNCTION_LIST_ACK = 0x4F;
+        public const int CMD_GET_FUNCTION_LIST_ACK_END = 0x4E;
         public const int CMD_GET_FUNCTION_DETAILS = 0x50;
         public const int CMD_GET_FUNCTION_DETAILS_ACK = 0x5F;
         public const int CMD_CALL_FUNCTION = 0x60;
@@ -40,7 +41,7 @@ namespace kowhai_sharp
         public struct kowhai_protocol_header_t
         {
             public uint8_t command;
-            public uint8_t id;
+            public uint16_t id;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

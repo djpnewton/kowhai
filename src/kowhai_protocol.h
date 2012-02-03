@@ -31,10 +31,12 @@
 // Acknowledge read tree command (this is the final packet)
 #define KOW_CMD_READ_DESCRIPTOR_ACK_END      0x3E
 
-// Get the function count
-#define KOW_CMD_GET_FUNCTION_COUNT           0x40
-// Acknowledge get function count command
-#define KOW_CMD_GET_FUNCTION_COUNT_ACK       0x4F
+// Get the function list
+#define KOW_CMD_GET_FUNCTION_LIST            0x40
+// Acknowledge get function list command (and return list)
+#define KOW_CMD_GET_FUNCTION_LIST_ACK        0x4F
+// Acknowledge get function list command (this is the final packet)
+#define KOW_CMD_GET_FUNCTION_LIST_ACK_END    0x4E
 
 // Get function details
 #define KOW_CMD_GET_FUNCTION_DETAILS         0x50
@@ -72,7 +74,7 @@
 struct kowhai_protocol_header_t
 {
     uint8_t command;
-    uint8_t id;
+    uint16_t id;
 };
 
 /**
@@ -116,10 +118,41 @@ struct kowhai_protocol_descriptor_payload_spec_t
 /**
  * @brief 
  */
+struct kowhai_protocol_function_list_t
+{
+    uint16_t list_count;
+    uint16_t offset;
+    uint16_t size;
+};
+
+/**
+ * @brief 
+ */
+struct kowhai_protocol_function_details_t
+{
+    uint16_t tree_in_id;
+    uint16_t tree_out_id;
+};
+
+/**
+ * @brief 
+ */
+struct kowhai_protocol_function_call_t
+{
+    uint16_t offset;
+    uint16_t size;
+};
+
+/**
+ * @brief 
+ */
 union kowhai_protocol_payload_spec_t
 {
     struct kowhai_protocol_data_payload_spec_t data;
     struct kowhai_protocol_descriptor_payload_spec_t descriptor;
+    struct kowhai_protocol_function_list_t function_list;
+    struct kowhai_protocol_function_details_t function_details;
+    struct kowhai_protocol_function_call_t function_call;
 };
 
 /**

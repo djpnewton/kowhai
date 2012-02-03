@@ -767,7 +767,7 @@ void test_client_protocol()
         assert(prot.payload.spec.data.memory.type == 0);
         assert(prot.payload.spec.data.memory.offset == 0);
         kowhai_protocol_get_overhead(&prot, &overhead);
-        assert(overhead == 17);
+        assert(overhead == 18);
         assert(prot.payload.spec.data.memory.size == MAX_PACKET_SIZE - overhead);
         assert(memcmp(prot.payload.buffer, flux_cap, prot.payload.spec.data.memory.size) == 0);
         memset(buffer, 0, MAX_PACKET_SIZE);
@@ -793,7 +793,7 @@ void test_client_protocol()
         assert(prot.payload.spec.descriptor.node_count == sizeof(settings_descriptor) / sizeof(settings_descriptor[0]));
         assert(prot.payload.spec.data.memory.offset == 0);
         kowhai_protocol_get_overhead(&prot, &overhead);
-        assert(overhead == 8);
+        assert(overhead == 9);
         assert(prot.payload.spec.descriptor.size == MAX_PACKET_SIZE - overhead);
         assert(memcmp(prot.payload.buffer, settings_descriptor, prot.payload.spec.data.memory.size) == 0);
         xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
