@@ -269,6 +269,11 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             server->send_packet(server->send_packet_param, server->packet_buffer, bytes_required);
             break;
         }
+        case KOW_CMD_CALL_FUNCTION:
+        {
+            printf("    CMD call function\n");
+            //TODO!
+        }
         default:
             printf("    invalid command (%d)\n", prot.header.command);
             POPULATE_PROTOCOL_CMD(prot, KOW_CMD_ERROR_INVALID_COMMAND, prot.header.id);

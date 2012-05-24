@@ -890,7 +890,7 @@ void test_client_protocol()
         assert(prot.payload.spec.function_details.tree_out_id == KOW_UNDEFINED_SYMBOL);
 
         // test call function
-        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BEEP);
+        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BEEP, 0, 0);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
