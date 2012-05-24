@@ -32,6 +32,9 @@ struct kowhai_protocol_server_t
     struct kowhai_node_t** tree_descriptors;
     size_t* tree_descriptor_sizes;
     void** tree_data_buffers;
+    size_t function_list_size;
+    uint16_t* function_list;
+    struct kowhai_protocol_function_details_t* function_list_details;
 };
 
 /**

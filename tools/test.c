@@ -169,10 +169,10 @@ struct scope_data_t
 //
 
 uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_BEEP};
-struct kowhai_protocol_function_details_t function_details[] = {
-    {SYM_START, -1},
-    {SYM_STOP, -1},
-    {SYM_BEEP, -1}
+struct kowhai_protocol_function_details_t function_list_details[] = {
+    {SYM_START, KOW_UNDEFINED_SYMBOL},
+    {SYM_STOP, KOW_UNDEFINED_SYMBOL},
+    {SYM_BEEP, KOW_UNDEFINED_SYMBOL}
 };
 
 //
@@ -624,7 +624,19 @@ void test_server_protocol()
     struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, action_descriptor, scope_descriptor};
     size_t tree_descriptor_sizes[] = {sizeof(settings_descriptor), sizeof(shadow_descriptor), sizeof(action_descriptor), sizeof(scope_descriptor)};
     void* tree_data_buffers[] = {&settings, &shadow, &action, &scope};
-    struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE, packet_buffer, node_written, NULL, server_buffer_send, NULL, 4, tree_descriptors, tree_descriptor_sizes, tree_data_buffers};
+    struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE,
+                                              packet_buffer,
+                                              node_written,
+                                              NULL,
+                                              server_buffer_send,
+                                              NULL,
+                                              4,
+                                              tree_descriptors,
+                                              tree_descriptor_sizes,
+                                              tree_data_buffers,
+                                              sizeof(function_list),
+                                              function_list,
+                                              function_list_details};
     printf("test server protocol...\n");
     xpsocket_init();
     xpsocket_serve(server_buffer_received, &server, MAX_PACKET_SIZE);
@@ -863,6 +875,7 @@ void test_client_protocol()
         assert(prot.payload.spec.function_list.list_count == sizeof(function_list) / sizeof(function_list[0]));
         assert(prot.payload.spec.function_list.offset == 0);
         assert(prot.payload.spec.function_list.size == sizeof(function_list));
+        assert(memcmp(prot.payload.buffer, function_list, sizeof(function_list)) == 0);
 
         // test get function details
         POPULATE_PROTOCOL_GET_FUNCTION_DETAILS(prot, SYM_BEEP);
@@ -874,7 +887,7 @@ void test_client_protocol()
         assert(prot.header.command == KOW_CMD_GET_FUNCTION_DETAILS_ACK);
         assert(prot.header.id == SYM_BEEP);
         assert(prot.payload.spec.function_details.tree_in_id == SYM_BEEP);
-        assert(prot.payload.spec.function_details.tree_out_id == -1);
+        assert(prot.payload.spec.function_details.tree_out_id == KOW_UNDEFINED_SYMBOL);
 
         // test call function
         POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BEEP);
