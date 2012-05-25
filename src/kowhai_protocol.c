@@ -125,7 +125,7 @@ static int parse_function_call(void* payload_packet, int packet_size, struct kow
     if (packet_size < sizeof(struct kowhai_protocol_function_call_t))
         return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
     memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_function_call_t));
-    if (payload->spec.function_list.size > packet_size - sizeof(struct kowhai_protocol_function_call_t))
+    if (payload->spec.function_call.size > packet_size - sizeof(struct kowhai_protocol_function_call_t))
         return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
     payload->buffer = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_function_call_t));
     return KOW_STATUS_OK;

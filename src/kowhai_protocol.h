@@ -232,12 +232,13 @@ struct kowhai_protocol_t
         protocol.header.id = function_id;                              \
     }
 
-#define POPULATE_PROTOCOL_CALL_FUNCTION(protocol, function_id, data_offset, data_size)  \
-    {                                                                                   \
-        protocol.header.command = KOW_CMD_CALL_FUNCTION;                                \
-        protocol.header.id = function_id;                                               \
-        protocol.payload.spec.function_call.offset = data_offset;                       \
-        protocol.payload.spec.function_call.size = data_size;                           \
+#define POPULATE_PROTOCOL_CALL_FUNCTION(protocol, function_id, data_offset, data_size, data)\
+    {                                                                                       \
+        protocol.header.command = KOW_CMD_CALL_FUNCTION;                                    \
+        protocol.header.id = function_id;                                                   \
+        protocol.payload.spec.function_call.offset = data_offset;                           \
+        protocol.payload.spec.function_call.size = data_size;                               \
+        protocol.payload.buffer = data;                                                     \
     }
 
 //

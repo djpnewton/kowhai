@@ -61,26 +61,22 @@ struct kowhai_node_t shadow_descriptor[] =
 };
 
 //
-// action tree descriptor
+// function tree descriptors
 //
 
-#define ACTION_START 1
-#define ACTION_STOP  2
-#define ACTION_BEEP  3
-
-struct kowhai_node_t action_descriptor[] =
+struct kowhai_node_t start_descriptor[] =
 {
-    { KOW_BRANCH_START,     SYM_ACTIONS,        1,                 0 },
-    { KOW_BRANCH_START,     SYM_START,          1,                 ACTION_START },
+    { KOW_BRANCH_START,     SYM_START,          1,                 0 },
     { KOW_UINT32,           SYM_DELAY,          1,                 0 },
     { KOW_BRANCH_END,       SYM_START,          0,                 0 },
-    { KOW_BRANCH_START,     SYM_STOP,           1,                 ACTION_STOP },
-    { KOW_BRANCH_END,       SYM_STOP,           0,                 0 },
-    { KOW_BRANCH_START,     SYM_BEEP,           1,                 ACTION_BEEP},
+};
+
+struct kowhai_node_t beep_descriptor[] =
+{
+    { KOW_BRANCH_START,     SYM_BEEP,           1,                 0},
     { KOW_INT32,            SYM_FREQUENCY,      1,                 0 },
     { KOW_INT32,            SYM_DURATION,       1,                 0 },
     { KOW_BRANCH_END,       SYM_BEEP,           0,                 0 },
-    { KOW_BRANCH_END,       SYM_ACTIONS,        0,                 0 },
 };
 
 //
@@ -133,24 +129,18 @@ struct shadow_data_t
 };
 
 //
-// action tree stucts
+// function tree stucts
 //
 
-struct start_t
+struct start_data_t
 {
     uint32_t delay;
 };
 
-struct beep_t
+struct beep_data_t
 {
     int32_t freq;
     int32_t duration;
-};
-
-struct action_data_t
-{
-    struct start_t start;
-    struct beep_t beep;
 };
 
 //
@@ -200,8 +190,10 @@ struct settings_data_t settings;
 struct kowhai_tree_t settings_tree = {settings_descriptor, &settings};
 struct shadow_data_t shadow;
 struct kowhai_tree_t shadow_tree = {shadow_descriptor, &shadow};
-struct action_data_t action = { 100, 500, 100 };
-struct kowhai_tree_t action_tree = {action_descriptor, &action};
+struct start_data_t start;
+struct kowhai_tree_t start_tree = {start_descriptor, &start};
+struct beep_data_t beepd;
+struct kowhai_tree_t beep_tree = {beep_descriptor, &beepd};
 struct scope_data_t scope;
 struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 
@@ -581,28 +573,35 @@ void create_symbol_path_tests()
     printf(" passed!\n");
 }
 
-void node_written(void* param, struct kowhai_node_t* node)
+void node_written(pkowhai_protocol_server_t server, void* param, struct kowhai_node_t* node)
 {
-    switch (node->tag)
-    {
-        case ACTION_START:
-            shadow.running = 1;
-            shadow.status = rand();
-            break;
-        case ACTION_STOP:
-            shadow.running = 0;
-            shadow.status = 0;
-            break;
-        case ACTION_BEEP:
-            beep(action.beep.freq, action.beep.duration);
-            break;
-    }
 }
 
-void server_buffer_send(void* param, void* buffer, size_t buffer_size)
+void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buffer, size_t buffer_size)
 {
     xpsocket_handle conn = (xpsocket_handle)param;
     xpsocket_send(conn, buffer, buffer_size);
+}
+
+void function_called(pkowhai_protocol_server_t server, void* param, uint16_t function_id)
+{
+    switch (function_id)
+    {
+        case SYM_START:
+            printf("Function: Start\n");
+            shadow.running = 1;
+            shadow.status = rand();
+            break;
+        case SYM_STOP:
+            printf("Function: Stop\n");
+            shadow.running = 0;
+            shadow.status = 0;
+            break;
+        case SYM_BEEP:
+            printf("Function: Beep\n");
+            beep(beepd.freq, beepd.duration);
+            break;
+    }
 }
 
 void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int buffer_size)
@@ -618,25 +617,32 @@ void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int
     kowhai_server_process_packet(server, buffer, buffer_size);
 }
 
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 void test_server_protocol()
 {
     char packet_buffer[MAX_PACKET_SIZE];
-    struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, action_descriptor, scope_descriptor};
-    size_t tree_descriptor_sizes[] = {sizeof(settings_descriptor), sizeof(shadow_descriptor), sizeof(action_descriptor), sizeof(scope_descriptor)};
-    void* tree_data_buffers[] = {&settings, &shadow, &action, &scope};
+
+    struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, NULL, beep_descriptor};
+    size_t tree_descriptor_sizes[COUNT_OF(tree_descriptors)];
+
+    void* tree_data_buffers[] = {&settings, &shadow, &scope};
     struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE,
                                               packet_buffer,
                                               node_written,
                                               NULL,
                                               server_buffer_send,
                                               NULL,
-                                              4,
+                                              COUNT_OF(tree_descriptors),
                                               tree_descriptors,
                                               tree_descriptor_sizes,
                                               tree_data_buffers,
                                               sizeof(function_list),
                                               function_list,
-                                              function_list_details};
+                                              function_list_details,
+                                              function_called,
+                                              NULL
+    };
+    kowhai_server_init_tree_descriptor_sizes(tree_descriptors, tree_descriptor_sizes, COUNT_OF(tree_descriptors));
     printf("test server protocol...\n");
     xpsocket_init();
     xpsocket_serve(server_buffer_received, &server, MAX_PACKET_SIZE);
@@ -890,17 +896,29 @@ void test_client_protocol()
         assert(prot.payload.spec.function_details.tree_out_id == KOW_UNDEFINED_SYMBOL);
 
         // test call function
-        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BEEP, 0, 0);
+        start.delay = 50;
+        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_START, 0, sizeof(start), &start);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
         xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
         kowhai_protocol_parse(buffer, received_size, &prot);
-        assert(prot.header.command == KOW_CMD_GET_FUNCTION_DETAILS_ACK);
-        assert(prot.header.id == SYM_BEEP);
+        assert(prot.header.command == KOW_CMD_CALL_FUNCTION_ACK);
+        assert(prot.header.id == SYM_START);
         assert(prot.payload.spec.function_call.offset == 0);
         assert(prot.payload.spec.function_call.size == 0);
-        assert(prot.payload.buffer == 7337 /*TODO*/);
+
+        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_STOP, 0, 0, NULL);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_CALL_FUNCTION_ACK);
+        assert(prot.header.id == SYM_STOP);
+        assert(prot.payload.spec.function_call.offset == 0);
+        assert(prot.payload.spec.function_call.size == 0);
+
 
         xpsocket_free_client(conn);
     }
