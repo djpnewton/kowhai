@@ -31,8 +31,8 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_node_t** descriptors
 struct kowhai_tree_t _populate_tree(struct kowhai_protocol_server_t* server, uint16_t tree_id)
 {
     struct kowhai_tree_t tree;
-    tree.desc = *(server->tree_descriptors + tree_id);
-    tree.data = *(server->tree_data_buffers + tree_id);
+    tree.desc = server->tree_descriptors[tree_id];
+    tree.data = server->tree_data_buffers[tree_id];
     return tree;
 }
 
@@ -79,13 +79,16 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
     {
         case KOW_CMD_WRITE_DATA:
         {
-            struct kowhai_tree_t tree = _populate_tree(server, prot.header.id);
+            struct kowhai_tree_t tree;
             printf("    CMD write data\n");
             if (prot.header.id > server->tree_count)
             {
                 _invalid_tree_id(server, &prot);
                 break;
             }
+            // init tree helper struct
+            tree = _populate_tree(server, prot.header.id);
+            // write to tree
             status = kowhai_write(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
             if (status == KOW_STATUS_OK)
             {
@@ -128,7 +131,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
         }
         case KOW_CMD_READ_DATA:
         {
-            struct kowhai_tree_t tree = _populate_tree(server, prot.header.id);
+            struct kowhai_tree_t tree;
             uint16_t node_offset;
             int size, overhead, max_payload_size;
             struct kowhai_node_t* node;
@@ -139,6 +142,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 _invalid_tree_id(server, &prot);
                 break;
             }
+            // init tree helper struct
+            tree = _populate_tree(server, prot.header.id);
             // get node information
             status = kowhai_get_node(tree.desc, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, &node_offset, &node);
             if (status == KOW_STATUS_OK)
@@ -205,7 +210,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
         }
         case KOW_CMD_READ_DESCRIPTOR:
         {
-            struct kowhai_tree_t tree = _populate_tree(server, prot.header.id);
+            struct kowhai_tree_t tree;
             int size, overhead, max_payload_size;
             printf("    CMD read descriptor\n");
             if (prot.header.id > server->tree_count)
@@ -213,6 +218,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 _invalid_tree_id(server, &prot);
                 break;
             }
+            // init tree helper struct
+            tree = _populate_tree(server, prot.header.id);
             // get descriptor size
             size = *(server->tree_descriptor_sizes + prot.header.id);
             // get protocol overhead
@@ -317,7 +324,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     _invalid_tree_id(server, &prot);
                     break;
                 }
-                if (kowhai_get_node_size(tree.desc, &tree_data_size) == KOW_STATUS_OK)
+                tree_data_size = 0;
+                if (tree.desc == NULL || kowhai_get_node_size(tree.desc, &tree_data_size) == KOW_STATUS_OK)
                 {
                     if (prot.payload.spec.function_call.offset > tree_data_size)
                     {
