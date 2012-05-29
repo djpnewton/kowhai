@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 
 #define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 
@@ -71,6 +72,14 @@ struct kowhai_node_t start_descriptor[] =
     { KOW_BRANCH_START,     SYM_START,          1,                 0 },
     { KOW_UINT32,           SYM_DELAY,          1,                 0 },
     { KOW_BRANCH_END,       SYM_START,          0,                 0 },
+};
+
+struct kowhai_node_t status_descriptor[] =
+{
+    { KOW_BRANCH_START,     SYM_STATUS,         1,                 0 },
+    { KOW_UINT32,           SYM_STATUS,         1,                 0 },
+    { KOW_UINT32,           SYM_TIME,           1,                 0 },
+    { KOW_BRANCH_END,       SYM_STATUS,         0,                 0 },
 };
 
 struct kowhai_node_t beep_descriptor[] =
@@ -139,6 +148,12 @@ struct start_data_t
     uint32_t delay;
 };
 
+struct status_data_t
+{
+    uint32_t status;
+    uint32_t time;
+};
+
 struct beep_data_t
 {
     int32_t freq;
@@ -183,6 +198,8 @@ struct shadow_data_t shadow;
 struct kowhai_tree_t shadow_tree = {shadow_descriptor, &shadow};
 struct start_data_t start;
 struct kowhai_tree_t start_tree = {start_descriptor, &start};
+struct status_data_t status;
+struct kowhai_tree_t status_tree = {status_descriptor, &status};
 struct beep_data_t beepd;
 struct kowhai_tree_t beep_tree = {beep_descriptor, &beepd};
 struct scope_data_t scope;
@@ -192,15 +209,15 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 // test server structures
 //
 
-struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, NULL, beep_descriptor};
-size_t tree_descriptor_sizes[COUNT_OF(tree_descriptors)];
-uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_BEEP};
+struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor};
+void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd};
+uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP};
 struct kowhai_protocol_function_details_t function_list_details[] = {
     {3, KOW_UNDEFINED_SYMBOL},
     {4, KOW_UNDEFINED_SYMBOL},
+    {KOW_UNDEFINED_SYMBOL, 4},
     {5, KOW_UNDEFINED_SYMBOL}
 };
-void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, NULL, &beepd};
 
 //
 // test protocol packet size
@@ -588,6 +605,7 @@ void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buf
     xpsocket_send(conn, buffer, buffer_size);
 }
 
+#define STATUS_RESULT 0xff00ff00
 void function_called(pkowhai_protocol_server_t server, void* param, uint16_t function_id)
 {
     switch (function_id)
@@ -601,6 +619,11 @@ void function_called(pkowhai_protocol_server_t server, void* param, uint16_t fun
             printf("Function: Stop\n");
             shadow.running = 0;
             shadow.status = 0;
+            break;
+        case SYM_STATUS:
+            printf("Function: Status (time: %d)\n", time(NULL));
+            status.status = STATUS_RESULT;
+            status.time = (uint32_t)time(NULL);
             break;
         case SYM_BEEP:
             printf("Function: Beep (freq: %d, duration: %d)\n", beepd.freq, beepd.duration);
@@ -625,6 +648,7 @@ void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int
 void test_server_protocol()
 {
     char packet_buffer[MAX_PACKET_SIZE];
+    size_t tree_descriptor_sizes[COUNT_OF(tree_descriptors)];
     struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE,
                                               packet_buffer,
                                               node_written,
@@ -930,6 +954,21 @@ void test_client_protocol()
         assert(prot.header.id == SYM_BEEP);
         assert(prot.payload.spec.function_call.offset == 0);
         assert(prot.payload.spec.function_call.size == 0);
+
+        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_STATUS, 0, 0, NULL);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_CALL_FUNCTION_ACK);
+        assert(prot.header.id == SYM_STATUS);
+        assert(prot.payload.spec.function_call.offset == 0);
+        assert(prot.payload.spec.function_call.size == sizeof(status));
+        {
+            struct status_data_t s = {STATUS_RESULT, (uint32_t)time(NULL)};
+            assert(memcmp(prot.payload.buffer, &s, sizeof(s)) == 0);
+        }
 
         xpsocket_free_client(conn);
     }

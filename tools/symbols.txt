@@ -18,3 +18,4 @@ Beep
 Duration
 Pixels
 Owner
+Time

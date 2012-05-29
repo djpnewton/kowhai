@@ -31,8 +31,16 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_node_t** descriptors
 struct kowhai_tree_t _populate_tree(struct kowhai_protocol_server_t* server, uint16_t tree_id)
 {
     struct kowhai_tree_t tree;
-    tree.desc = server->tree_descriptors[tree_id];
-    tree.data = server->tree_data_buffers[tree_id];
+    if (tree_id == KOW_UNDEFINED_SYMBOL)
+    {
+        tree.desc = NULL;
+        tree.data = NULL;
+    }
+    else
+    {
+        tree.desc = server->tree_descriptors[tree_id];
+        tree.data = server->tree_data_buffers[tree_id];
+    }
     return tree;
 }
 
@@ -318,8 +326,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             if (_get_function_index(server, prot.header.id, &i))
             {
                 struct kowhai_tree_t tree = _populate_tree(server, server->function_list_details[i].tree_in_id);
-                printf("        write data\n");
-                if (server->function_list_details[i].tree_in_id > server->tree_count)
+                if (server->function_list_details[i].tree_in_id > server->tree_count && server->function_list_details[i].tree_in_id != KOW_UNDEFINED_SYMBOL)
                 {
                     _invalid_tree_id(server, &prot);
                     break;
@@ -337,19 +344,31 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     }
                     else
                     {
+                        printf("        write data\n");
                         memcpy((char*)tree.data + prot.payload.spec.function_call.offset, prot.payload.buffer, prot.payload.spec.function_call.size);
-
-                        if (tree_data_size == 0 ||
-                            prot.payload.spec.function_call.offset + prot.payload.spec.function_call.size == tree_data_size)
-                        {
-                            server->function_called(server, server->function_called_param, prot.header.id);
-                        }
                         // setup response details
                         prot.header.command = KOW_CMD_CALL_FUNCTION_ACK;
                         prot.payload.spec.function_call.offset = 0;
                         prot.payload.spec.function_call.size = 0;
-                        // set payload buffer
                         prot.payload.buffer = NULL;
+                        // handle server->function_called when all data has been written
+                        if (tree_data_size == 0 ||
+                            prot.payload.spec.function_call.offset + prot.payload.spec.function_call.size == tree_data_size)
+                        {
+                            printf("        function_called callback\n");
+                            server->function_called(server, server->function_called_param, prot.header.id);
+
+                            {
+                                struct kowhai_tree_t tree = _populate_tree(server, server->function_list_details[i].tree_out_id);
+                                if (tree.desc != NULL)
+                                {
+                                    kowhai_get_node_size(tree.desc, &tree_data_size);
+                                    prot.payload.spec.function_call.offset = 0;
+                                    prot.payload.spec.function_call.size = tree_data_size;
+                                    prot.payload.buffer = tree.data;
+                                }
+                            }
+                        }
                     }
                 }
                 else

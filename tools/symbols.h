@@ -22,6 +22,7 @@ char* symbols[] = {
 	"Duration",
 	"Pixels",
 	"Owner",
+	"Time",
 };
 
 #define SYM_SETTINGS		0
@@ -44,5 +45,6 @@ char* symbols[] = {
 #define SYM_DURATION		17
 #define SYM_PIXELS		18
 #define SYM_OWNER		19
+#define SYM_TIME		20
 
 #endif
