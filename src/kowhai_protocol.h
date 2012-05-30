@@ -45,12 +45,12 @@
 
 // Call function
 #define KOW_CMD_CALL_FUNCTION                0x60
-// Call function (this is the final packet)
-#define KOW_CMD_CALL_FUNCTION_END            0x61
 // Acknowledge call function command
 #define KOW_CMD_CALL_FUNCTION_ACK            0x6F
-// Acknowledge call function command (this is the final packet)
-#define KOW_CMD_CALL_FUNCTION_ACK_END        0x6E
+// Call function result command
+#define KOW_CMD_CALL_FUNCTION_RESULT         0x6E
+// Call function result command (this is the final packet)
+#define KOW_CMD_CALL_FUNCTION_RESULT_END     0x6D
 
 
 // Error codes

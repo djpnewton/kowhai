@@ -167,9 +167,9 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         case KOW_CMD_GET_FUNCTION_DETAILS_ACK:
             return parse_function_details((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload.spec.function_details);
         case KOW_CMD_CALL_FUNCTION:
-        case KOW_CMD_CALL_FUNCTION_END:
         case KOW_CMD_CALL_FUNCTION_ACK:
-        case KOW_CMD_CALL_FUNCTION_ACK_END:
+        case KOW_CMD_CALL_FUNCTION_RESULT:
+        case KOW_CMD_CALL_FUNCTION_RESULT_END:
             return parse_function_call((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;
@@ -265,9 +265,9 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             memcpy(pkt, &protocol->payload.spec.function_details, sizeof(struct kowhai_protocol_function_details_t));
             break;
         case KOW_CMD_CALL_FUNCTION:
-        case KOW_CMD_CALL_FUNCTION_END:
         case KOW_CMD_CALL_FUNCTION_ACK:
-        case KOW_CMD_CALL_FUNCTION_ACK_END:
+        case KOW_CMD_CALL_FUNCTION_RESULT:
+        case KOW_CMD_CALL_FUNCTION_RESULT_END:
             // write payload spec
             *bytes_required += sizeof(struct kowhai_protocol_function_call_t);
             if (packet_size < *bytes_required)
@@ -322,9 +322,9 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
             *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_function_details_t);
             return KOW_STATUS_OK;
         case KOW_CMD_CALL_FUNCTION:
-        case KOW_CMD_CALL_FUNCTION_END:
         case KOW_CMD_CALL_FUNCTION_ACK:
-        case KOW_CMD_CALL_FUNCTION_ACK_END:
+        case KOW_CMD_CALL_FUNCTION_RESULT:
+        case KOW_CMD_CALL_FUNCTION_RESULT_END:
             *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_function_call_t);
             return KOW_STATUS_OK;
         default:
