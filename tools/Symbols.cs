@@ -25,6 +25,7 @@ namespace KowhaiSymbols
             "Pixels",
             "Owner",
             "Time",
+            "Big",
         };
         public enum Constants
         {
@@ -49,6 +50,7 @@ namespace KowhaiSymbols
             Pixels,
             Owner,
             Time,
+            Big,
         };
     }
 }

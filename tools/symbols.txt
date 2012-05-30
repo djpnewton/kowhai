@@ -19,3 +19,4 @@ Duration
 Pixels
 Owner
 Time
+Big

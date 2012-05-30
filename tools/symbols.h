@@ -23,6 +23,7 @@ char* symbols[] = {
 	"Pixels",
 	"Owner",
 	"Time",
+	"Big",
 };
 
 #define SYM_SETTINGS		0
@@ -46,5 +47,6 @@ char* symbols[] = {
 #define SYM_PIXELS		18
 #define SYM_OWNER		19
 #define SYM_TIME		20
+#define SYM_BIG		21
 
 #endif

@@ -241,6 +241,12 @@ struct kowhai_protocol_t
         protocol.payload.buffer = data;                                                     \
     }
 
+#define POPULATE_PROTOCOL_CALL_FUNCTION_END(protocol, function_id, data_offset, data_size, data)\
+    {                                                                                           \
+        POPULATE_PROTOCOL_CALL_FUNCTION(protocol, function_id, data_offset, data_size, data);   \
+        protocol.header.command = KOW_CMD_CALL_FUNCTION_END;                                    \
+    }
+
 //
 // Functions
 //

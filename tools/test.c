@@ -82,6 +82,18 @@ struct kowhai_node_t status_descriptor[] =
     { KOW_BRANCH_END,       SYM_STATUS,         0,                 0 },
 };
 
+#define BIG_COEFF_COUNT 100
+
+struct kowhai_node_t big_descriptor[] =
+{
+    { KOW_BRANCH_START,     SYM_BIG,            1,                 0 },
+    { KOW_UINT32,           SYM_STATUS,         1,                 0 },
+    { KOW_UINT32,           SYM_TIME,           1,                 0 },
+    { KOW_UINT32,           SYM_COEFFICIENT,    BIG_COEFF_COUNT,   0 },
+    { KOW_BRANCH_END,       SYM_BIG,            0,                 0 },
+};
+
+
 struct kowhai_node_t beep_descriptor[] =
 {
     { KOW_BRANCH_START,     SYM_BEEP,           1,                 0},
@@ -154,6 +166,13 @@ struct status_data_t
     uint32_t time;
 };
 
+struct big_data_t
+{
+    uint32_t status;
+    uint32_t time;
+    uint32_t coeff[BIG_COEFF_COUNT];
+};
+
 struct beep_data_t
 {
     int32_t freq;
@@ -200,6 +219,8 @@ struct start_data_t start;
 struct kowhai_tree_t start_tree = {start_descriptor, &start};
 struct status_data_t status;
 struct kowhai_tree_t status_tree = {status_descriptor, &status};
+struct big_data_t big;
+struct kowhai_tree_t big_tree = {big_descriptor, &big};
 struct beep_data_t beepd;
 struct kowhai_tree_t beep_tree = {beep_descriptor, &beepd};
 struct scope_data_t scope;
@@ -209,14 +230,15 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 // test server structures
 //
 
-struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor};
-void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd};
-uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP};
+struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor, big_descriptor};
+void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd, &big};
+uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP, SYM_BIG};
 struct kowhai_protocol_function_details_t function_list_details[] = {
     {3, KOW_UNDEFINED_SYMBOL},
     {4, KOW_UNDEFINED_SYMBOL},
     {KOW_UNDEFINED_SYMBOL, 4},
-    {5, KOW_UNDEFINED_SYMBOL}
+    {5, KOW_UNDEFINED_SYMBOL},
+    {6, 6}
 };
 
 //
@@ -606,6 +628,7 @@ void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buf
 }
 
 #define STATUS_RESULT 0xff00ff00
+#define BIG_COEFF_RESULT 0xff00ff00
 void function_called(pkowhai_protocol_server_t server, void* param, uint16_t function_id)
 {
     switch (function_id)
@@ -625,6 +648,10 @@ void function_called(pkowhai_protocol_server_t server, void* param, uint16_t fun
             status.status = STATUS_RESULT;
             status.time = (uint32_t)time(NULL);
             break;
+        case SYM_BIG:
+            printf("Function: Big (time: %d)\n", time(NULL));
+            big.status = STATUS_RESULT;
+            big.time = (uint32_t)time(NULL);
         case SYM_BEEP:
             printf("Function: Beep (freq: %d, duration: %d)\n", beepd.freq, beepd.duration);
             beep(beepd.freq, beepd.duration);
@@ -969,6 +996,51 @@ void test_client_protocol()
             struct status_data_t s = {STATUS_RESULT, (uint32_t)time(NULL)};
             assert(memcmp(prot.payload.buffer, &s, sizeof(s)) == 0);
         }
+
+        {
+            struct big_data_t b;
+            void* data = &big;
+            int bytes_written = 0;
+            big.coeff[BIG_COEFF_COUNT-1] = BIG_COEFF_RESULT;
+            prot.header.command = KOW_CMD_CALL_FUNCTION;
+            assert(kowhai_protocol_get_overhead(&prot, &overhead) == KOW_STATUS_OK);
+            assert(overhead == 7);
+        
+            POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BIG, 0,  MAX_PACKET_SIZE - overhead, data);
+            while (bytes_written < sizeof(big))
+            {
+                int prev_bytes_written = bytes_written;
+                assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+                xpsocket_send(conn, buffer, bytes_required);
+                bytes_written += prot.payload.spec.function_call.size;
+
+                memset(buffer, 0, MAX_PACKET_SIZE);
+                xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+                kowhai_protocol_parse(buffer, received_size, &prot);
+                if (bytes_written < sizeof(big))
+                    assert(prot.header.command == KOW_CMD_CALL_FUNCTION_ACK);
+                else
+                    assert(prot.header.command == KOW_CMD_CALL_FUNCTION_ACK_END);
+                assert(prot.header.id == SYM_BIG);
+                assert(prot.payload.spec.function_call.offset == prev_bytes_written);
+                assert(prot.payload.spec.function_call.size == MAX_PACKET_SIZE - overhead);
+
+                memcpy((char*)&b + prot.payload.spec.function_call.offset, prot.payload.buffer, prot.payload.spec.function_call.size);
+
+                if (bytes_written < sizeof(big))
+                {
+                    POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BIG, bytes_written,  MAX_PACKET_SIZE - overhead, (char*)data + bytes_written);
+                }
+                else
+                    POPULATE_PROTOCOL_CALL_FUNCTION_END(prot, SYM_BIG, bytes_written,  MAX_PACKET_SIZE - overhead, (char*)data + bytes_written);
+            }
+            assert(bytes_written == sizeof(big));
+        }
+        {
+            //struct big_t b = {STATUS_RESULT, (uint32_t)time(NULL)};
+            //assert(memcmp(prot.payload.buffer, &s, sizeof(s)) == 0);
+        }
+
 
         xpsocket_free_client(conn);
     }
