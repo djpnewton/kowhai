@@ -148,6 +148,7 @@ struct kowhai_protocol_function_call_t
  */
 union kowhai_protocol_payload_spec_t
 {
+    uint8_t tree_count;
     struct kowhai_protocol_data_payload_spec_t data;
     struct kowhai_protocol_descriptor_payload_spec_t descriptor;
     struct kowhai_protocol_function_list_t function_list;

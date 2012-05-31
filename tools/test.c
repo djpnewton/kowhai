@@ -717,9 +717,19 @@ void test_client_protocol()
         char value;
         struct oven_t oven = {0x0102, 321};
         struct flux_capacitor_t flux_cap[2] = {{{"Marty Mc Fly"}, 100, 200, {1, 2, 3, 4, 5, 6}}, {{"Dr Brown"}, 110, 210, {11, 12, 13, 14, 15, 16}}};
+
+        // get tree list
+        POPULATE_PROTOCOL_CMD(prot, KOW_CMD_GET_TREE_COUNT, 0);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_GET_TREE_COUNT_ACK);
+        assert(prot.payload.spec.tree_count == COUNT_OF(tree_descriptors));
+
         // write oven.temp
         temp = 25;
-
         POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, TREE_ID_SETTINGS, 3, symbols1, KOW_INT16, 0, sizeof(uint16_t), &temp);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);

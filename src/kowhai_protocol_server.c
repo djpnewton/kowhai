@@ -91,6 +91,12 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
 
     switch (prot.header.command)
     {
+        case KOW_CMD_GET_TREE_COUNT:
+            prot.header.command = KOW_CMD_GET_TREE_COUNT_ACK;
+            prot.payload.spec.tree_count = server->tree_count;
+            kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
+            server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+            break;
         case KOW_CMD_WRITE_DATA:
         {
             struct kowhai_tree_t tree;
