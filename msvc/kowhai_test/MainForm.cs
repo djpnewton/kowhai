@@ -70,8 +70,17 @@ namespace kowhai_test
                 switch (prot.header.command)
                 {
                     case KowhaiProtocol.CMD_GET_TREE_COUNT_ACK:
+                    {
                         InitTreeList(prot.payload.spec.tree_count);
+
+                        buffer = new byte[PACKET_SIZE];
+                        int bytesRequired;
+                        prot.header.command = KowhaiProtocol.CMD_GET_FUNCTION_LIST;
+                        if (KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot,
+                            out bytesRequired) == Kowhai.STATUS_OK)
+                            sock.Send(buffer, bytesRequired);
                         break;
+                    }
                     case KowhaiProtocol.CMD_READ_DATA_ACK:
                     case KowhaiProtocol.CMD_WRITE_DATA_ACK:
                     case KowhaiProtocol.CMD_READ_DATA_ACK_END:
@@ -129,6 +138,7 @@ namespace kowhai_test
                         {
                             if (!TreeIdOk(prot.header.id))
                                 return;
+                            SetTreeListName(descriptor[0].symbol);
                             kowhaiTreeMain.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
 
                             buffer = new byte[PACKET_SIZE];
@@ -142,6 +152,12 @@ namespace kowhai_test
                                 sock.Send(buffer, bytesRequired);
                         }
                         break;
+                    case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK:
+                    case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK_END:
+                        ushort[] funcs = new ushort[prot.payload.spec.function_list.list_count];
+                        KowhaiProtocol.CopyFunctionList(funcs, prot.payload);
+                        InitFunctionList(funcs);
+                        break;
                     default:
                         MessageBox.Show(string.Format("ProcessPacket(): Unknown command ({0})", prot.header.command),
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -154,12 +170,25 @@ namespace kowhai_test
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        private void SetTreeListName(ushort symbol)
+        {
+            lbTreeList.SelectedIndexChanged -= lbTreeList_SelectedIndexChanged;
+            lbTreeList.Items[lbTreeList.SelectedIndex] = KowhaiSymbols.Symbols.Strings[symbol];
+            lbTreeList.SelectedIndexChanged += lbTreeList_SelectedIndexChanged;
+        }
 
         private void InitTreeList(byte treeCount)
         {
             lbTreeList.Items.Clear();
             for (int i = 0; i < treeCount; i++)
                 lbTreeList.Items.Add(i);
+        }
+
+        private void InitFunctionList(ushort[] funcs)
+        {
+            lbFunctionList.Items.Clear();
+            foreach (ushort func in funcs)
+                lbFunctionList.Items.Add(KowhaiSymbols.Symbols.Strings[func]);
         }
 
         private bool TreeIdOk(ushort id)

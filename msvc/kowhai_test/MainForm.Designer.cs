@@ -38,11 +38,13 @@
             this.panel6 = new System.Windows.Forms.Panel();
             this.lbTreeList = new System.Windows.Forms.ListBox();
             this.pnlScope = new System.Windows.Forms.Panel();
-            this.kowhaiTreeScratch = new kowhai_sharp.KowhaiTree();
             this.label1 = new System.Windows.Forms.Label();
-            this.kowhaiTreeMain = new kowhai_sharp.KowhaiTree();
             this.btnLoadScratch = new System.Windows.Forms.Button();
             this.btnRefreshList = new System.Windows.Forms.Button();
+            this.lbFunctionList = new System.Windows.Forms.ListBox();
+            this.kowhaiTreeScratch = new kowhai_sharp.KowhaiTree();
+            this.kowhaiTreeMain = new kowhai_sharp.KowhaiTree();
+            this.label4 = new System.Windows.Forms.Label();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel6.SuspendLayout();
             this.SuspendLayout();
@@ -97,9 +99,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tableLayoutPanel1.ColumnCount = 3;
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
-            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33334F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 33.33334F));
             this.tableLayoutPanel1.Controls.Add(this.label3, 1, 0);
             this.tableLayoutPanel1.Controls.Add(this.label2, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.panel6, 0, 1);
@@ -110,7 +112,7 @@
             this.tableLayoutPanel1.Margin = new System.Windows.Forms.Padding(4);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 25F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 18F));
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(908, 514);
             this.tableLayoutPanel1.TabIndex = 14;
@@ -135,25 +137,26 @@
             // 
             // panel6
             // 
+            this.panel6.Controls.Add(this.label4);
+            this.panel6.Controls.Add(this.lbFunctionList);
             this.panel6.Controls.Add(this.lbTreeList);
             this.panel6.Controls.Add(this.pnlScope);
             this.panel6.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel6.Location = new System.Drawing.Point(0, 25);
+            this.panel6.Location = new System.Drawing.Point(0, 18);
             this.panel6.Margin = new System.Windows.Forms.Padding(0);
             this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(302, 489);
+            this.panel6.Size = new System.Drawing.Size(302, 496);
             this.panel6.TabIndex = 20;
             // 
             // lbTreeList
             // 
-            this.lbTreeList.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.lbTreeList.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lbTreeList.FormattingEnabled = true;
             this.lbTreeList.ItemHeight = 16;
             this.lbTreeList.Location = new System.Drawing.Point(3, 3);
             this.lbTreeList.Name = "lbTreeList";
-            this.lbTreeList.Size = new System.Drawing.Size(296, 372);
+            this.lbTreeList.Size = new System.Drawing.Size(296, 164);
             this.lbTreeList.TabIndex = 7;
             this.lbTreeList.SelectedIndexChanged += new System.EventHandler(this.lbTreeList_SelectedIndexChanged);
             // 
@@ -161,22 +164,12 @@
             // 
             this.pnlScope.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.pnlScope.Location = new System.Drawing.Point(4, 382);
+            this.pnlScope.Location = new System.Drawing.Point(4, 383);
             this.pnlScope.Margin = new System.Windows.Forms.Padding(4);
             this.pnlScope.Name = "pnlScope";
-            this.pnlScope.Size = new System.Drawing.Size(294, 103);
+            this.pnlScope.Size = new System.Drawing.Size(294, 109);
             this.pnlScope.TabIndex = 5;
             this.pnlScope.Paint += new System.Windows.Forms.PaintEventHandler(this.OnPaint);
-            // 
-            // kowhaiTreeScratch
-            // 
-            this.kowhaiTreeScratch.ContextMenuEnabled = true;
-            this.kowhaiTreeScratch.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.kowhaiTreeScratch.Location = new System.Drawing.Point(607, 27);
-            this.kowhaiTreeScratch.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTreeScratch.Name = "kowhaiTreeScratch";
-            this.kowhaiTreeScratch.Size = new System.Drawing.Size(298, 485);
-            this.kowhaiTreeScratch.TabIndex = 9;
             // 
             // label1
             // 
@@ -186,16 +179,6 @@
             this.label1.Size = new System.Drawing.Size(56, 17);
             this.label1.TabIndex = 14;
             this.label1.Text = "Scratch";
-            // 
-            // kowhaiTreeMain
-            // 
-            this.kowhaiTreeMain.ContextMenuEnabled = true;
-            this.kowhaiTreeMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.kowhaiTreeMain.Location = new System.Drawing.Point(305, 27);
-            this.kowhaiTreeMain.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.kowhaiTreeMain.Name = "kowhaiTreeMain";
-            this.kowhaiTreeMain.Size = new System.Drawing.Size(296, 485);
-            this.kowhaiTreeMain.TabIndex = 8;
             // 
             // btnLoadScratch
             // 
@@ -219,6 +202,47 @@
             this.btnRefreshList.UseVisualStyleBackColor = true;
             this.btnRefreshList.Click += new System.EventHandler(this.btnRefreshList_Click);
             // 
+            // lbFunctionList
+            // 
+            this.lbFunctionList.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lbFunctionList.FormattingEnabled = true;
+            this.lbFunctionList.ItemHeight = 16;
+            this.lbFunctionList.Location = new System.Drawing.Point(3, 189);
+            this.lbFunctionList.Name = "lbFunctionList";
+            this.lbFunctionList.Size = new System.Drawing.Size(296, 180);
+            this.lbFunctionList.TabIndex = 8;
+            // 
+            // kowhaiTreeScratch
+            // 
+            this.kowhaiTreeScratch.ContextMenuEnabled = true;
+            this.kowhaiTreeScratch.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.kowhaiTreeScratch.Location = new System.Drawing.Point(607, 20);
+            this.kowhaiTreeScratch.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.kowhaiTreeScratch.Name = "kowhaiTreeScratch";
+            this.kowhaiTreeScratch.Size = new System.Drawing.Size(298, 492);
+            this.kowhaiTreeScratch.TabIndex = 9;
+            // 
+            // kowhaiTreeMain
+            // 
+            this.kowhaiTreeMain.ContextMenuEnabled = true;
+            this.kowhaiTreeMain.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.kowhaiTreeMain.Location = new System.Drawing.Point(305, 20);
+            this.kowhaiTreeMain.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.kowhaiTreeMain.Name = "kowhaiTreeMain";
+            this.kowhaiTreeMain.Size = new System.Drawing.Size(296, 492);
+            this.kowhaiTreeMain.TabIndex = 8;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(3, 170);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(62, 17);
+            this.label4.TabIndex = 22;
+            this.label4.Text = "Function";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -239,6 +263,7 @@
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
             this.panel6.ResumeLayout(false);
+            this.panel6.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -260,5 +285,7 @@
         private System.Windows.Forms.ListBox lbTreeList;
         private System.Windows.Forms.Panel pnlScope;
         private System.Windows.Forms.Button btnRefreshList;
+        private System.Windows.Forms.ListBox lbFunctionList;
+        private System.Windows.Forms.Label label4;
     }
 }

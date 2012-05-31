@@ -234,6 +234,13 @@ namespace kowhai_sharp
             h.Free();
         }
 
+        public static void CopyFunctionList(uint16_t[] target, kowhai_protocol_payload_t payload)
+        {
+            GCHandle h = GCHandle.Alloc(target, GCHandleType.Pinned);
+            CopyIntPtrs(new IntPtr(h.AddrOfPinnedObject().ToInt64() + payload.spec.function_list.offset), payload.buffer, payload.spec.function_list.size);
+            h.Free();
+        }
+
         public static uint8_t[] GetBuffer(kowhai_protocol_t prot)
         {
             byte[] buffer;
