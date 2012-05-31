@@ -528,5 +528,10 @@ namespace kowhai_sharp
             foreach (TreeNode childNode in node.Nodes)
                 _resetNodesBackColor(childNode);
         }
+
+        public void Clear()
+        {
+            treeView1.Nodes.Clear();
+        }
     }
 }

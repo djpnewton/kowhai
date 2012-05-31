@@ -29,7 +29,8 @@ namespace kowhai_sharp
         public const int CMD_CALL_FUNCTION = 0x60;
         public const int CMD_CALL_FUNCTION_END = 0x61;
         public const int CMD_CALL_FUNCTION_ACK = 0x6F;
-        public const int CMD_CALL_FUNCTION_ACK_END = 0x6E;
+        public const int KOW_CMD_CALL_FUNCTION_RESULT = 0x6E;
+        public const int KOW_CMD_CALL_FUNCTION_RESULT_END = 0x6D;
         public const int CMD_ERROR_INVALID_TREE_ID = 0xF0;
         public const int CMD_ERROR_INVALID_COMMAND = 0xF1;
         public const int CMD_ERROR_INVALID_SYMBOL_PATH = 0xF2;
@@ -74,13 +75,43 @@ namespace kowhai_sharp
             public uint16_t size;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_protocol_function_list_t
+        {
+            public uint16_t list_count;
+            public uint16_t offset;
+            public uint16_t size;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_protocol_function_details_t
+        {
+            public uint16_t tree_in_id;
+            public uint16_t tree_out_id;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_protocol_function_call_t
+        {
+            public uint16_t offset;
+            public uint16_t size;
+        }
+
         [StructLayout(LayoutKind.Explicit)]
         public struct kowhai_protocol_payload_spec_t
         {
             [FieldOffset(0)]
+            public uint8_t tree_count;
+            [FieldOffset(0)]
             public kowhai_protocol_data_payload_spec_t data;
             [FieldOffset(0)]
             public kowhai_protocol_descriptor_payload_spec_t descriptor;
+            [FieldOffset(0)]
+            public kowhai_protocol_function_list_t function_list;
+            [FieldOffset(0)]
+            public kowhai_protocol_function_details_t function_details;
+            [FieldOffset(0)]
+            public kowhai_protocol_function_call_t function_call;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -130,7 +161,7 @@ namespace kowhai_sharp
             GCHandle h = GCHandle.Alloc(protoPacket, GCHandleType.Pinned);
             int result = kowhai_protocol_parse(h.AddrOfPinnedObject(), packetSize, out protocol);
             h.Free();
-            if (result == Kowhai.STATUS_OK && !IsDescriptorCommand(protocol.header.command))
+            if (result == Kowhai.STATUS_OK && IsSymbolCommand(protocol.header.command))
             {
                 symbols = new Kowhai.kowhai_symbol_t[protocol.payload.spec.data.symbols.count];
                 h = GCHandle.Alloc(symbols, GCHandleType.Pinned);
@@ -150,6 +181,20 @@ namespace kowhai_sharp
                 return true;
             if (command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
                 return true;
+            return false;
+        }
+
+        private static bool IsSymbolCommand(uint8_t command)
+        {
+            switch (command)
+            {
+                case KowhaiProtocol.CMD_READ_DATA:
+                case KowhaiProtocol.CMD_READ_DATA_ACK:
+                case KowhaiProtocol.CMD_READ_DATA_ACK_END:
+                case KowhaiProtocol.CMD_WRITE_DATA:
+                case KowhaiProtocol.CMD_WRITE_DATA_ACK:
+                    return true;
+            }
             return false;
         }
 
