@@ -54,6 +54,8 @@ namespace kowhai_sharp
 
         public bool ContextMenuEnabled { get; set; }
 
+        public bool EditDataInPlace { get; set; }
+
         public delegate void NodeReadEventHandler(object sender, NodeReadEventArgs e);
 
         Kowhai.kowhai_node_t[] descriptor;
@@ -387,7 +389,10 @@ namespace kowhai_sharp
                 try
                 {
                     data = TextToData(e.Label, info.KowhaiNode.type);
-                    e.Node.Text = "updating...";
+                    if (EditDataInPlace)
+                        UpdateData(data, info.Offset);
+                    else
+                        e.Node.Text = "updating...";
                 }
                 catch (Exception ex)
                 {

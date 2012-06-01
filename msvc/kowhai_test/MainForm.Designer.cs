@@ -213,6 +213,7 @@
             this.lbFunctionList.Name = "lbFunctionList";
             this.lbFunctionList.Size = new System.Drawing.Size(296, 180);
             this.lbFunctionList.TabIndex = 8;
+            this.lbFunctionList.DoubleClick += new System.EventHandler(this.lbFunctionList_DoubleClick);
             // 
             // kowhaiTreeScratch
             // 

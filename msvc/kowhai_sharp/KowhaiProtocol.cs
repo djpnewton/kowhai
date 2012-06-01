@@ -27,10 +27,9 @@ namespace kowhai_sharp
         public const int CMD_GET_FUNCTION_DETAILS = 0x50;
         public const int CMD_GET_FUNCTION_DETAILS_ACK = 0x5F;
         public const int CMD_CALL_FUNCTION = 0x60;
-        public const int CMD_CALL_FUNCTION_END = 0x61;
         public const int CMD_CALL_FUNCTION_ACK = 0x6F;
-        public const int KOW_CMD_CALL_FUNCTION_RESULT = 0x6E;
-        public const int KOW_CMD_CALL_FUNCTION_RESULT_END = 0x6D;
+        public const int CMD_CALL_FUNCTION_RESULT = 0x6E;
+        public const int CMD_CALL_FUNCTION_RESULT_END = 0x6D;
         public const int CMD_ERROR_INVALID_TREE_ID = 0xF0;
         public const int CMD_ERROR_INVALID_COMMAND = 0xF1;
         public const int CMD_ERROR_INVALID_SYMBOL_PATH = 0xF2;
@@ -198,7 +197,18 @@ namespace kowhai_sharp
             return false;
         }
 
-        public static int Create(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, out int bytesRequired)
+        private static bool IsFunctionResultCommand(uint8_t command)
+        {
+            switch (command)
+            {
+                case KowhaiProtocol.CMD_CALL_FUNCTION_RESULT:
+                case KowhaiProtocol.CMD_CALL_FUNCTION_RESULT_END:
+                    return true;
+            }
+            return false;
+        }
+
+        public static int CreateBasicPacket(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, out int bytesRequired)
         {
             GCHandle h = GCHandle.Alloc(protoPacket, GCHandleType.Pinned);
             int result = kowhai_protocol_create(h.AddrOfPinnedObject(), packetSize, ref protocol, out bytesRequired);
@@ -206,25 +216,42 @@ namespace kowhai_sharp
             return result;
         }
 
-        public static int Create(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, Kowhai.kowhai_symbol_t[] symbols, out int bytesRequired)
+        public static int CreateReadDataPacket(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, Kowhai.kowhai_symbol_t[] symbols, out int bytesRequired)
         {
             protocol.payload.spec.data.symbols.count = (uint8_t)symbols.Length;
             GCHandle h = GCHandle.Alloc(symbols, GCHandleType.Pinned);
             protocol.payload.spec.data.symbols.array_ = h.AddrOfPinnedObject();
-            int result = Create(protoPacket, packetSize, ref protocol, out bytesRequired);
+            int result = CreateBasicPacket(protoPacket, packetSize, ref protocol, out bytesRequired);
             h.Free();
             return result;
         }
 
-        public static int Create(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, Kowhai.kowhai_symbol_t[] symbols, byte[] buffer, uint16_t offset, out int bytesRequired)
+        public static int CreateWriteDataPacket(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, Kowhai.kowhai_symbol_t[] symbols, byte[] buffer, uint16_t offset, out int bytesRequired)
         {
             protocol.payload.spec.data.memory.size = (uint16_t)buffer.Length;
             protocol.payload.spec.data.memory.offset = offset;
             GCHandle h = GCHandle.Alloc(buffer, GCHandleType.Pinned);
             protocol.payload.buffer = h.AddrOfPinnedObject();
-            int result = Create(protoPacket, packetSize, ref protocol, symbols, out bytesRequired);
+            int result = CreateReadDataPacket(protoPacket, packetSize, ref protocol, symbols, out bytesRequired);
             h.Free();
             return result;
+        }
+
+        public static int CreateCallFunctionPacket(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, byte[] buffer, uint16_t offset, out int bytesRequired)
+        {
+            protocol.payload.spec.function_call.offset = offset;
+            if (buffer != null)
+            {
+                protocol.payload.spec.function_call.size = (uint16_t)buffer.Length;
+                GCHandle h = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+                protocol.payload.buffer = h.AddrOfPinnedObject();
+                int result = CreateBasicPacket(protoPacket, packetSize, ref protocol, out bytesRequired);
+                h.Free();
+                return result;
+            }
+            else
+                protocol.payload.spec.function_call.size = 0;
+            return CreateBasicPacket(protoPacket, packetSize, ref protocol, out bytesRequired);
         }
 
         public static void CopyDescriptor(Kowhai.kowhai_node_t[] target, kowhai_protocol_payload_t payload)
@@ -246,8 +273,12 @@ namespace kowhai_sharp
             byte[] buffer;
             if (IsDescriptorCommand(prot.header.command))
                 buffer = new byte[prot.payload.spec.descriptor.size];
-            else
+            else if (IsSymbolCommand(prot.header.command))
                 buffer = new byte[prot.payload.spec.data.memory.size];
+            else if (IsFunctionResultCommand(prot.header.command))
+                buffer = new byte[prot.payload.spec.function_call.size];
+            else
+                return null;
             Marshal.Copy(prot.payload.buffer, buffer, 0, buffer.Length);
             return buffer;
         }
