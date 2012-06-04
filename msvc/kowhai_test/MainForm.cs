@@ -206,6 +206,9 @@ namespace kowhai_test
                         else
                             functionCallForm.ShowDialog();
                         break;
+                    case KowhaiProtocol.CMD_CALL_FUNCTION_ACK:
+                        // do nothing
+                        break;
                     case KowhaiProtocol.CMD_CALL_FUNCTION_RESULT:
                     case KowhaiProtocol.CMD_CALL_FUNCTION_RESULT_END:
                         if (functionCallForm != null)
