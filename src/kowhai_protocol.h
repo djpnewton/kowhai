@@ -7,10 +7,12 @@
 // Protocol commands
 //
 
-// Get the tree count
-#define KOW_CMD_GET_TREE_COUNT               0x00
-// Acknowledge get tree count command
-#define KOW_CMD_GET_TREE_COUNT_ACK           0x0F
+// Get the tree list
+#define KOW_CMD_GET_TREE_LIST                0x00
+// Acknowledge get tree list command
+#define KOW_CMD_GET_TREE_LIST_ACK            0x0F
+// Acknowledge get tree list command (this is the final packet)
+#define KOW_CMD_GET_TREE_LIST_ACK_END        0x0E
 
 // Write tree data
 #define KOW_CMD_WRITE_DATA                   0x10
@@ -118,7 +120,7 @@ struct kowhai_protocol_descriptor_payload_spec_t
 /**
  * @brief 
  */
-struct kowhai_protocol_function_list_t
+struct kowhai_protocol_id_list_t
 {
     uint16_t list_count;
     uint16_t offset;
@@ -148,10 +150,9 @@ struct kowhai_protocol_function_call_t
  */
 union kowhai_protocol_payload_spec_t
 {
-    uint8_t tree_count;
+    struct kowhai_protocol_id_list_t id_list;
     struct kowhai_protocol_data_payload_spec_t data;
     struct kowhai_protocol_descriptor_payload_spec_t descriptor;
-    struct kowhai_protocol_function_list_t function_list;
     struct kowhai_protocol_function_details_t function_details;
     struct kowhai_protocol_function_call_t function_call;
 };
@@ -185,6 +186,16 @@ struct kowhai_protocol_t
     {                                                            \
         protocol.header.command = cmd;                           \
         protocol.header.id = id_;                                \
+    }
+
+/**
+ * @brief format protocol to request reading the tree list
+ * @param protocol, this is a kowhai_protocol_t struct used to make the request
+ */
+#define POPULATE_PROTOCOL_GET_TREE_LIST(protocol)       \
+    {                                                   \
+        protocol.header.command = KOW_CMD_GET_TREE_LIST;\
+        protocol.header.id = 0;                         \
     }
 
 /**

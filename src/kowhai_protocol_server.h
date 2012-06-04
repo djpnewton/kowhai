@@ -40,11 +40,12 @@ struct kowhai_protocol_server_t
     void* node_written_param;
     kowhai_send_packet_t send_packet;
     void* send_packet_param;
-    int tree_count;
+    int tree_list_count;
+    uint16_t* tree_list;
     struct kowhai_node_t** tree_descriptors;
     size_t* tree_descriptor_sizes;
     void** tree_data_buffers;
-    size_t function_list_size;
+    int function_list_count;
     uint16_t* function_list;
     struct kowhai_protocol_function_details_t* function_list_details;
     kowhai_function_called_t function_called;

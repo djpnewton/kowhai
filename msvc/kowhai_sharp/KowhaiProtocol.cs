@@ -11,8 +11,9 @@ namespace kowhai_sharp
 
     public static class KowhaiProtocol
     {
-        public const int CMD_GET_TREE_COUNT = 0x00;
-        public const int CMD_GET_TREE_COUNT_ACK = 0x0F;
+        public const int CMD_GET_TREE_LIST = 0x00;
+        public const int CMD_GET_TREE_LIST_ACK = 0x0F;
+        public const int CMD_GET_TREE_LIST_ACK_END = 0x0E;
         public const int CMD_WRITE_DATA = 0x10;
         public const int CMD_WRITE_DATA_ACK = 0x1F;
         public const int CMD_READ_DATA = 0x20;
@@ -75,7 +76,7 @@ namespace kowhai_sharp
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct kowhai_protocol_function_list_t
+        public struct kowhai_protocol_id_list_t
         {
             public uint16_t list_count;
             public uint16_t offset;
@@ -100,13 +101,11 @@ namespace kowhai_sharp
         public struct kowhai_protocol_payload_spec_t
         {
             [FieldOffset(0)]
-            public uint8_t tree_count;
+            public kowhai_protocol_id_list_t id_list;
             [FieldOffset(0)]
             public kowhai_protocol_data_payload_spec_t data;
             [FieldOffset(0)]
             public kowhai_protocol_descriptor_payload_spec_t descriptor;
-            [FieldOffset(0)]
-            public kowhai_protocol_function_list_t function_list;
             [FieldOffset(0)]
             public kowhai_protocol_function_details_t function_details;
             [FieldOffset(0)]
@@ -261,10 +260,10 @@ namespace kowhai_sharp
             h.Free();
         }
 
-        public static void CopyFunctionList(uint16_t[] target, kowhai_protocol_payload_t payload)
+        public static void CopyIdList(uint16_t[] target, kowhai_protocol_payload_t payload)
         {
             GCHandle h = GCHandle.Alloc(target, GCHandleType.Pinned);
-            CopyIntPtrs(new IntPtr(h.AddrOfPinnedObject().ToInt64() + payload.spec.function_list.offset), payload.buffer, payload.spec.function_list.size);
+            CopyIntPtrs(new IntPtr(h.AddrOfPinnedObject().ToInt64() + payload.spec.id_list.offset), payload.buffer, payload.spec.id_list.size);
             h.Free();
         }
 

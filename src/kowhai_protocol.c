@@ -101,14 +101,14 @@ static int parse_descriptor_payload(void* payload_packet, int packet_size, struc
     return KOW_STATUS_OK;
 }
 
-static int parse_function_list(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+static int parse_id_list(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
 {
-    if (packet_size < sizeof(struct kowhai_protocol_function_list_t))
+    if (packet_size < sizeof(struct kowhai_protocol_id_list_t))
         return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-    memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_function_list_t));
-    if (payload->spec.function_list.size > packet_size - sizeof(struct kowhai_protocol_function_list_t))
+    memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_id_list_t));
+    if (payload->spec.id_list.size > packet_size - sizeof(struct kowhai_protocol_id_list_t))
         return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-    payload->buffer = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_function_list_t));
+    payload->buffer = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_id_list_t));
     return KOW_STATUS_OK;
 }
 
@@ -144,14 +144,13 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
 
     switch (protocol->header.command)
     {
-        case KOW_CMD_GET_TREE_COUNT:
+        case KOW_CMD_GET_TREE_LIST:
             return KOW_STATUS_OK;
-        case KOW_CMD_GET_TREE_COUNT_ACK:
-            required_size += sizeof(protocol->payload.spec.tree_count);
-            if (packet_size < required_size)
-                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-            protocol->payload.spec.tree_count = ((uint8_t*)proto_packet)[required_size-1];
-            return KOW_STATUS_OK;
+        case KOW_CMD_GET_TREE_LIST_ACK:
+        case KOW_CMD_GET_TREE_LIST_ACK_END:
+        case KOW_CMD_GET_FUNCTION_LIST_ACK:
+        case KOW_CMD_GET_FUNCTION_LIST_ACK_END:
+            return parse_id_list((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         case KOW_CMD_READ_DATA:
             return parse_symbols((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload, &required_size);
         case KOW_CMD_WRITE_DATA:
@@ -169,9 +168,6 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         case KOW_CMD_GET_FUNCTION_DETAILS:
             // get function list/details command requires no more parameters
             return KOW_STATUS_OK;
-        case KOW_CMD_GET_FUNCTION_LIST_ACK:
-        case KOW_CMD_GET_FUNCTION_LIST_ACK_END:
-            return parse_function_list((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         case KOW_CMD_GET_FUNCTION_DETAILS_ACK:
             return parse_function_details((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload.spec.function_details);
         case KOW_CMD_CALL_FUNCTION:
@@ -198,14 +194,24 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     // check protocol command
     switch (protocol->header.command)
     {
-        case KOW_CMD_GET_TREE_COUNT:
+        case KOW_CMD_GET_TREE_LIST:
             break;
-        case KOW_CMD_GET_TREE_COUNT_ACK:
-            *bytes_required += sizeof(uint8_t);
+        case KOW_CMD_GET_TREE_LIST_ACK:
+        case KOW_CMD_GET_TREE_LIST_ACK_END:
+        case KOW_CMD_GET_FUNCTION_LIST_ACK:
+        case KOW_CMD_GET_FUNCTION_LIST_ACK_END:
+            // write payload spec
+            *bytes_required += sizeof(struct kowhai_protocol_id_list_t);
             if (packet_size < *bytes_required)
                 return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-            *pkt = protocol->payload.spec.tree_count;
-            return KOW_STATUS_OK;
+            memcpy(pkt, &protocol->payload.spec.id_list, sizeof(struct kowhai_protocol_id_list_t));
+            pkt += sizeof(struct kowhai_protocol_id_list_t);
+            // write payload
+            *bytes_required += protocol->payload.spec.id_list.size;
+            if (packet_size < *bytes_required)
+                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.id_list.size);
+            break;
         case KOW_CMD_WRITE_DATA:
         case KOW_CMD_WRITE_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK:
@@ -259,20 +265,6 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
         case KOW_CMD_GET_FUNCTION_DETAILS:
             // get function list/details command requires no more parameters
             break;
-        case KOW_CMD_GET_FUNCTION_LIST_ACK:
-        case KOW_CMD_GET_FUNCTION_LIST_ACK_END:
-            // write payload spec
-            *bytes_required += sizeof(struct kowhai_protocol_function_list_t);
-            if (packet_size < *bytes_required)
-                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-            memcpy(pkt, &protocol->payload.spec.function_list, sizeof(struct kowhai_protocol_function_list_t));
-            pkt += sizeof(struct kowhai_protocol_function_list_t);
-            // write payload
-            *bytes_required += protocol->payload.spec.function_list.size;
-            if (packet_size < *bytes_required)
-                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-            memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.function_list.size);
-            break;
         case KOW_CMD_GET_FUNCTION_DETAILS_ACK:
             // write details
             *bytes_required += sizeof(struct kowhai_protocol_function_details_t);
@@ -307,10 +299,11 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
     // check protocol command
     switch (protocol->header.command)
     {
-        case KOW_CMD_GET_TREE_COUNT:
+        case KOW_CMD_GET_TREE_LIST:
             *overhead = sizeof(struct kowhai_protocol_header_t);
             return KOW_STATUS_OK;
-        case KOW_CMD_GET_TREE_COUNT_ACK:
+        case KOW_CMD_GET_TREE_LIST_ACK:
+        case KOW_CMD_GET_TREE_LIST_ACK_END:
             *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(uint8_t);
             return KOW_STATUS_OK;
         case KOW_CMD_READ_DESCRIPTOR:
@@ -338,7 +331,7 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
             return KOW_STATUS_OK;
         case KOW_CMD_GET_FUNCTION_LIST_ACK:
         case KOW_CMD_GET_FUNCTION_LIST_ACK_END:
-            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_function_list_t);
+            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_id_list_t);
             return KOW_STATUS_OK;
         case KOW_CMD_GET_FUNCTION_DETAILS_ACK:
             *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_function_details_t);

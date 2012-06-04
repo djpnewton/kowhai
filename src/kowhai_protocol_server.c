@@ -28,20 +28,44 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_node_t** descriptors
     }
 }
 
+int _get_tree_index(struct kowhai_protocol_server_t* server , uint16_t id, int* index)
+{
+    int i = 0;
+    while (i < server->tree_list_count)
+    {
+        if (server->tree_list[i] == id)
+        {
+            *index = i;
+            return 1;
+        }
+        i++;
+    }
+    return 0;
+}
+
 struct kowhai_tree_t _populate_tree(struct kowhai_protocol_server_t* server, uint16_t tree_id)
 {
-    struct kowhai_tree_t tree;
-    if (tree_id == KOW_UNDEFINED_SYMBOL)
+    struct kowhai_tree_t tree = {NULL, NULL};
+    int index;
+    if (tree_id != KOW_UNDEFINED_SYMBOL &&
+        _get_tree_index(server, tree_id, &index))
     {
-        tree.desc = NULL;
-        tree.data = NULL;
-    }
-    else
-    {
-        tree.desc = server->tree_descriptors[tree_id];
-        tree.data = server->tree_data_buffers[tree_id];
+
+        tree.desc = server->tree_descriptors[index];
+        tree.data = server->tree_data_buffers[index];
     }
     return tree;
+}
+
+int _check_tree_id(struct kowhai_protocol_server_t* server, uint16_t id)
+{
+    int i;
+    for (i = 0; i < server->tree_list_count; i++)
+    {
+        if (server->tree_list[i] == id)
+            return 1;
+    }
+    return 0;
 }
 
 void _invalid_tree_id(struct kowhai_protocol_server_t* server, struct kowhai_protocol_t* prot)
@@ -55,8 +79,8 @@ void _invalid_tree_id(struct kowhai_protocol_server_t* server, struct kowhai_pro
 
 int _get_function_index(struct kowhai_protocol_server_t* server , uint16_t id, int* index)
 {
-    size_t i = 0;
-    while (i < server->function_list_size / sizeof(server->function_list[0]))
+    int i = 0;
+    while (i < server->function_list_count)
     {
         if (server->function_list[i] == id)
         {
@@ -66,6 +90,43 @@ int _get_function_index(struct kowhai_protocol_server_t* server , uint16_t id, i
         i++;
     }
     return 0;
+}
+
+void _send_id_list(struct kowhai_protocol_server_t* server, struct kowhai_protocol_t* prot,
+                    uint8_t cmd_ack, uint8_t cmd_ack_end,
+                    int id_list_count, uint16_t* id_list)
+{
+    int bytes_required;
+    int overhead, max_payload_size;
+    int size = id_list_count * sizeof(uint16_t);
+    // get protocol overhead
+    prot->header.command = cmd_ack;
+    kowhai_protocol_get_overhead(prot, &overhead);
+    // setup max payload size and payload offset
+    max_payload_size = server->max_packet_size - overhead;
+    prot->payload.spec.id_list.offset = 0;
+    prot->payload.spec.id_list.list_count = id_list_count;
+    // allocate payload buffer
+    prot->payload.buffer = malloc(server->max_packet_size - overhead);
+    // send packets
+    while (size > max_payload_size)
+    {
+        prot->payload.spec.descriptor.size = max_payload_size;
+        memcpy(prot->payload.buffer, (char*)id_list + prot->payload.spec.id_list.offset, prot->payload.spec.id_list.size);
+        kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
+        server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+        // increment payload offset and decrement remaining payload size
+        prot->payload.spec.id_list.offset += max_payload_size;
+        size -= max_payload_size;
+    }
+    // send final packet
+    prot->header.command = cmd_ack_end;
+    prot->payload.spec.id_list.size = size;
+    memcpy(prot->payload.buffer, (char*)id_list + prot->payload.spec.id_list.offset, prot->payload.spec.id_list.size);
+    kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
+    server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+    // free payload buffer
+    free(prot->payload.buffer);
 }
 
 int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* packet, size_t packet_size)
@@ -91,17 +152,17 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
 
     switch (prot.header.command)
     {
-        case KOW_CMD_GET_TREE_COUNT:
-            prot.header.command = KOW_CMD_GET_TREE_COUNT_ACK;
-            prot.payload.spec.tree_count = server->tree_count;
-            kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
-            server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+        case KOW_CMD_GET_TREE_LIST:
+        case KOW_CMD_GET_TREE_LIST_ACK_END:
+            _send_id_list(server, &prot,
+                KOW_CMD_GET_TREE_LIST_ACK, KOW_CMD_GET_TREE_LIST_ACK_END,
+                server->tree_list_count, server->tree_list);
             break;
         case KOW_CMD_WRITE_DATA:
         {
             struct kowhai_tree_t tree;
             printf("    CMD write data\n");
-            if (prot.header.id > server->tree_count)
+            if (!_check_tree_id(server, prot.header.id))
             {
                 _invalid_tree_id(server, &prot);
                 break;
@@ -157,7 +218,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             struct kowhai_node_t* node;
             struct kowhai_protocol_symbol_spec_t symbols = prot.payload.spec.data.symbols;
             printf("    CMD read data\n");
-            if (prot.header.id > server->tree_count)
+            if (!_check_tree_id(server, prot.header.id))
             {
                 _invalid_tree_id(server, &prot);
                 break;
@@ -231,9 +292,9 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
         case KOW_CMD_READ_DESCRIPTOR:
         {
             struct kowhai_tree_t tree;
-            int size, overhead, max_payload_size;
+            int size, overhead, max_payload_size, index;
             printf("    CMD read descriptor\n");
-            if (prot.header.id > server->tree_count)
+            if (!_check_tree_id(server, prot.header.id))
             {
                 _invalid_tree_id(server, &prot);
                 break;
@@ -241,7 +302,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             // init tree helper struct
             tree = _populate_tree(server, prot.header.id);
             // get descriptor size
-            size = *(server->tree_descriptor_sizes + prot.header.id);
+            _get_tree_index(server, prot.header.id, &index);
+            size = *(server->tree_descriptor_sizes + index);
             // get protocol overhead
             prot.header.command = KOW_CMD_READ_DESCRIPTOR_ACK;
             kowhai_protocol_get_overhead(&prot, &overhead);
@@ -275,39 +337,10 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
         }
         case KOW_CMD_GET_FUNCTION_LIST:
         {
-            int size, overhead, max_payload_size;
             printf("    CMD get function list\n");
-            // get function list size
-            size = server->function_list_size;
-            // get protocol overhead
-            prot.header.command = KOW_CMD_GET_FUNCTION_LIST_ACK;
-            kowhai_protocol_get_overhead(&prot, &overhead);
-            // setup max payload size and payload offset
-            max_payload_size = server->max_packet_size - overhead;
-            prot.payload.spec.function_list.offset = 0;
-            prot.payload.spec.function_list.list_count = size / sizeof(server->function_list[0]);
-            // allocate payload buffer
-            prot.payload.buffer = malloc(server->max_packet_size - overhead);
-
-            // send packets
-            while (size > max_payload_size)
-            {
-                prot.payload.spec.descriptor.size = max_payload_size;
-                memcpy(prot.payload.buffer, (char*)server->function_list + prot.payload.spec.function_list.offset, prot.payload.spec.function_list.size);
-                kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
-                server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
-                // increment payload offset and decrement remaining payload size
-                prot.payload.spec.function_list.offset += max_payload_size;
-                size -= max_payload_size;
-            }
-            // send final packet
-            prot.header.command = KOW_CMD_GET_FUNCTION_LIST_ACK_END;
-            prot.payload.spec.function_list.size = size;
-            memcpy(prot.payload.buffer, (char*)server->function_list + prot.payload.spec.function_list.offset, prot.payload.spec.function_list.size);
-            kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
-            server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
-            // free payload buffer
-            free(prot.payload.buffer);
+            _send_id_list(server, &prot,
+                KOW_CMD_GET_FUNCTION_LIST_ACK, KOW_CMD_GET_FUNCTION_LIST_ACK_END,
+                server->function_list_count, server->function_list);
             break;
         }
         case KOW_CMD_GET_FUNCTION_DETAILS:
@@ -338,8 +371,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             if (_get_function_index(server, prot.header.id, &function_index))
             {
                 struct kowhai_tree_t tree = _populate_tree(server, server->function_list_details[function_index].tree_in_id);
-                if (server->function_list_details[function_index].tree_in_id > server->tree_count &&
-                    server->function_list_details[function_index].tree_in_id != KOW_UNDEFINED_SYMBOL)
+                if (server->function_list_details[function_index].tree_in_id != KOW_UNDEFINED_SYMBOL &&
+                    !_check_tree_id(server, server->function_list_details[function_index].tree_in_id))
                 {
                     _invalid_tree_id(server, &prot);
                     break;
