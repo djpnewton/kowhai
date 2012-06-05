@@ -81,6 +81,8 @@ namespace kowhai_sharp
             }
         }
 
+        public const int KOW_UNDEFINED_SYMBOL = 65535;
+
         public const int BRANCH = 0;
         public const int BRANCH_END = 1;
 

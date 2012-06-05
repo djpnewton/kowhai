@@ -13,14 +13,10 @@ namespace kowhai_test
 {
     public partial class MainForm : Form
     {
-        const int TREE_ID_SETTINGS = 0;
-        const int TREE_ID_SHADOW = 1;
-        const int TREE_ID_ACTIONS = 2;
-        const int TREE_ID_SCOPE = 3;
-
         Sock sock;
         const int PACKET_SIZE = 64;
-        List<Kowhai.kowhai_node_t[]> descriptors = new List<Kowhai.kowhai_node_t[]>();
+        Dictionary<int, Kowhai.kowhai_node_t[]> descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>();
+        FunctionCallForm functionCallForm = null;
 
         public MainForm()
         {
@@ -32,25 +28,19 @@ namespace kowhai_test
             sock = new Sock();
             if (sock.Connect())
             {
-                btnRefreshTrees.Enabled = true;
+                btnRefreshList.Enabled = true;
                 sock.SockBufferReceived += new SockReceiveEventHandler(sock_SockBufferReceived);
                 sock.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
-                kowhaiTreeSettings.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
-                kowhaiTreeShadow.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
-                kowhaiTreeActions.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
-                kowhaiTreeScope.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
-                kowhaiTreeSettings.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
-                kowhaiTreeShadow.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
-                kowhaiTreeActions.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
-                kowhaiTreeScope.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
+                kowhaiTreeMain.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
+                kowhaiTreeMain.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
             }
             else
-                btnRefreshTrees.Enabled = false;
+                btnRefreshList.Enabled = false;
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
-            if (btnRefreshTrees.Enabled)
+            if (btnRefreshList.Enabled)
                 sock.Disconnect();
         }
 
@@ -71,25 +61,39 @@ namespace kowhai_test
         {
             KowhaiProtocol.kowhai_protocol_t prot;
             Kowhai.kowhai_symbol_t[] symbols;
-            if (KowhaiProtocol.Parse(buffer, buffer.Length, out prot, out symbols) == Kowhai.STATUS_OK)
+            int result = KowhaiProtocol.Parse(buffer, buffer.Length, out prot, out symbols);
+            if (result == Kowhai.STATUS_OK)
             {
-                while (prot.header.tree_id > descriptors.Count - 1)
-                    descriptors.Add(null);
-                Kowhai.kowhai_node_t[] descriptor = descriptors[prot.header.tree_id];
-
                 switch (prot.header.command)
                 {
+                    case KowhaiProtocol.CMD_GET_TREE_LIST_ACK:
+                    case KowhaiProtocol.CMD_GET_TREE_LIST_ACK_END:
+                    {
+                        ushort[] trees = new ushort[prot.payload.spec.id_list.list_count];
+                        KowhaiProtocol.CopyIdList(trees, prot.payload);
+                        InitTreeList(trees);
+
+                        buffer = new byte[PACKET_SIZE];
+                        int bytesRequired;
+                        prot.header.command = KowhaiProtocol.CMD_GET_FUNCTION_LIST;
+                        if (KowhaiProtocol.CreateBasicPacket(buffer, PACKET_SIZE, ref prot,
+                            out bytesRequired) == Kowhai.STATUS_OK)
+                            sock.Send(buffer, bytesRequired);
+                        break;
+                    }
                     case KowhaiProtocol.CMD_READ_DATA_ACK:
                     case KowhaiProtocol.CMD_WRITE_DATA_ACK:
                     case KowhaiProtocol.CMD_READ_DATA_ACK_END:
+                    {
                         byte[] data = KowhaiProtocol.GetBuffer(prot);
                         int nodeOffset;
                         Kowhai.kowhai_node_t node;
+                        Kowhai.kowhai_node_t[] descriptor = descriptors[prot.header.id];
                         if (Kowhai.GetNode(descriptor, symbols, out nodeOffset, out node) == Kowhai.STATUS_OK)
                         {
-                            KowhaiTree tree = GetKowhaiTree(prot.header.tree_id);
+                            KowhaiTree tree = kowhaiTreeMain;
                             tree.UpdateData(data, nodeOffset + prot.payload.spec.data.memory.offset);
-                            if (tree == kowhaiTreeScope)
+                            if (descriptor[0].symbol == (ushort)KowhaiSymbols.Symbols.Constants.Scope)
                             {
                                 Kowhai.kowhai_symbol_t[] symbolPath = new Kowhai.kowhai_symbol_t[] {
                                     new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Scope),
@@ -121,30 +125,125 @@ namespace kowhai_test
                             }
                         }
                         break;
+                    }
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK:
                     case KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END:
+                    {
+                        if (!descriptors.ContainsKey(prot.header.id))
+                            descriptors.Add(prot.header.id, null);
+                        Kowhai.kowhai_node_t[] descriptor = descriptors[prot.header.id];
                         if (descriptor == null || descriptor.Length < prot.payload.spec.descriptor.node_count)
                         {
                             Array.Resize<Kowhai.kowhai_node_t>(ref descriptor, prot.payload.spec.descriptor.node_count);
-                            descriptors[prot.header.tree_id] = descriptor;
+                            descriptors[prot.header.id] = descriptor;
                         }
                         KowhaiProtocol.CopyDescriptor(descriptor, prot.payload);
 
                         if (prot.header.command == KowhaiProtocol.CMD_READ_DESCRIPTOR_ACK_END)
                         {
-                            GetKowhaiTree(prot.header.tree_id).UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
-
-                            buffer = new byte[PACKET_SIZE];
-                            int bytesRequired;
-                            prot.header.command = KowhaiProtocol.CMD_READ_DATA;
-                            if (KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot,
-                                GetRootSymbolPath(prot.header.tree_id),
-                                out bytesRequired) == Kowhai.STATUS_OK)
-                                sock.Send(buffer, bytesRequired);
+                            if (functionCallForm != null)
+                            {
+                                if (prot.header.id == functionCallForm.FunctionDetails.tree_in_id)
+                                {
+                                    functionCallForm.TreeInDescriptor = descriptor;
+                                    if (functionCallForm.FunctionDetails.tree_out_id != Kowhai.KOW_UNDEFINED_SYMBOL)
+                                    {
+                                        if (functionCallForm.FunctionDetails.tree_out_id == functionCallForm.FunctionDetails.tree_in_id)
+                                        {
+                                            functionCallForm.TreeOutDescriptor = descriptor;
+                                            functionCallForm.ShowDialog();
+                                        }
+                                        else
+                                            CallGetTreeDescriptor(functionCallForm.FunctionDetails.tree_out_id);
+                                    }
+                                    else
+                                        functionCallForm.ShowDialog();
+                                }
+                                else if (prot.header.id == functionCallForm.FunctionDetails.tree_out_id)
+                                {
+                                    functionCallForm.TreeOutDescriptor = descriptor;
+                                    functionCallForm.ShowDialog();
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Why am i here?");
+                                }
+                            }
+                            else
+                            {
+                                kowhaiTreeMain.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
+                                CallGetTreeData(prot.header.id, descriptor[0].symbol);
+                            }
                         }
+                        break;
+                    }
+                    case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK:
+                    case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK_END:
+                        ushort[] funcs = new ushort[prot.payload.spec.id_list.list_count];
+                        KowhaiProtocol.CopyIdList(funcs, prot.payload);
+                        InitFunctionList(funcs);
+                        break;
+                    case KowhaiProtocol.CMD_GET_FUNCTION_DETAILS_ACK:
+                        // setup function call form
+                        functionCallForm = new FunctionCallForm();
+                        functionCallForm.FunctionName = new SymbolName(prot.header.id, KowhaiSymbols.Symbols.Strings[prot.header.id]);
+                        functionCallForm.FunctionDetails = prot.payload.spec.function_details;
+                        functionCallForm.FormClosed += new FormClosedEventHandler(delegate (object sender, FormClosedEventArgs e)
+                            { functionCallForm = null; });
+                        functionCallForm.CallFunction += new FunctionCallForm.CallFunctionEventHandler(delegate (object sender, FunctionCallForm.CallFunctionEventArgs e)
+                            { CallFunction(e.FunctionId, e.Buffer); });
+                        // get descriptors for function trees
+                        if (prot.payload.spec.function_details.tree_in_id != Kowhai.KOW_UNDEFINED_SYMBOL ||
+                            prot.payload.spec.function_details.tree_out_id != Kowhai.KOW_UNDEFINED_SYMBOL)
+                        {
+                            if (prot.payload.spec.function_details.tree_in_id != Kowhai.KOW_UNDEFINED_SYMBOL)
+                                // get input tree descriptor
+                                CallGetTreeDescriptor(prot.payload.spec.function_details.tree_in_id);
+                            else
+                                // get input tree descriptor
+                                CallGetTreeDescriptor(prot.payload.spec.function_details.tree_out_id);
+                        }
+                        else
+                            functionCallForm.ShowDialog();
+                        break;
+                    case KowhaiProtocol.CMD_CALL_FUNCTION_ACK:
+                        // do nothing
+                        break;
+                    case KowhaiProtocol.CMD_CALL_FUNCTION_RESULT:
+                    case KowhaiProtocol.CMD_CALL_FUNCTION_RESULT_END:
+                        if (functionCallForm != null)
+                        {
+                            byte[] buf = KowhaiProtocol.GetBuffer(prot);
+                            functionCallForm.SetFunctionOutData(buf, prot.payload.spec.function_call.offset);
+                        }
+                        else
+                            MessageBox.Show("Why am I here?");
+                        break;
+                    default:
+                        MessageBox.Show(string.Format("ProcessPacket(): Unknown command ({0})", prot.header.command),
+                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         break;
                 }
             }
+            else
+            {
+                MessageBox.Show(string.Format("ProcessPacket(): KowhaiProtocol.Parse() = {0}", result),
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void InitTreeList(ushort[] trees)
+        {
+            lbTreeList.Items.Clear();
+            foreach (ushort tree in trees)
+                lbTreeList.Items.Add(new SymbolName(tree, KowhaiSymbols.Symbols.Strings[tree]));
+        }
+
+        private void InitFunctionList(ushort[] funcs)
+        {
+            lbFunctionList.Items.Clear();
+            foreach (ushort func in funcs)
+                lbFunctionList.Items.Add(new SymbolName(func, KowhaiSymbols.Symbols.Strings[func]));
         }
 
         private List<ushort> CreateNodeInfoArrayIndexList(KowhaiTree.KowhaiNodeInfo info)
@@ -166,23 +265,23 @@ namespace kowhai_test
 
             byte[] buffer = new byte[PACKET_SIZE];
             List<ushort> arrayIndexes = CreateNodeInfoArrayIndexList(e.Info);
-            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetDescriptor(sender), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
+            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetCachedDescriptor(), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
             KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
-            prot.header.tree_id = GetTreeId(sender);
             prot.header.command = KowhaiProtocol.CMD_WRITE_DATA;
+            prot.header.id = GetTreeId();
             int bytesRequired;
-            KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, out bytesRequired);
+            KowhaiProtocol.CreateReadDataPacket(buffer, PACKET_SIZE, ref prot, symbols, out bytesRequired);
             int overhead;
             KowhaiProtocol.kowhai_protocol_get_overhead(ref prot, out overhead);
             int offset = 0;
             int maxPayloadSize = PACKET_SIZE - overhead;
             while (e.Buffer.Length - offset > maxPayloadSize)
             {
-                KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, maxPayloadSize), (ushort)offset, out bytesRequired);
+                KowhaiProtocol.CreateWriteDataPacket(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, maxPayloadSize), (ushort)offset, out bytesRequired);
                 sock.Send(buffer, bytesRequired);
                 offset += maxPayloadSize;
             }
-            KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, e.Buffer.Length - offset), (ushort)offset, out bytesRequired);
+            KowhaiProtocol.CreateWriteDataPacket(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, e.Buffer.Length - offset), (ushort)offset, out bytesRequired);
             sock.Send(buffer, bytesRequired);
         }
 
@@ -200,33 +299,89 @@ namespace kowhai_test
 
             byte[] buffer = new byte[PACKET_SIZE];
             List<ushort> arrayIndexes = CreateNodeInfoArrayIndexList(e.Info);
-            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetDescriptor(sender), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
+            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetCachedDescriptor(), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
             KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
-            prot.header.tree_id = GetTreeId(sender);
             prot.header.command = KowhaiProtocol.CMD_READ_DATA;
+            prot.header.id = GetTreeId();
             int bytesRequired;
-            KowhaiProtocol.Create(buffer, PACKET_SIZE, ref prot, symbols, out bytesRequired);
+            KowhaiProtocol.CreateReadDataPacket(buffer, PACKET_SIZE, ref prot, symbols, out bytesRequired);
             sock.Send(buffer, bytesRequired);
         }
 
-        private void btnRefreshTrees_Click(object sender, EventArgs e)
+        private void btnRefreshList_Click(object sender, EventArgs e)
         {
-            byte[] buffer = new byte[2];
-            buffer[0] = TREE_ID_SETTINGS;
-            buffer[1] = KowhaiProtocol.CMD_READ_DESCRIPTOR;
-            sock.Send(buffer, 2);
-            System.Threading.Thread.Sleep(100);
-            Application.DoEvents();
-            buffer[0] = TREE_ID_SHADOW;
-            sock.Send(buffer, 2);
-            System.Threading.Thread.Sleep(100);
-            Application.DoEvents();
-            buffer[0] = TREE_ID_ACTIONS;
-            sock.Send(buffer, 2);
-            System.Threading.Thread.Sleep(100);
-            Application.DoEvents();
-            buffer[0] = TREE_ID_SCOPE;
-            sock.Send(buffer, 2);
+            kowhaiTreeMain.Clear();
+            byte[] buffer = new byte[3];
+            buffer[0] = KowhaiProtocol.CMD_GET_TREE_LIST;
+            sock.Send(buffer, buffer.Length);
+        }
+
+
+        private void lbTreeList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            CallGetTreeDescriptor(GetTreeId());
+        }
+
+        private void CallGetTreeDescriptor(ushort treeId)
+        {
+            byte[] buffer = new byte[3];
+            buffer[0] = KowhaiProtocol.CMD_READ_DESCRIPTOR;
+            Array.Copy(BitConverter.GetBytes(treeId), 0, buffer, 1, 2); ;
+            sock.Send(buffer, buffer.Length);
+        }
+
+        private void CallGetTreeData(ushort treeId, ushort baseSymbol)
+        {
+            KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
+            byte[] buffer = new byte[PACKET_SIZE];
+            int bytesRequired;
+            prot.header.command = KowhaiProtocol.CMD_READ_DATA;
+            prot.header.id = treeId;
+            Kowhai.kowhai_symbol_t[] syms = new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t(baseSymbol, 0) };
+            if (KowhaiProtocol.CreateReadDataPacket(buffer, PACKET_SIZE, ref prot,
+                syms,
+                out bytesRequired) == Kowhai.STATUS_OK)
+                sock.Send(buffer, bytesRequired);
+        }
+
+        private void CallFunction(ushort functionId, byte[] data)
+        {
+            KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
+            byte[] buffer = new byte[PACKET_SIZE];
+            int bytesRequired;
+            prot.header.command = KowhaiProtocol.CMD_CALL_FUNCTION;
+            prot.header.id = functionId;
+            int overhead;
+            if (KowhaiProtocol.kowhai_protocol_get_overhead(ref prot, out overhead) == Kowhai.STATUS_OK)
+            {
+                int maxDataSize = PACKET_SIZE - overhead;
+                int bytesWritten = 0;
+                if (data != null)
+                {
+                    while (bytesWritten < data.Length)
+                    {
+                        byte[] temp = new byte[Math.Min(maxDataSize, data.Length - bytesWritten)];
+                        Array.Copy(data, bytesWritten, temp, 0, temp.Length);
+                        if (KowhaiProtocol.CreateCallFunctionPacket(buffer, PACKET_SIZE, ref prot,
+                            temp, (ushort)bytesWritten,
+                            out bytesRequired) == Kowhai.STATUS_OK)
+                        {
+                            sock.Send(buffer, bytesRequired);
+                            bytesWritten += temp.Length;
+                        }
+                        else
+                            break;
+                    }
+                }
+                else
+                {
+                    if (KowhaiProtocol.CreateCallFunctionPacket(buffer, PACKET_SIZE, ref prot,
+                        data, 0,
+                        out bytesRequired) == Kowhai.STATUS_OK)
+                        sock.Send(buffer, bytesRequired);
+                }
+            }
+
         }
 
         string getSymbolName(Object param, UInt16 value)
@@ -236,9 +391,8 @@ namespace kowhai_test
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            KowhaiTree tree = GetTreeFromRadioButtonSelection();
             string text;
-            if (KowhaiSerialize.Serialize(tree.GetDescriptor(), tree.GetData(), out text, 0x1000, null, getSymbolName) == Kowhai.STATUS_OK)
+            if (KowhaiSerialize.Serialize(kowhaiTreeMain.GetDescriptor(), kowhaiTreeMain.GetData(), out text, 0x1000, null, getSymbolName) == Kowhai.STATUS_OK)
             {
                 SaveFileDialog d = new SaveFileDialog();
                 d.Filter = "Kowhai Files | *.kowhai";
@@ -254,8 +408,7 @@ namespace kowhai_test
 
         private void btnLoad_Click(object sender, EventArgs e)
         {
-            KowhaiTree tree = GetTreeFromRadioButtonSelection();
-            LoadTree(tree);
+            LoadTree(kowhaiTreeMain);
         }
 
         private void LoadTree(KowhaiTree tree)
@@ -288,7 +441,7 @@ namespace kowhai_test
 
         private void btnDiff_Click(object sender, EventArgs e)
         {
-            KowhaiTree leftTree = GetTreeFromRadioButtonSelection();
+            KowhaiTree leftTree = kowhaiTreeMain;
             Kowhai.Tree left = new Kowhai.Tree(leftTree.GetDescriptor(), leftTree.GetData());
             kowhaiTreeScratch.ResetNodesBackColor();
             Kowhai.Tree right = new Kowhai.Tree(kowhaiTreeScratch.GetDescriptor(), kowhaiTreeScratch.GetData());
@@ -298,7 +451,7 @@ namespace kowhai_test
 
         private void btnMerge_Click(object sender, EventArgs e)
         {
-            KowhaiTree srcTree = GetTreeFromRadioButtonSelection();
+            KowhaiTree srcTree = kowhaiTreeMain;
             Kowhai.Tree src = new Kowhai.Tree(srcTree.GetDescriptor(), srcTree.GetData());
             Kowhai.Tree dst = new Kowhai.Tree(kowhaiTreeScratch.GetDescriptor(), kowhaiTreeScratch.GetData());
             if (KowhaiUtils.Merge(dst, src) == Kowhai.STATUS_OK)
@@ -307,61 +460,14 @@ namespace kowhai_test
                 MessageBox.Show("Merge Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private Kowhai.kowhai_symbol_t[] GetRootSymbolPath(byte treeId)
+        private ushort GetTreeId()
         {
-            if (treeId == TREE_ID_SETTINGS)
-                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Settings) };
-            if (treeId == TREE_ID_SHADOW)
-                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Shadow) };
-            if (treeId == TREE_ID_ACTIONS)
-                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Actions) };
-            if (treeId == TREE_ID_SCOPE)
-                return new Kowhai.kowhai_symbol_t[] { new Kowhai.kowhai_symbol_t((uint)KowhaiSymbols.Symbols.Constants.Scope) };
-            return null;
+            return ((SymbolName)lbTreeList.SelectedItem).Symbol;
         }
 
-        private KowhaiTree GetKowhaiTree(byte treeId)
+        private Kowhai.kowhai_node_t[] GetCachedDescriptor()
         {
-            if (treeId == TREE_ID_SETTINGS)
-                return kowhaiTreeSettings;
-            if (treeId == TREE_ID_SHADOW)
-                return kowhaiTreeShadow;
-            if (treeId == TREE_ID_ACTIONS)
-                return kowhaiTreeActions;
-            if (treeId == TREE_ID_SCOPE)
-                return kowhaiTreeScope;
-            return null;
-        }
-
-        private byte GetTreeId(object sender)
-        {
-            if (sender == kowhaiTreeSettings)
-                return TREE_ID_SETTINGS;
-            if (sender == kowhaiTreeShadow)
-                return TREE_ID_SHADOW;
-            if (sender == kowhaiTreeActions)
-                return TREE_ID_ACTIONS;
-            if (sender == kowhaiTreeScope)
-                return TREE_ID_SCOPE;
-            return 255;
-        }
-
-        KowhaiTree GetTreeFromRadioButtonSelection()
-        {
-            if (rbSettings.Checked)
-                return kowhaiTreeSettings;
-            if (rbShadow.Checked)
-                return kowhaiTreeShadow;
-            if (rbActions.Checked)
-                return kowhaiTreeActions;
-            if (rbScope.Checked)
-                return kowhaiTreeScope;
-            return null;
-        }
-
-        private Kowhai.kowhai_node_t[] GetDescriptor(object sender)
-        {
-            return descriptors[GetTreeId(sender)];
+            return descriptors[GetTreeId()];
         }
 
         private void OnPaint(object sender, PaintEventArgs e)
@@ -389,6 +495,31 @@ namespace kowhai_test
                 }
                 g.DrawLines(Pens.CornflowerBlue, points);
             }
+        }
+
+        private void lbFunctionList_DoubleClick(object sender, EventArgs e)
+        {
+            SymbolName sym = (SymbolName)lbFunctionList.SelectedItem;
+            byte[] buffer = new byte[3];
+            buffer[0] = KowhaiProtocol.CMD_GET_FUNCTION_DETAILS;
+            Array.Copy(BitConverter.GetBytes(sym.Symbol), 0, buffer, 1, 2);
+            sock.Send(buffer, buffer.Length);
+        }
+    }
+
+    public class SymbolName
+    {
+        public ushort Symbol;
+        public string Name;
+        public SymbolName(ushort symbol, string name)
+        {
+            this.Symbol = symbol;
+            this.Name = name;
+        }
+
+        public override string ToString()
+        {
+            return this.Name;
         }
     }
 }
