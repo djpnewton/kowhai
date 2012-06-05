@@ -11,31 +11,34 @@ namespace kowhai_sharp
 
     public static class KowhaiProtocol
     {
-        public const int CMD_GET_TREE_LIST = 0x00;
-        public const int CMD_GET_TREE_LIST_ACK = 0x0F;
-        public const int CMD_GET_TREE_LIST_ACK_END = 0x0E;
-        public const int CMD_WRITE_DATA = 0x10;
-        public const int CMD_WRITE_DATA_ACK = 0x1F;
-        public const int CMD_READ_DATA = 0x20;
-        public const int CMD_READ_DATA_ACK = 0x2F;
-        public const int CMD_READ_DATA_ACK_END = 0x2E;
-        public const int CMD_READ_DESCRIPTOR = 0x30;
-        public const int CMD_READ_DESCRIPTOR_ACK = 0x3F;
-        public const int CMD_READ_DESCRIPTOR_ACK_END = 0x3E;
-        public const int CMD_GET_FUNCTION_LIST = 0x40;
-        public const int CMD_GET_FUNCTION_LIST_ACK = 0x4F;
-        public const int CMD_GET_FUNCTION_LIST_ACK_END = 0x4E;
-        public const int CMD_GET_FUNCTION_DETAILS = 0x50;
-        public const int CMD_GET_FUNCTION_DETAILS_ACK = 0x5F;
-        public const int CMD_CALL_FUNCTION = 0x60;
-        public const int CMD_CALL_FUNCTION_ACK = 0x6F;
-        public const int CMD_CALL_FUNCTION_RESULT = 0x6E;
-        public const int CMD_CALL_FUNCTION_RESULT_END = 0x6D;
-        public const int CMD_ERROR_INVALID_TREE_ID = 0xF0;
-        public const int CMD_ERROR_INVALID_COMMAND = 0xF1;
-        public const int CMD_ERROR_INVALID_SYMBOL_PATH = 0xF2;
-        public const int CMD_ERROR_INVALID_PAYLOAD_OFFSET = 0xF3;
-        public const int CMD_ERROR_INVALID_PAYLOAD_SIZE = 0xF4;
+        public const int CMD_GET_VERSION = 0x00;
+        public const int CMD_GET_VERSION_ACK = 0x0F;
+        public const int CMD_GET_TREE_LIST = 0x10;
+        public const int CMD_GET_TREE_LIST_ACK = 0x1F;
+        public const int CMD_GET_TREE_LIST_ACK_END = 0x1E;
+        public const int CMD_WRITE_DATA = 0x20;
+        public const int CMD_WRITE_DATA_ACK = 0x2F;
+        public const int CMD_READ_DATA = 0x30;
+        public const int CMD_READ_DATA_ACK = 0x3F;
+        public const int CMD_READ_DATA_ACK_END = 0x3E;
+        public const int CMD_READ_DESCRIPTOR = 0x40;
+        public const int CMD_READ_DESCRIPTOR_ACK = 0x4F;
+        public const int CMD_READ_DESCRIPTOR_ACK_END = 0x4E;
+        public const int CMD_GET_FUNCTION_LIST = 0x50;
+        public const int CMD_GET_FUNCTION_LIST_ACK = 0x5F;
+        public const int CMD_GET_FUNCTION_LIST_ACK_END = 0x5E;
+        public const int CMD_GET_FUNCTION_DETAILS = 0x60;
+        public const int CMD_GET_FUNCTION_DETAILS_ACK = 0x6F;
+        public const int CMD_CALL_FUNCTION = 0x70;
+        public const int CMD_CALL_FUNCTION_ACK = 0x7F;
+        public const int CMD_CALL_FUNCTION_RESULT = 0x7E;
+        public const int CMD_CALL_FUNCTION_RESULT_END = 0x7D;
+        public const int CMD_ERROR_INVALID_COMMAND = 0xF0;
+        public const int CMD_ERROR_INVALID_TREE_ID = 0xF1;
+        public const int CMD_ERROR_INVALID_FUNCTION_ID = 0xF2;
+        public const int CMD_ERROR_INVALID_SYMBOL_PATH = 0xF3;
+        public const int CMD_ERROR_INVALID_PAYLOAD_OFFSET = 0xF4;
+        public const int CMD_ERROR_INVALID_PAYLOAD_SIZE = 0xF5;
         public const int CMD_ERROR_UNKNOWN = 0xFF;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -97,9 +100,11 @@ namespace kowhai_sharp
             public uint16_t size;
         }
 
-        [StructLayout(LayoutKind.Explicit)]
+        [StructLayout(LayoutKind.Explicit, Pack = 1)]
         public struct kowhai_protocol_payload_spec_t
         {
+            [FieldOffset(0)]
+            public uint32_t version;
             [FieldOffset(0)]
             public kowhai_protocol_id_list_t id_list;
             [FieldOffset(0)]

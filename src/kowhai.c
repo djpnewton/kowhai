@@ -8,6 +8,12 @@
 #define KOWHAI_INFO "KOWHAI INFO: "
 #endif
 
+#define VERSION 1
+
+uint32_t kowhai_version(void)
+{
+    return VERSION;
+}
 
 int kowhai_get_node_type_size(uint16_t type)
 {

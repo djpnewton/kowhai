@@ -272,6 +272,9 @@ void core_tests()
     char owner_initial;
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
+    // test version
+    assert(kowhai_version() == 1);
+
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
     assert(kowhai_get_node(settings_tree.desc, 3, symbols1, &offset, &node) == KOW_STATUS_OK);
@@ -710,6 +713,17 @@ void test_client_protocol()
         char value;
         struct oven_t oven = {0x0102, 321};
         struct flux_capacitor_t flux_cap[2] = {{{"Marty Mc Fly"}, 100, 200, {1, 2, 3, 4, 5, 6}}, {{"Dr Brown"}, 110, 210, {11, 12, 13, 14, 15, 16}}};
+
+        // get protocol version
+        POPULATE_PROTOCOL_CMD(prot, KOW_CMD_GET_VERSION, 0);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_GET_VERSION_ACK);
+        assert(prot.header.id == 0);
+        assert(prot.payload.spec.version == kowhai_version());
 
         // get tree list
         POPULATE_PROTOCOL_GET_TREE_LIST(prot);

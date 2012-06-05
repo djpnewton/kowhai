@@ -7,52 +7,56 @@
 // Protocol commands
 //
 
+// Get the protocol version
+#define KOW_CMD_GET_VERSION                  0x00
+#define KOW_CMD_GET_VERSION_ACK              0x0F
+
 // Get the tree list
-#define KOW_CMD_GET_TREE_LIST                0x00
+#define KOW_CMD_GET_TREE_LIST                0x10
 // Acknowledge get tree list command
-#define KOW_CMD_GET_TREE_LIST_ACK            0x0F
+#define KOW_CMD_GET_TREE_LIST_ACK            0x1F
 // Acknowledge get tree list command (this is the final packet)
-#define KOW_CMD_GET_TREE_LIST_ACK_END        0x0E
+#define KOW_CMD_GET_TREE_LIST_ACK_END        0x1E
 
 // Write tree data
-#define KOW_CMD_WRITE_DATA                   0x10
+#define KOW_CMD_WRITE_DATA                   0x20
 // Acknowledge write tree data command
-#define KOW_CMD_WRITE_DATA_ACK               0x1F
+#define KOW_CMD_WRITE_DATA_ACK               0x2F
 
 // Read tree data
-#define KOW_CMD_READ_DATA                    0x20
+#define KOW_CMD_READ_DATA                    0x30
 // Acknowledge read tree data command (and return the data)
-#define KOW_CMD_READ_DATA_ACK                0x2F
+#define KOW_CMD_READ_DATA_ACK                0x3F
 // Acknowledge read tree data command (this is the final packet)
-#define KOW_CMD_READ_DATA_ACK_END            0x2E
+#define KOW_CMD_READ_DATA_ACK_END            0x3E
 
 // Read the tree descriptor
-#define KOW_CMD_READ_DESCRIPTOR              0x30
+#define KOW_CMD_READ_DESCRIPTOR              0x40
 // Acknowledge read tree command (and return tree contents)
-#define KOW_CMD_READ_DESCRIPTOR_ACK          0x3F
+#define KOW_CMD_READ_DESCRIPTOR_ACK          0x4F
 // Acknowledge read tree command (this is the final packet)
-#define KOW_CMD_READ_DESCRIPTOR_ACK_END      0x3E
+#define KOW_CMD_READ_DESCRIPTOR_ACK_END      0x4E
 
 // Get the function list
-#define KOW_CMD_GET_FUNCTION_LIST            0x40
+#define KOW_CMD_GET_FUNCTION_LIST            0x50
 // Acknowledge get function list command (and return list)
-#define KOW_CMD_GET_FUNCTION_LIST_ACK        0x4F
+#define KOW_CMD_GET_FUNCTION_LIST_ACK        0x5F
 // Acknowledge get function list command (this is the final packet)
-#define KOW_CMD_GET_FUNCTION_LIST_ACK_END    0x4E
+#define KOW_CMD_GET_FUNCTION_LIST_ACK_END    0x5E
 
 // Get function details
-#define KOW_CMD_GET_FUNCTION_DETAILS         0x50
+#define KOW_CMD_GET_FUNCTION_DETAILS         0x60
 // Acknowledge get function details command
-#define KOW_CMD_GET_FUNCTION_DETAILS_ACK     0x5F
+#define KOW_CMD_GET_FUNCTION_DETAILS_ACK     0x6F
 
 // Call function
-#define KOW_CMD_CALL_FUNCTION                0x60
+#define KOW_CMD_CALL_FUNCTION                0x70
 // Acknowledge call function command
-#define KOW_CMD_CALL_FUNCTION_ACK            0x6F
+#define KOW_CMD_CALL_FUNCTION_ACK            0x7F
 // Call function result command
-#define KOW_CMD_CALL_FUNCTION_RESULT         0x6E
+#define KOW_CMD_CALL_FUNCTION_RESULT         0x7E
 // Call function result command (this is the final packet)
-#define KOW_CMD_CALL_FUNCTION_RESULT_END     0x6D
+#define KOW_CMD_CALL_FUNCTION_RESULT_END     0x7D
 
 
 // Error codes
@@ -150,6 +154,7 @@ struct kowhai_protocol_function_call_t
  */
 union kowhai_protocol_payload_spec_t
 {
+    uint32_t version;
     struct kowhai_protocol_id_list_t id_list;
     struct kowhai_protocol_data_payload_spec_t data;
     struct kowhai_protocol_descriptor_payload_spec_t descriptor;

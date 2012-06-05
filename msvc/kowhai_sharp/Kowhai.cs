@@ -115,6 +115,9 @@ namespace kowhai_sharp
         public const int STATUS_SCRATCH_TOO_SMALL = 11;
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
+        public static extern uint32_t kowhai_version();
+
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_get_node_type_size(uint16_t type);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]

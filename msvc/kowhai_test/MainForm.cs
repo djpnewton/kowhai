@@ -25,6 +25,7 @@ namespace kowhai_test
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            Text += string.Format(" - kowhai client version: {0}", Kowhai.kowhai_version());
             sock = new Sock();
             if (sock.Connect())
             {
@@ -33,6 +34,7 @@ namespace kowhai_test
                 sock.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
                 kowhaiTreeMain.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
                 kowhaiTreeMain.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
+                CallGetVersion();
             }
             else
                 btnRefreshList.Enabled = false;
@@ -66,6 +68,9 @@ namespace kowhai_test
             {
                 switch (prot.header.command)
                 {
+                    case KowhaiProtocol.CMD_GET_VERSION_ACK:
+                        Text += string.Format(" - kowhai server version: {0}", prot.payload.spec.version);
+                        break;
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK_END:
                     {
@@ -320,6 +325,13 @@ namespace kowhai_test
         private void lbTreeList_SelectedIndexChanged(object sender, EventArgs e)
         {
             CallGetTreeDescriptor(GetTreeId());
+        }
+
+        private void CallGetVersion()
+        {
+            byte[] buffer = new byte[3];
+            buffer[0] = KowhaiProtocol.CMD_GET_VERSION;
+            sock.Send(buffer, buffer.Length);
         }
 
         private void CallGetTreeDescriptor(ushort treeId)

@@ -17,6 +17,18 @@ int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tr
     return KOW_STATUS_OK;
 }
 
+static int parse_version(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+{
+    // check packet is large enough for version integer
+    int required_size = sizeof(uint32_t);
+    if (packet_size < required_size)
+        return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+
+    // get version
+    payload->spec.version = *((uint32_t*)payload_packet);
+    return KOW_STATUS_OK;
+}
+
 /**
  * @brief Parse the symbols from a read packet into a formatted kowhai_protocol_payload_t structure
  * @param payload_packet a packet read over the protocol that needs the symbols parsed out of 
@@ -134,7 +146,6 @@ static int parse_function_call(void* payload_packet, int packet_size, struct kow
 int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol)
 {
     int required_size = sizeof(struct kowhai_protocol_header_t);
-
     memset(protocol, 0, sizeof(struct kowhai_protocol_t));
 
     // check packet is large enough for header
@@ -144,6 +155,10 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
 
     switch (protocol->header.command)
     {
+        case KOW_CMD_GET_VERSION:
+            return KOW_STATUS_OK;
+        case KOW_CMD_GET_VERSION_ACK:
+            return parse_version((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         case KOW_CMD_GET_TREE_LIST:
             return KOW_STATUS_OK;
         case KOW_CMD_GET_TREE_LIST_ACK:
@@ -194,6 +209,15 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
     // check protocol command
     switch (protocol->header.command)
     {
+        case KOW_CMD_GET_VERSION:
+            break;
+        case KOW_CMD_GET_VERSION_ACK:
+            // write version
+            *bytes_required += sizeof(uint32_t);
+            if (packet_size < *bytes_required)
+                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, &protocol->payload.spec.version, sizeof(uint32_t));
+            break;
         case KOW_CMD_GET_TREE_LIST:
             break;
         case KOW_CMD_GET_TREE_LIST_ACK:
@@ -211,6 +235,7 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             if (packet_size < *bytes_required)
                 return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
             memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.id_list.size);
+            pkt += protocol->payload.spec.id_list.size;
             break;
         case KOW_CMD_WRITE_DATA:
         case KOW_CMD_WRITE_DATA_ACK:

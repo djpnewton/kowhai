@@ -79,6 +79,11 @@ union kowhai_symbol_t
 #define KOW_STATUS_NOT_FOUND               12
 
 /**
+ * @brief return the version of the kowhai library
+ */
+uint32_t kowhai_version(void);
+
+/**
  * @brief return the size for a given node type
  * @param type, a node type to find the size of
  * @return the size in bytes

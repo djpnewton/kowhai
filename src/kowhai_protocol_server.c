@@ -148,6 +148,13 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
 
     switch (prot.header.command)
     {
+        case KOW_CMD_GET_VERSION:
+            printf("    CMD get version\n");
+            prot.header.command = KOW_CMD_GET_VERSION_ACK;
+            prot.payload.spec.version = kowhai_version();
+            kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
+            server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+            break;
         case KOW_CMD_GET_TREE_LIST:
         case KOW_CMD_GET_TREE_LIST_ACK_END:
             _send_id_list(server, &prot,
