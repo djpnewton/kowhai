@@ -1,4 +1,4 @@
-LIBRARY KOWHAI_DLL
+LIBRARY KOWHAI
 EXPORTS
 	kowhai_version
 	kowhai_get_node_type_size

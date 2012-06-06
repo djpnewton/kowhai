@@ -14,7 +14,7 @@ namespace kowhai_sharp
 #if (LINUX)
         public const string dllname = "libkowhai.so";
 #else
-        public const string dllname = "kowhai_dll.dll";
+        public const string dllname = "kowhai.dll";
 #endif
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
