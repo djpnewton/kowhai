@@ -30,10 +30,12 @@ KOW_CHAR = 0x77
 # kowhai node structure
 class kowhai_node_t(ctypes.Structure):
     _pack_ = 1
-    _fields_ = [('type', uint16_t),
+    _fields_ = [('type_', uint16_t),
                 ('symbol', uint16_t),
                 ('count', uint16_t),
                 ('tag', uint16_t)]
+    def __str__(self):
+        return "kowhai_node_t(%d, %d, %d, %d)" % (self.type_, self.symbol, self.count, self.tag)
 
 # kowhai tree structure
 class kowhai_tree_t(ctypes.Structure):
@@ -68,16 +70,39 @@ KOW_STATUS_BUFFER_INVALID           = 10
 KOW_STATUS_SCRATCH_TOO_SMALL        = 11
 KOW_STATUS_NOT_FOUND                = 12
 
+#uint32_t kowhai_version(void);
+def version():
+    return kowhai_lib.kowhai_version()
+
 #int kowhai_get_node_type_size(uint16_t type);
 def get_node_type_size(type_):
     return kowhai_lib.kowhai_get_node_type_size(uint16_t(type_))
 
-
+#int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
+def get_node(node, num_symbols, symbols, offset, target_node):
+    return kowhai_lib.kowhai_get_node(ctypes.byref(node), ctypes.c_int(num_symbols), ctypes.byref(symbols),
+            ctypes.byref(offset), ctypes.byref(target_node))
 
 if __name__ == "__main__":
     print "test kowhai wrapper"
+    print "  kowhai_version() =", version()
     print "  KOW_INT32 size is", get_node_type_size(KOW_INT32)
-
-
-
-
+    descriptor = (kowhai_node_t * 7)(
+            kowhai_node_t(KOW_BRANCH_START, 0, 1, 0),
+            kowhai_node_t(KOW_UINT8,        1, 1, 1),
+            kowhai_node_t(KOW_BRANCH_START, 2, 1, 2),
+            kowhai_node_t(KOW_FLOAT,        3, 1, 3),
+            kowhai_node_t(KOW_UINT8,        4, 1, 4),
+            kowhai_node_t(KOW_BRANCH_END,   2, 0, 5),
+            kowhai_node_t(KOW_BRANCH_END,   0, 0, 6)
+            )
+    num_symbols = 3
+    symbols = (kowhai_symbol_t * num_symbols)(
+            kowhai_symbol_t(0),
+            kowhai_symbol_t(2),
+            kowhai_symbol_t(4)
+            )
+    offset = uint16_t()
+    target_node = ctypes.pointer(kowhai_node_t())
+    res = get_node(descriptor, num_symbols, symbols, offset, target_node)
+    print "  kowhai_get_node() - res: %d, offset: %s, target_node: %s" % (res, offset, target_node.contents)
