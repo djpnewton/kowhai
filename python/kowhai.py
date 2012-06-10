@@ -44,11 +44,13 @@ class kowhai_tree_t(ctypes.Structure):
                 ('data', ctypes.c_void_p)]
 
 class _kowhai_symbol_parts_t(ctypes.Structure):
+    _pack_ = 1
     _fields_ = [('name', uint16_t),
                 ('array_index', uint16_t)]
 
 # kowhai symbol type
 class kowhai_symbol_t(ctypes.Union):
+    _pack_ = 1
     _fields_ = [('symbol', uint32_t),
                 ('parts', _kowhai_symbol_parts_t)]
 
@@ -91,10 +93,15 @@ def get_node_size(node, size):
 def get_node_count(node, count):
     return kowhai_lib.kowhai_get_node_count(ctypes.byref(node), ctypes.byref(count))
 
+#int kowhai_read(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int read_offset, void* result, int read_size);
+def read(tree, num_symbols, symbols, read_offset, result, read_size):
+    return kowhai_lib.kowhai_read(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_int(read_offset), result, ctypes.c_int(read_size))
+
+#int kowhai_write(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int write_offset, void* value, int write_size);
+def write(tree, num_symbols, symbols, write_offset, value, write_size):
+    return kowhai_lib.kowhai_write(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_int(write_offset), value, ctypes.c_int(write_size))
+
 if __name__ == "__main__":
-    print "test kowhai wrapper"
-    print "  kowhai_version() =", version()
-    print "  KOW_INT32 size is", get_node_type_size(KOW_INT32)
     descriptor = (kowhai_node_t * 7)(
             kowhai_node_t(KOW_BRANCH_START, 0, 1, 0),
             kowhai_node_t(KOW_UINT8,        1, 1, 1),
@@ -104,12 +111,24 @@ if __name__ == "__main__":
             kowhai_node_t(KOW_BRANCH_END,   2, 0, 5),
             kowhai_node_t(KOW_BRANCH_END,   0, 0, 6)
             )
+    class test_data_t(ctypes.Structure):
+        _pack_ = 1
+        _fields_ = [('a', uint8_t),
+                    ('b', ctypes.c_float),
+                    ('c', uint8_t)]
+
+    tree = kowhai_tree_t()
+    tree.desc = descriptor
+    tree.data = ctypes.cast(ctypes.pointer(test_data_t(11, 22, 33)), ctypes.c_void_p)
     num_symbols = 3
     symbols = (kowhai_symbol_t * num_symbols)(
             kowhai_symbol_t(0),
             kowhai_symbol_t(2),
             kowhai_symbol_t(4)
             )
+    print "test kowhai wrapper"
+    print "  kowhai_version() =", version()
+    print "  KOW_INT32 size is", get_node_type_size(KOW_INT32)
     offset = uint16_t()
     target_node = ctypes.pointer(kowhai_node_t())
     res = get_node(descriptor, num_symbols, symbols, offset, target_node)
@@ -120,3 +139,9 @@ if __name__ == "__main__":
     count = ctypes.c_int()
     res = get_node_count(descriptor, count)
     print "  kowhai_get_node_count() - res: %d, count: %d" % (res, count.value)
+    ptr = ctypes.pointer(uint8_t(44))
+    res = write(tree, num_symbols, symbols, 0, ptr, 1) 
+    print "  kowhai_write() - res: %d" % (res)
+    ptr = ctypes.pointer(uint8_t())
+    res = read(tree, num_symbols, symbols, 0, ptr, 1) 
+    print "  kowhai_read() - res: %d, value: %d" % (res, ptr.contents.value)
