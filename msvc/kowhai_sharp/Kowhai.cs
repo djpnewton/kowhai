@@ -127,6 +127,9 @@ namespace kowhai_sharp
         public static extern int kowhai_get_node_size(IntPtr tree_descriptor, out int size);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int kowhai_get_node_count(IntPtr tree_descriptor, out int count);
+
+        [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_read(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int read_offset, IntPtr result, int read_size);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]

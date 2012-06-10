@@ -83,6 +83,14 @@ def get_node(node, num_symbols, symbols, offset, target_node):
     return kowhai_lib.kowhai_get_node(ctypes.byref(node), ctypes.c_int(num_symbols), ctypes.byref(symbols),
             ctypes.byref(offset), ctypes.byref(target_node))
 
+#int kowhai_get_node_size(const struct kowhai_node_t *node, int *size);
+def get_node_size(node, size):
+    return kowhai_lib.kowhai_get_node_size(ctypes.byref(node), ctypes.byref(size))
+
+#int kowhai_get_node_count(const struct kowhai_node_t *node, int *count);
+def get_node_count(node, count):
+    return kowhai_lib.kowhai_get_node_count(ctypes.byref(node), ctypes.byref(count))
+
 if __name__ == "__main__":
     print "test kowhai wrapper"
     print "  kowhai_version() =", version()
@@ -106,3 +114,9 @@ if __name__ == "__main__":
     target_node = ctypes.pointer(kowhai_node_t())
     res = get_node(descriptor, num_symbols, symbols, offset, target_node)
     print "  kowhai_get_node() - res: %d, offset: %s, target_node: %s" % (res, offset, target_node.contents)
+    size = ctypes.c_int()
+    res = get_node_size(descriptor, size)
+    print "  kowhai_get_node_size() - res: %d, size: %d" % (res, size.value)
+    count = ctypes.c_int()
+    res = get_node_count(descriptor, count)
+    print "  kowhai_get_node_count() - res: %d, count: %d" % (res, count.value)
