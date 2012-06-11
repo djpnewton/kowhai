@@ -101,37 +101,84 @@ def read(tree, num_symbols, symbols, read_offset, result, read_size):
 def write(tree, num_symbols, symbols, write_offset, value, write_size):
     return kowhai_lib.kowhai_write(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_int(write_offset), value, ctypes.c_int(write_size))
 
+#int kowhai_get_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int8_t* result);
+def get_int8(tree, num_symbols, symbols, result):
+    return kowhai_lib.kowhai_get_int8(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.byref(result)) 
+
+#int kowhai_get_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result);
+def get_int16(tree, num_symbols, symbols, result):
+    return kowhai_lib.kowhai_get_int16(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.byref(result)) 
+
+#int kowhai_get_int32(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t* result);
+def get_int32(tree, num_symbols, symbols, result):
+    return kowhai_lib.kowhai_get_int32(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.byref(result)) 
+
+#int kowhai_get_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, float* result);
+def get_float(tree, num_symbols, symbols, result):
+    return kowhai_lib.kowhai_get_float(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.byref(result)) 
+
+#int kowhai_set_int8(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, uint8_t value);
+def set_int8(tree, num_symbols, symbols, value):
+    return kowhai_lib.kowhai_set_int8(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_byte(value))
+
+#int kowhai_set_int16(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int16_t value);
+def set_int16(tree, num_symbols, symbols, value):
+    return kowhai_lib.kowhai_set_int16(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_short(value))
+
+#int kowhai_set_int32(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, int32_t value);
+def set_int32(tree, num_symbols, symbols, value):
+    return kowhai_lib.kowhai_set_int32(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_int(value))
+
+#int kowhai_set_float(struct kowhai_tree_t *tree, int num_symbols, union kowhai_symbol_t* symbols, float value);
+def set_float(tree, num_symbols, symbols, value):
+    return kowhai_lib.kowhai_set_float(ctypes.byref(tree), ctypes.c_int(num_symbols), ctypes.byref(symbols), ctypes.c_float(value))
+
 if __name__ == "__main__":
-    descriptor = (kowhai_node_t * 7)(
+    descriptor = (kowhai_node_t * 9)(
             kowhai_node_t(KOW_BRANCH_START, 0, 1, 0),
             kowhai_node_t(KOW_UINT8,        1, 1, 1),
             kowhai_node_t(KOW_BRANCH_START, 2, 1, 2),
             kowhai_node_t(KOW_FLOAT,        3, 1, 3),
-            kowhai_node_t(KOW_UINT8,        4, 1, 4),
-            kowhai_node_t(KOW_BRANCH_END,   2, 0, 5),
-            kowhai_node_t(KOW_BRANCH_END,   0, 0, 6)
+            kowhai_node_t(KOW_UINT8,        4, 1, 5),
+            kowhai_node_t(KOW_UINT16,       5, 1, 6),
+            kowhai_node_t(KOW_UINT32,       6, 1, 7),
+            kowhai_node_t(KOW_BRANCH_END,   2, 0, 8),
+            kowhai_node_t(KOW_BRANCH_END,   0, 0, 9)
             )
     class test_data_t(ctypes.Structure):
         _pack_ = 1
         _fields_ = [('a', uint8_t),
                     ('b', ctypes.c_float),
-                    ('c', uint8_t)]
+                    ('c', uint8_t),
+                    ('d', uint16_t),
+                    ('e', uint32_t)]
 
     tree = kowhai_tree_t()
     tree.desc = descriptor
-    tree.data = ctypes.cast(ctypes.pointer(test_data_t(11, 22, 33)), ctypes.c_void_p)
+    tree.data = ctypes.cast(ctypes.pointer(test_data_t(11, 22.2, 33, 44, 55)), ctypes.c_void_p)
     num_symbols = 3
-    symbols = (kowhai_symbol_t * num_symbols)(
+    symbols_f = (kowhai_symbol_t * num_symbols)(
             kowhai_symbol_t(0),
             kowhai_symbol_t(2),
-            kowhai_symbol_t(4)
-            )
+            kowhai_symbol_t(3))
+    symbols_u8 = (kowhai_symbol_t * num_symbols)(
+            kowhai_symbol_t(0),
+            kowhai_symbol_t(2),
+            kowhai_symbol_t(4))
+    symbols_u16 = (kowhai_symbol_t * num_symbols)(
+            kowhai_symbol_t(0),
+            kowhai_symbol_t(2),
+            kowhai_symbol_t(5))
+    symbols_u32 = (kowhai_symbol_t * num_symbols)(
+            kowhai_symbol_t(0),
+            kowhai_symbol_t(2),
+            kowhai_symbol_t(6))
     print "test kowhai wrapper"
     print "  kowhai_version() =", version()
     print "  KOW_INT32 size is", get_node_type_size(KOW_INT32)
     offset = uint16_t()
     target_node = ctypes.pointer(kowhai_node_t())
-    res = get_node(descriptor, num_symbols, symbols, offset, target_node)
+    res = get_node(descriptor, num_symbols, symbols_u8, offset, target_node)
     print "  kowhai_get_node() - res: %d, offset: %s, target_node: %s" % (res, offset, target_node.contents)
     size = ctypes.c_int()
     res = get_node_size(descriptor, size)
@@ -139,9 +186,29 @@ if __name__ == "__main__":
     count = ctypes.c_int()
     res = get_node_count(descriptor, count)
     print "  kowhai_get_node_count() - res: %d, count: %d" % (res, count.value)
-    ptr = ctypes.pointer(uint8_t(44))
-    res = write(tree, num_symbols, symbols, 0, ptr, 1) 
+    ptr = ctypes.pointer(uint8_t(34))
+    res = write(tree, num_symbols, symbols_u8, 0, ptr, 1) 
     print "  kowhai_write() - res: %d" % (res)
     ptr = ctypes.pointer(uint8_t())
-    res = read(tree, num_symbols, symbols, 0, ptr, 1) 
+    res = read(tree, num_symbols, symbols_u8, 0, ptr, 1) 
     print "  kowhai_read() - res: %d, value: %d" % (res, ptr.contents.value)
+    res = set_int8(tree, num_symbols, symbols_u8, 10)
+    print "  kowhai_set_int8() - res: %d" % res
+    res = set_int16(tree, num_symbols, symbols_u16, 20)
+    print "  kowhai_set_int16() - res: %d" % res
+    res = set_int32(tree, num_symbols, symbols_u32, 30)
+    print "  kowhai_set_int32() - res: %d" % res
+    res = set_float(tree, num_symbols, symbols_f, 40.5)
+    print "  kowhai_set_float() - res: %d" % res
+    value = uint8_t()
+    res = get_int8(tree, num_symbols, symbols_u8, value)
+    print "  kowhai_get_int8() - res: %d, value: %d" % (res, value.value)
+    value = uint16_t()
+    res = get_int16(tree, num_symbols, symbols_u16, value)
+    print "  kowhai_get_int16() - res: %d, value: %d" % (res, value.value)
+    value = uint32_t()
+    res = get_int32(tree, num_symbols, symbols_u32, value)
+    print "  kowhai_get_int32() - res: %d, value: %d" % (res, value.value)
+    value = ctypes.c_float()
+    res = get_float(tree, num_symbols, symbols_f, value)
+    print "  kowhai_get_float() - res: %d, value: %f" % (res, value.value)

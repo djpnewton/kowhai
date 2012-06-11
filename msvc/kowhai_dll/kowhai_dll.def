@@ -7,11 +7,13 @@ EXPORTS
 	kowhai_get_node_count
 	kowhai_read
 	kowhai_write
+	kowhai_get_char
 	kowhai_get_int8
 	kowhai_get_int16
 	kowhai_get_int32
 	kowhai_get_float
 	kowhai_set_char
+	kowhai_set_int8
 	kowhai_set_int16
 	kowhai_set_int32
 	kowhai_set_float
