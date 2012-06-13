@@ -216,7 +216,7 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             *bytes_required += sizeof(uint32_t);
             if (packet_size < *bytes_required)
                 return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-            memcpy(pkt, &protocol->payload.spec.version, sizeof(uint32_t));
+            *(uint32_t*)pkt = protocol->payload.spec.version;
             break;
         case KOW_CMD_GET_TREE_LIST:
             break;
