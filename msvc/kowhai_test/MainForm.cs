@@ -13,7 +13,8 @@ namespace kowhai_test
 {
     public partial class MainForm : Form
     {
-        Sock sock;
+        string initialFormText;
+        IComms comms;
         const int PACKET_SIZE = 64;
         Dictionary<int, Kowhai.kowhai_node_t[]> descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>();
         FunctionCallForm functionCallForm = null;
@@ -26,27 +27,17 @@ namespace kowhai_test
         private void MainForm_Load(object sender, EventArgs e)
         {
             Text += string.Format(" - kowhai client version: {0}", Kowhai.kowhai_version());
-            sock = new Sock();
-            if (sock.Connect())
-            {
-                btnRefreshList.Enabled = true;
-                sock.SockBufferReceived += new SockReceiveEventHandler(sock_SockBufferReceived);
-                sock.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
-                kowhaiTreeMain.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
-                kowhaiTreeMain.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
-                CallGetVersion();
-            }
-            else
-                btnRefreshList.Enabled = false;
+            initialFormText = Text;
+            btnRefreshList.Enabled = false;
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             if (btnRefreshList.Enabled)
-                sock.Disconnect();
+                comms.Disconnect();
         }
 
-        void sock_SockBufferReceived(object sender, SockReceiveEventArgs e)
+        void comms_CommsReceived(object sender, CommsReceiveEventArgs e)
         {
             byte[] buffer = new byte[e.Size];
             Array.Copy(e.Buffer, buffer, e.Size);
@@ -69,7 +60,7 @@ namespace kowhai_test
                 switch (prot.header.command)
                 {
                     case KowhaiProtocol.CMD_GET_VERSION_ACK:
-                        Text += string.Format(" - kowhai server version: {0}", prot.payload.spec.version);
+                        Text = initialFormText + string.Format(" - kowhai server version: {0}", prot.payload.spec.version);
                         break;
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK_END:
@@ -83,7 +74,7 @@ namespace kowhai_test
                         prot.header.command = KowhaiProtocol.CMD_GET_FUNCTION_LIST;
                         if (KowhaiProtocol.CreateBasicPacket(buffer, PACKET_SIZE, ref prot,
                             out bytesRequired) == Kowhai.STATUS_OK)
-                            sock.Send(buffer, bytesRequired);
+                            comms.Send(buffer, bytesRequired);
                         break;
                     }
                     case KowhaiProtocol.CMD_READ_DATA_ACK:
@@ -283,11 +274,11 @@ namespace kowhai_test
             while (e.Buffer.Length - offset > maxPayloadSize)
             {
                 KowhaiProtocol.CreateWriteDataPacket(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, maxPayloadSize), (ushort)offset, out bytesRequired);
-                sock.Send(buffer, bytesRequired);
+                comms.Send(buffer, bytesRequired);
                 offset += maxPayloadSize;
             }
             KowhaiProtocol.CreateWriteDataPacket(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, e.Buffer.Length - offset), (ushort)offset, out bytesRequired);
-            sock.Send(buffer, bytesRequired);
+            comms.Send(buffer, bytesRequired);
         }
 
         private byte[] CopyArray(byte[] source, int offset, int size)
@@ -310,7 +301,7 @@ namespace kowhai_test
             prot.header.id = GetTreeId();
             int bytesRequired;
             KowhaiProtocol.CreateReadDataPacket(buffer, PACKET_SIZE, ref prot, symbols, out bytesRequired);
-            sock.Send(buffer, bytesRequired);
+            comms.Send(buffer, bytesRequired);
         }
 
         private void btnRefreshList_Click(object sender, EventArgs e)
@@ -318,9 +309,8 @@ namespace kowhai_test
             kowhaiTreeMain.Clear();
             byte[] buffer = new byte[3];
             buffer[0] = KowhaiProtocol.CMD_GET_TREE_LIST;
-            sock.Send(buffer, buffer.Length);
+            comms.Send(buffer, buffer.Length);
         }
-
 
         private void lbTreeList_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -331,7 +321,7 @@ namespace kowhai_test
         {
             byte[] buffer = new byte[3];
             buffer[0] = KowhaiProtocol.CMD_GET_VERSION;
-            sock.Send(buffer, buffer.Length);
+            comms.Send(buffer, buffer.Length);
         }
 
         private void CallGetTreeDescriptor(ushort treeId)
@@ -339,7 +329,7 @@ namespace kowhai_test
             byte[] buffer = new byte[3];
             buffer[0] = KowhaiProtocol.CMD_READ_DESCRIPTOR;
             Array.Copy(BitConverter.GetBytes(treeId), 0, buffer, 1, 2); ;
-            sock.Send(buffer, buffer.Length);
+            comms.Send(buffer, buffer.Length);
         }
 
         private void CallGetTreeData(ushort treeId, ushort baseSymbol)
@@ -353,7 +343,7 @@ namespace kowhai_test
             if (KowhaiProtocol.CreateReadDataPacket(buffer, PACKET_SIZE, ref prot,
                 syms,
                 out bytesRequired) == Kowhai.STATUS_OK)
-                sock.Send(buffer, bytesRequired);
+                comms.Send(buffer, bytesRequired);
         }
 
         private void CallFunction(ushort functionId, byte[] data)
@@ -378,7 +368,7 @@ namespace kowhai_test
                             temp, (ushort)bytesWritten,
                             out bytesRequired) == Kowhai.STATUS_OK)
                         {
-                            sock.Send(buffer, bytesRequired);
+                            comms.Send(buffer, bytesRequired);
                             bytesWritten += temp.Length;
                         }
                         else
@@ -390,7 +380,7 @@ namespace kowhai_test
                     if (KowhaiProtocol.CreateCallFunctionPacket(buffer, PACKET_SIZE, ref prot,
                         data, 0,
                         out bytesRequired) == Kowhai.STATUS_OK)
-                        sock.Send(buffer, bytesRequired);
+                        comms.Send(buffer, bytesRequired);
                 }
             }
 
@@ -515,7 +505,56 @@ namespace kowhai_test
             byte[] buffer = new byte[3];
             buffer[0] = KowhaiProtocol.CMD_GET_FUNCTION_DETAILS;
             Array.Copy(BitConverter.GetBytes(sym.Symbol), 0, buffer, 1, 2);
-            sock.Send(buffer, buffer.Length);
+            comms.Send(buffer, buffer.Length);
+        }
+
+        private void btnSocket_Click(object sender, EventArgs e)
+        {
+            comms = new Sock();
+            if (comms.Connect())
+                KowhaiConnected();
+        }
+
+        private void btnHID_Click(object sender, EventArgs e)
+        {
+            HidDetailsForm f = new HidDetailsForm();
+            // load default settings
+            f.VendorId = Settings.Default.VendorID;
+            f.ProductId = Settings.Default.ProductID;
+            f.UsagePage = Settings.Default.UsagePage;
+            f.Usage = Settings.Default.Usage;
+            f.ReportId = Settings.Default.ReportID;
+            f.ReportPrefix = Convert.FromBase64String(Settings.Default.ReportPrefix);
+            f.ReportSize = Settings.Default.ReportSize;
+            if (f.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                // save default settings
+                Settings.Default.VendorID = f.VendorId;
+                Settings.Default.ProductID = f.ProductId;
+                Settings.Default.UsagePage = f.UsagePage;
+                Settings.Default.Usage = f.Usage;
+                Settings.Default.ReportID = f.ReportId;
+                Settings.Default.ReportPrefix = Convert.ToBase64String(f.ReportPrefix);
+                Settings.Default.ReportSize = f.ReportSize;
+                Settings.Default.Save();
+
+                string path = HidAPI.GetDevicePath(f.VendorId, f.ProductId, f.UsagePage, f.Usage);
+                comms = new Hid(path, f.ReportId, f.ReportPrefix, f.ReportSize);
+                if (comms.Connect())
+                    KowhaiConnected();
+            }
+        }
+
+        private void KowhaiConnected()
+        {
+            btnRefreshList.Enabled = true;
+            btnSocket.Enabled = false;
+            btnHID.Enabled = false;
+            comms.CommsReceived += new CommsReceiveEventHandler(comms_CommsReceived);
+            comms.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
+            kowhaiTreeMain.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
+            kowhaiTreeMain.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
+            CallGetVersion();
         }
     }
 

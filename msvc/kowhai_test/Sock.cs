@@ -7,26 +7,13 @@ using System.Net.Sockets;
 
 namespace kowhai_test
 {
-    class SockReceiveEventArgs : EventArgs
-    {
-        public byte[] Buffer;
-        public int Size;
-        public SockReceiveEventArgs(byte[] buffer, int size)
-        {
-            Buffer = buffer;
-            Size = size;
-        }
-    }
-
-    delegate void SockReceiveEventHandler(object sender, SockReceiveEventArgs e);
-
-    class Sock
+    class Sock : IComms
     {
         static IPAddress addr = IPAddress.Parse("127.0.0.1");
         static IPEndPoint ep = new IPEndPoint(addr, 55555);
 
         Socket sock;
-        public event SockReceiveEventHandler SockBufferReceived;
+        public event CommsReceiveEventHandler CommsReceived;
 
         public Sock()
         {
@@ -82,8 +69,8 @@ namespace kowhai_test
                 int read = sock.EndReceive(ar);
                 if (read > 0)
                 {
-                    if (SockBufferReceived != null)
-                        SockBufferReceived(this, new SockReceiveEventArgs(state.Buffer, read));
+                    if (CommsReceived != null)
+                        CommsReceived(this, new CommsReceiveEventArgs(state.Buffer, read));
                     sock.BeginReceive(state.Buffer, 0, state.Size, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
                 }
                 else
