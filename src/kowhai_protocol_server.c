@@ -403,44 +403,51 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                         {
                             struct kowhai_tree_t tree = _populate_tree(server, server->function_list_details[function_index].tree_out_id);
                             printf("        function_called callback\n");
-                            server->function_called(server, server->function_called_param, prot.header.id);
-                            // respond with result tree or not
-                            if (tree.desc != NULL)
+                            if (server->function_called(server, server->function_called_param, prot.header.id))
                             {
-                                int size, overhead, max_payload_size;
-                                printf("        send return tree\n");
-                                prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT;
-                                kowhai_protocol_get_overhead(&prot, &overhead);
-                                // setup size
-                                kowhai_get_node_size(tree.desc, &size);
-                                // setup max payload size and payload offset
-                                max_payload_size = server->max_packet_size - overhead;
-                                prot.payload.spec.function_call.offset = 0;
-                                prot.payload.spec.function_call.size = max_payload_size;
-                                prot.payload.buffer = tree.data;
-                                // send packets
-                                while (size > max_payload_size)
+                                // respond with result tree or not
+                                if (tree.desc != NULL)
                                 {
+                                    int size, overhead, max_payload_size;
+                                    printf("        send return tree\n");
+                                    prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT;
+                                    kowhai_protocol_get_overhead(&prot, &overhead);
+                                    // setup size
+                                    kowhai_get_node_size(tree.desc, &size);
+                                    // setup max payload size and payload offset
+                                    max_payload_size = server->max_packet_size - overhead;
+                                    prot.payload.spec.function_call.offset = 0;
                                     prot.payload.spec.function_call.size = max_payload_size;
+                                    prot.payload.buffer = tree.data;
+                                    // send packets
+                                    while (size > max_payload_size)
+                                    {
+                                        prot.payload.spec.function_call.size = max_payload_size;
+                                        prot.payload.buffer = (char*)tree.data + prot.payload.spec.function_call.offset;
+                                        kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
+                                        server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+                                        // increment payload offset and decrement remaining payload size
+                                        prot.payload.spec.function_call.offset += max_payload_size;
+                                        size -= max_payload_size;
+                                    }
+                                    // send final packet
+                                    prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT_END;
+                                    prot.payload.spec.function_call.size = size;
                                     prot.payload.buffer = (char*)tree.data + prot.payload.spec.function_call.offset;
                                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                                     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
-                                    // increment payload offset and decrement remaining payload size
-                                    prot.payload.spec.function_call.offset += max_payload_size;
-                                    size -= max_payload_size;
+                                    break;
                                 }
-                                // send final packet
-                                prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT_END;
-                                prot.payload.spec.function_call.size = size;
-                                prot.payload.buffer = (char*)tree.data + prot.payload.spec.function_call.offset;
-                                kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
-                                server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
-                                break;
+                                else
+                                {
+                                    printf("        send no return tree\n");
+                                    prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT_END;
+                                }
                             }
                             else
                             {
-                                printf("        send no return tree\n");
-                                prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT_END;
+                                printf("        function call failed\n");
+                                prot.header.command = KOW_CMD_CALL_FUNCTION_FAILED;
                             }
                         }
                         else

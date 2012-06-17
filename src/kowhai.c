@@ -8,7 +8,7 @@
 #define KOWHAI_INFO "KOWHAI INFO: "
 #endif
 
-#define VERSION 1
+#define VERSION 2
 
 uint32_t kowhai_version(void)
 {

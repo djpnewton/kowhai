@@ -33,6 +33,7 @@ namespace kowhai_sharp
         public const int CMD_CALL_FUNCTION_ACK = 0x7F;
         public const int CMD_CALL_FUNCTION_RESULT = 0x7E;
         public const int CMD_CALL_FUNCTION_RESULT_END = 0x7D;
+        public const int CMD_CALL_FUNCTION_FAILED = 0x7C;
         public const int CMD_ERROR_INVALID_COMMAND = 0xF0;
         public const int CMD_ERROR_INVALID_TREE_ID = 0xF1;
         public const int CMD_ERROR_INVALID_FUNCTION_ID = 0xF2;

@@ -190,6 +190,8 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         case KOW_CMD_CALL_FUNCTION_RESULT:
         case KOW_CMD_CALL_FUNCTION_RESULT_END:
             return parse_function_call((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
+        case KOW_CMD_CALL_FUNCTION_FAILED:
+            return KOW_STATUS_OK;
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;
     }
@@ -312,6 +314,8 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             if (packet_size < *bytes_required)
                 return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
             memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.function_call.size);
+            break;
+        case KOW_CMD_CALL_FUNCTION_FAILED:
             break;
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;

@@ -215,6 +215,10 @@ namespace kowhai_test
                         else
                             MessageBox.Show("Why am I here?");
                         break;
+                    case KowhaiProtocol.CMD_CALL_FUNCTION_FAILED:
+                        MessageBox.Show(string.Format("ProcessPacket(): Function call failed ({0})", prot.header.command),
+                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        break;
                     default:
                         MessageBox.Show(string.Format("ProcessPacket(): Unknown command ({0})", prot.header.command),
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);

@@ -224,13 +224,14 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 uint16_t tree_list[] = {SYM_SETTINGS, SYM_SHADOW, SYM_SCOPE, SYM_START, SYM_STATUS, SYM_BEEP, SYM_BIG};
 struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor, big_descriptor};
 void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd, &big};
-uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP, SYM_BIG};
+uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP, SYM_BIG, SYM_FAIL};
 struct kowhai_protocol_function_details_t function_list_details[] = {
     {SYM_START, KOW_UNDEFINED_SYMBOL},
     {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
     {KOW_UNDEFINED_SYMBOL, SYM_STATUS},
     {SYM_BEEP, KOW_UNDEFINED_SYMBOL},
-    {SYM_BIG, SYM_BIG}
+    {SYM_BIG, SYM_BIG},
+    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL}
 };
 
 //
@@ -273,7 +274,7 @@ void core_tests()
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
     // test version
-    assert(kowhai_version() == 1);
+    assert(kowhai_version() == 2);
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
@@ -624,7 +625,7 @@ void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buf
 
 #define STATUS_RESULT 0xff00ff00
 #define BIG_COEFF_RESULT 0xff00ff00
-void function_called(pkowhai_protocol_server_t server, void* param, uint16_t function_id)
+int function_called(pkowhai_protocol_server_t server, void* param, uint16_t function_id)
 {
     switch (function_id)
     {
@@ -651,7 +652,11 @@ void function_called(pkowhai_protocol_server_t server, void* param, uint16_t fun
             printf("Function: Beep (freq: %d, duration: %d)\n", beepd.freq, beepd.duration);
             beep(beepd.freq, beepd.duration);
             break;
+        case SYM_FAIL:
+            printf("Function: Fail\n");
+            return 0;
     }
+    return 1;
 }
 
 void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int buffer_size)
@@ -1103,6 +1108,14 @@ void test_client_protocol()
             }
             assert(bytes_written == sizeof(big));
         }
+
+        POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_FAIL, 0, 0, NULL);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_CALL_FUNCTION_FAILED);
 
         xpsocket_free_client(conn);
     }

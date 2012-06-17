@@ -26,6 +26,7 @@ namespace KowhaiSymbols
             "Owner",
             "Time",
             "Big",
+            "Fail",
         };
         public enum Constants
         {
@@ -51,6 +52,7 @@ namespace KowhaiSymbols
             Owner,
             Time,
             Big,
+            Fail,
         };
     }
 }

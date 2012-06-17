@@ -57,6 +57,8 @@
 #define KOW_CMD_CALL_FUNCTION_RESULT         0x7E
 // Call function result command (this is the final packet)
 #define KOW_CMD_CALL_FUNCTION_RESULT_END     0x7D
+// Call function failed
+#define KOW_CMD_CALL_FUNCTION_FAILED         0x7C
 
 
 // Error codes

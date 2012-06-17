@@ -29,8 +29,9 @@ typedef void (*kowhai_node_written_t)(pkowhai_protocol_server_t server, void* pa
  * @param server the protocol server object
  * @param param application specific parameter passed through
  * @param function_id the id of the function that was called
+ * @return function was successfully called or not
  */
-typedef void (*kowhai_function_called_t)(pkowhai_protocol_server_t server, void* param, uint16_t function_id);
+typedef int (*kowhai_function_called_t)(pkowhai_protocol_server_t server, void* param, uint16_t function_id);
 
 struct kowhai_protocol_server_t
 {
