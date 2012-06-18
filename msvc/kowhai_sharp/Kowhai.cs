@@ -184,23 +184,5 @@ namespace kowhai_sharp
             h.Free();
             return result;
         }
-
-        public static kowhai_symbol_t[] GetSymbolPath(kowhai_node_t[] descriptor, kowhai_node_t node, int32_t nodeIndex,  uint16_t[] arrayIndexes)
-        {
-            Stack<kowhai_symbol_t> syms = new Stack<kowhai_symbol_t>();
-            for (int i = 0; i <= nodeIndex; i++)
-            {
-                kowhai_node_t newNode = descriptor[i];
-                if (i == nodeIndex)
-                    syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
-                else if (newNode.type == BRANCH)
-                    syms.Push(new kowhai_symbol_t(newNode.symbol, arrayIndexes[syms.Count]));
-                else if (newNode.type == BRANCH_END)
-                    syms.Pop();
-            }
-            kowhai_symbol_t[] result = syms.ToArray();
-            Array.Reverse(result);
-            return result;
-        }
     }
 }

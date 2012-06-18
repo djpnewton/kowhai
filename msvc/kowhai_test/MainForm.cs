@@ -289,16 +289,16 @@ namespace kowhai_test
                 lbFunctionList.Items.Add(new SymbolName(func, SymbolStrings[func]));
         }
 
-        private List<ushort> CreateNodeInfoArrayIndexList(KowhaiTree.KowhaiNodeInfo info)
+        private List<Kowhai.kowhai_symbol_t> CreateNodeInfoSymbolList(KowhaiTree.KowhaiNodeInfo info)
         {
-            List<ushort> arrayIndexes = new List<ushort>();
+            List<Kowhai.kowhai_symbol_t> syms = new List<Kowhai.kowhai_symbol_t>();
             while (info != null)
             {
-                arrayIndexes.Add(info.ArrayIndex);
+                syms.Add(new Kowhai.kowhai_symbol_t(info.KowhaiNode.symbol, info.ArrayIndex));
                 info = info.Parent;
             }
-            arrayIndexes.Reverse();
-            return arrayIndexes;
+            syms.Reverse();
+            return syms;
         }
 
         void kowhaiTree_DataChange(object sender, KowhaiTree.DataChangeEventArgs e)
@@ -307,8 +307,7 @@ namespace kowhai_test
             System.Threading.Thread.Sleep(250);
 
             byte[] buffer = new byte[PACKET_SIZE];
-            List<ushort> arrayIndexes = CreateNodeInfoArrayIndexList(e.Info);
-            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetCachedDescriptor(), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
+            Kowhai.kowhai_symbol_t[] symbols = CreateNodeInfoSymbolList(e.Info).ToArray();
             KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
             prot.header.command = KowhaiProtocol.CMD_WRITE_DATA;
             prot.header.id = GetTreeId();
@@ -341,8 +340,7 @@ namespace kowhai_test
             System.Threading.Thread.Sleep(250);
 
             byte[] buffer = new byte[PACKET_SIZE];
-            List<ushort> arrayIndexes = CreateNodeInfoArrayIndexList(e.Info);
-            Kowhai.kowhai_symbol_t[] symbols = Kowhai.GetSymbolPath(GetCachedDescriptor(), e.Info.KowhaiNode, e.Info.NodeIndex, arrayIndexes.ToArray());
+            Kowhai.kowhai_symbol_t[] symbols = CreateNodeInfoSymbolList(e.Info).ToArray();
             KowhaiProtocol.kowhai_protocol_t prot = new KowhaiProtocol.kowhai_protocol_t();
             prot.header.command = KowhaiProtocol.CMD_READ_DATA;
             prot.header.id = GetTreeId();
