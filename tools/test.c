@@ -691,7 +691,9 @@ void test_server_protocol()
                                               function_list,
                                               function_list_details,
                                               function_called,
-                                              NULL
+                                              NULL,
+                                              COUNT_OF(symbols),
+                                              symbols
     };
     kowhai_server_init_tree_descriptor_sizes(tree_descriptors, tree_descriptor_sizes, COUNT_OF(tree_descriptors));
     printf("test server protocol...\n");
@@ -699,6 +701,19 @@ void test_server_protocol()
     xpsocket_serve(server_buffer_received, &server, MAX_PACKET_SIZE);
     xpsocket_cleanup();
 
+}
+
+int _compare_string_arrays(char** arr1, char** arr2, int count)
+{
+    int i;
+    for (i = 0; i < count; i++)
+    {
+        if (strlen(arr1[i]) != strlen(arr2[i]))
+            return 0;
+        if (memcmp(arr1[i], arr2[i], strlen(arr1[i])) != 0)
+            return 0;
+    }
+    return 1;
 }
 
 void test_client_protocol()
@@ -1116,6 +1131,72 @@ void test_client_protocol()
         xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(prot.header.command == KOW_CMD_CALL_FUNCTION_FAILED);
+
+        // test get symbol list
+        {
+            char** symbols2;
+            char* symbols2_buf;
+            int sym_idx, sym_offset;
+            POPULATE_PROTOCOL_GET_SYMBOL_LIST(prot);
+            assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+            xpsocket_send(conn, buffer, bytes_required);
+            // get packet 1
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK);
+            assert(prot.header.id == 0);
+            assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
+            symbols2 = (char**)malloc(prot.payload.spec.string_list.list_count * sizeof(char*));
+            assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
+            symbols2_buf = (char*)malloc(prot.payload.spec.string_list.list_total_size);
+            assert(prot.payload.spec.string_list.offset == 0);
+            assert(prot.payload.spec.string_list.size == 51);
+            memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
+            // get packet 2
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK);
+            assert(prot.header.id == 0);
+            assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
+            assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
+            assert(prot.payload.spec.string_list.offset == 51);
+            assert(prot.payload.spec.string_list.size == 51);
+            memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
+            // get packet 3
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK);
+            assert(prot.header.id == 0);
+            assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
+            assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
+            assert(prot.payload.spec.string_list.offset == 102);
+            assert(prot.payload.spec.string_list.size == 51);
+            memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
+            // get packet 4
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK_END);
+            assert(prot.header.id == 0);
+            assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
+            assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
+            assert(prot.payload.spec.string_list.offset == 153);
+            assert(prot.payload.spec.string_list.size == 9);
+            memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
+            // validate results
+            sym_offset = 0;
+            for (sym_idx = 0; sym_idx < COUNT_OF(symbols); sym_idx++)
+            {
+                symbols2[sym_idx] = symbols2_buf + sym_offset;
+                sym_offset += strlen(symbols2[sym_idx]) + 1;
+            }
+            assert(_compare_string_arrays(symbols, symbols2, COUNT_OF(symbols)) == 1);
+            free(symbols2_buf);
+            free(symbols2);
+        }
 
         xpsocket_free_client(conn);
     }

@@ -34,6 +34,10 @@ namespace kowhai_sharp
         public const int CMD_CALL_FUNCTION_RESULT = 0x7E;
         public const int CMD_CALL_FUNCTION_RESULT_END = 0x7D;
         public const int CMD_CALL_FUNCTION_FAILED = 0x7C;
+        public const int CMD_GET_SYMBOL_LIST = 0x80;
+        public const int CMD_GET_SYMBOL_LIST_ACK = 0x8F;
+        public const int CMD_GET_SYMBOL_LIST_ACK_END = 0x8E;
+
         public const int CMD_ERROR_INVALID_COMMAND = 0xF0;
         public const int CMD_ERROR_INVALID_TREE_ID = 0xF1;
         public const int CMD_ERROR_INVALID_FUNCTION_ID = 0xF2;
@@ -88,6 +92,15 @@ namespace kowhai_sharp
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_protocol_string_list_t
+        {
+            public uint16_t list_count;
+            public uint32_t list_total_size;
+            public uint16_t offset;
+            public uint16_t size;
+        };
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_protocol_function_details_t
         {
             public uint16_t tree_in_id;
@@ -116,6 +129,8 @@ namespace kowhai_sharp
             public kowhai_protocol_function_details_t function_details;
             [FieldOffset(0)]
             public kowhai_protocol_function_call_t function_call;
+            [FieldOffset(0)]
+            public kowhai_protocol_string_list_t string_list;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -213,6 +228,17 @@ namespace kowhai_sharp
             return false;
         }
 
+        private static bool IsStringListResultCommand(uint8_t command)
+        {
+            switch (command)
+            {
+                case KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK:
+                case KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK_END:
+                    return true;
+            }
+            return false;
+        }
+
         public static int CreateBasicPacket(byte[] protoPacket, int packetSize, ref kowhai_protocol_t protocol, out int bytesRequired)
         {
             GCHandle h = GCHandle.Alloc(protoPacket, GCHandleType.Pinned);
@@ -282,6 +308,8 @@ namespace kowhai_sharp
                 buffer = new byte[prot.payload.spec.data.memory.size];
             else if (IsFunctionResultCommand(prot.header.command))
                 buffer = new byte[prot.payload.spec.function_call.size];
+            else if (IsStringListResultCommand(prot.header.command))
+                buffer = new byte[prot.payload.spec.string_list.size];
             else
                 return null;
             Marshal.Copy(prot.payload.buffer, buffer, 0, buffer.Length);

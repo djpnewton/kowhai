@@ -51,6 +51,8 @@ struct kowhai_protocol_server_t
     struct kowhai_protocol_function_details_t* function_list_details;
     kowhai_function_called_t function_called;
     void* function_called_param;
+    int symbol_list_count;
+    char** symbol_list;
 };
 
 void kowhai_server_init_tree_descriptor_sizes(struct kowhai_node_t** descriptors, size_t* sizes, int num);

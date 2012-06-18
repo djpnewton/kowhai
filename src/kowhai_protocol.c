@@ -124,6 +124,17 @@ static int parse_id_list(void* payload_packet, int packet_size, struct kowhai_pr
     return KOW_STATUS_OK;
 }
 
+static int parse_string_list(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
+{
+    if (packet_size < sizeof(struct kowhai_protocol_string_list_t))
+        return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+    memcpy(&payload->spec, payload_packet, sizeof(struct kowhai_protocol_string_list_t));
+    if (payload->spec.id_list.size > packet_size - sizeof(struct kowhai_protocol_string_list_t))
+        return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+    payload->buffer = (void*)((char*)payload_packet + sizeof(struct kowhai_protocol_string_list_t));
+    return KOW_STATUS_OK;
+}
+
 static int parse_function_details(void* payload_packet, int packet_size, struct kowhai_protocol_function_details_t* details)
 {
     if (packet_size < sizeof(struct kowhai_protocol_function_details_t))
@@ -192,6 +203,12 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
             return parse_function_call((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
         case KOW_CMD_CALL_FUNCTION_FAILED:
             return KOW_STATUS_OK;
+        case KOW_CMD_GET_SYMBOL_LIST:
+            return KOW_STATUS_OK;
+        case KOW_CMD_GET_SYMBOL_LIST_ACK:
+        case KOW_CMD_GET_SYMBOL_LIST_ACK_END:
+            return parse_string_list((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload);
+
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;
     }
@@ -317,6 +334,23 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             break;
         case KOW_CMD_CALL_FUNCTION_FAILED:
             break;
+        case KOW_CMD_GET_SYMBOL_LIST:
+            break;
+        case KOW_CMD_GET_SYMBOL_LIST_ACK:
+        case KOW_CMD_GET_SYMBOL_LIST_ACK_END:
+            // write payload spec
+            *bytes_required += sizeof(struct kowhai_protocol_string_list_t);
+            if (packet_size < *bytes_required)
+                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, &protocol->payload.spec.string_list, sizeof(struct kowhai_protocol_string_list_t));
+            pkt += sizeof(struct kowhai_protocol_string_list_t);
+            // write payload
+            *bytes_required += protocol->payload.spec.string_list.size;
+            if (packet_size < *bytes_required)
+                return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
+            memcpy(pkt, protocol->payload.buffer, protocol->payload.spec.string_list.size);
+            pkt += protocol->payload.spec.string_list.size;
+            break;
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;
     }
@@ -333,7 +367,7 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
             return KOW_STATUS_OK;
         case KOW_CMD_GET_TREE_LIST_ACK:
         case KOW_CMD_GET_TREE_LIST_ACK_END:
-            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(uint8_t);
+            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_id_list_t);
             return KOW_STATUS_OK;
         case KOW_CMD_READ_DESCRIPTOR:
             *overhead = sizeof(struct kowhai_protocol_header_t);
@@ -370,6 +404,13 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
         case KOW_CMD_CALL_FUNCTION_RESULT:
         case KOW_CMD_CALL_FUNCTION_RESULT_END:
             *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_function_call_t);
+            return KOW_STATUS_OK;
+        case KOW_CMD_GET_SYMBOL_LIST:
+            *overhead = sizeof(struct kowhai_protocol_header_t);
+            return KOW_STATUS_OK;
+        case KOW_CMD_GET_SYMBOL_LIST_ACK:
+        case KOW_CMD_GET_SYMBOL_LIST_ACK_END:
+            *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_string_list_t);
             return KOW_STATUS_OK;
         default:
             return KOW_STATUS_INVALID_PROTOCOL_COMMAND;

@@ -17,7 +17,20 @@ namespace kowhai_test
         IComms comms;
         const int PACKET_SIZE = 64;
         Dictionary<int, Kowhai.kowhai_node_t[]> descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>();
+        byte[] symbolListRaw = null;
+        List<string> symbolStrings = null;
         FunctionCallForm functionCallForm = null;
+
+        string[] SymbolStrings
+        {
+            get
+            {
+                if (symbolStrings != null)
+                    return symbolStrings.ToArray();
+                // use as a backup
+                return KowhaiSymbols.Symbols.Strings;
+            }
+        }
 
         public MainForm()
         {
@@ -61,6 +74,7 @@ namespace kowhai_test
                 {
                     case KowhaiProtocol.CMD_GET_VERSION_ACK:
                         Text = initialFormText + string.Format(" - kowhai server version: {0}", prot.payload.spec.version);
+                        CallGetSymbolList();
                         break;
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK_END:
@@ -167,7 +181,7 @@ namespace kowhai_test
                             }
                             else
                             {
-                                kowhaiTreeMain.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
+                                kowhaiTreeMain.UpdateDescriptor(descriptor, SymbolStrings, null);
                                 CallGetTreeData(prot.header.id, descriptor[0].symbol);
                             }
                         }
@@ -182,7 +196,8 @@ namespace kowhai_test
                     case KowhaiProtocol.CMD_GET_FUNCTION_DETAILS_ACK:
                         // setup function call form
                         functionCallForm = new FunctionCallForm();
-                        functionCallForm.FunctionName = new SymbolName(prot.header.id, KowhaiSymbols.Symbols.Strings[prot.header.id]);
+                        functionCallForm.SymbolStrings = SymbolStrings;
+                        functionCallForm.FunctionName = new SymbolName(prot.header.id, SymbolStrings[prot.header.id]);
                         functionCallForm.FunctionDetails = prot.payload.spec.function_details;
                         functionCallForm.FormClosed += new FormClosedEventHandler(delegate (object sender, FormClosedEventArgs e)
                             { functionCallForm = null; });
@@ -219,6 +234,34 @@ namespace kowhai_test
                         MessageBox.Show(string.Format("ProcessPacket(): Function call failed ({0})", prot.header.command),
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         break;
+                    case KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK:
+                    case KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK_END:
+                    {
+                        // copy buffer to symbolListRaw
+                        byte[] buf = KowhaiProtocol.GetBuffer(prot);
+                        if (symbolListRaw == null)
+                            symbolListRaw = new byte[prot.payload.spec.string_list.list_total_size];
+                        Array.Copy(buf, 0, symbolListRaw, prot.payload.spec.string_list.offset, buf.Length);
+                        // create new symbols array
+                        if (prot.header.command == KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK_END)
+                        {
+                            symbolStrings = new List<string>();
+                            System.Text.UTF8Encoding encoding = new System.Text.UTF8Encoding();
+                            int index = 0;
+                            int count = 0;
+                            while (index + count < symbolListRaw.Length)
+                            {
+                                if (symbolListRaw[index + count] == 0)
+                                {
+                                    symbolStrings.Add(encoding.GetString(symbolListRaw, index, count));
+                                    index += count + 1;
+                                    count = 0;
+                                }
+                                count++;
+                            }
+                        }
+                        break;
+                    }
                     default:
                         MessageBox.Show(string.Format("ProcessPacket(): Unknown command ({0})", prot.header.command),
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -236,14 +279,14 @@ namespace kowhai_test
         {
             lbTreeList.Items.Clear();
             foreach (ushort tree in trees)
-                lbTreeList.Items.Add(new SymbolName(tree, KowhaiSymbols.Symbols.Strings[tree]));
+                lbTreeList.Items.Add(new SymbolName(tree, SymbolStrings[tree]));
         }
 
         private void InitFunctionList(ushort[] funcs)
         {
             lbFunctionList.Items.Clear();
             foreach (ushort func in funcs)
-                lbFunctionList.Items.Add(new SymbolName(func, KowhaiSymbols.Symbols.Strings[func]));
+                lbFunctionList.Items.Add(new SymbolName(func, SymbolStrings[func]));
         }
 
         private List<ushort> CreateNodeInfoArrayIndexList(KowhaiTree.KowhaiNodeInfo info)
@@ -328,6 +371,13 @@ namespace kowhai_test
             comms.Send(buffer, buffer.Length);
         }
 
+        private void CallGetSymbolList()
+        {
+            byte[] buffer = new byte[3];
+            buffer[0] = KowhaiProtocol.CMD_GET_SYMBOL_LIST;
+            comms.Send(buffer, buffer.Length);
+        }
+
         private void CallGetTreeDescriptor(ushort treeId)
         {
             byte[] buffer = new byte[3];
@@ -392,7 +442,7 @@ namespace kowhai_test
 
         string getSymbolName(Object param, UInt16 value)
         {
-            return KowhaiSymbols.Symbols.Strings[value];
+            return SymbolStrings[value];
         }
 
         private void btnSave_Click(object sender, EventArgs e)
@@ -429,7 +479,7 @@ namespace kowhai_test
                 byte[] data;
                 if (KowhaiSerialize.Deserialize(text, out descriptor, out data) == Kowhai.STATUS_OK)
                 {
-                    tree.UpdateDescriptor(descriptor, KowhaiSymbols.Symbols.Strings, null);
+                    tree.UpdateDescriptor(descriptor, SymbolStrings, null);
                     tree.UpdateData(data, 0);
                 }
             }

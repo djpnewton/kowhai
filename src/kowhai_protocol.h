@@ -60,6 +60,13 @@
 // Call function failed
 #define KOW_CMD_CALL_FUNCTION_FAILED         0x7C
 
+// Get the symbol list
+#define KOW_CMD_GET_SYMBOL_LIST              0x80
+// Acknowledge get symbol list command (and return list)
+#define KOW_CMD_GET_SYMBOL_LIST_ACK          0x8F
+// Acknowledge get symbol list command (this is the final packet)
+#define KOW_CMD_GET_SYMBOL_LIST_ACK_END      0x8E
+
 
 // Error codes
 #define KOW_CMD_ERROR_INVALID_COMMAND        0xF0
@@ -136,6 +143,17 @@ struct kowhai_protocol_id_list_t
 /**
  * @brief 
  */
+struct kowhai_protocol_string_list_t
+{
+    uint16_t list_count;
+    uint32_t list_total_size;
+    uint16_t offset;
+    uint16_t size;
+};
+
+/**
+ * @brief 
+ */
 struct kowhai_protocol_function_details_t
 {
     uint16_t tree_in_id;
@@ -162,6 +180,7 @@ union kowhai_protocol_payload_spec_t
     struct kowhai_protocol_descriptor_payload_spec_t descriptor;
     struct kowhai_protocol_function_details_t function_details;
     struct kowhai_protocol_function_call_t function_call;
+    struct kowhai_protocol_string_list_t string_list;
 };
 
 /**
@@ -264,6 +283,12 @@ struct kowhai_protocol_t
     {                                                                                           \
         POPULATE_PROTOCOL_CALL_FUNCTION(protocol, function_id, data_offset, data_size, data);   \
         protocol.header.command = KOW_CMD_CALL_FUNCTION_END;                                    \
+    }
+
+#define POPULATE_PROTOCOL_GET_SYMBOL_LIST(protocol)        \
+    {                                                      \
+        protocol.header.command = KOW_CMD_GET_SYMBOL_LIST; \
+        protocol.header.id = 0;                            \
     }
 
 //

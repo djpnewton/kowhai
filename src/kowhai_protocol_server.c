@@ -109,7 +109,7 @@ void _send_id_list(struct kowhai_protocol_server_t* server, struct kowhai_protoc
     // send packets
     while (size > max_payload_size)
     {
-        prot->payload.spec.descriptor.size = max_payload_size;
+        prot->payload.spec.id_list.size = max_payload_size;
         prot->payload.buffer = (char*)id_list + prot->payload.spec.id_list.offset;
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
         server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
@@ -121,6 +121,76 @@ void _send_id_list(struct kowhai_protocol_server_t* server, struct kowhai_protoc
     prot->header.command = cmd_ack_end;
     prot->payload.spec.id_list.size = size;
     prot->payload.buffer = (char*)id_list + prot->payload.spec.id_list.offset;
+    kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
+    server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+}
+
+size_t _get_string_list_size(char** list, int count)
+{
+    int i;
+    size_t total = 0;
+    for (i = 0; i < count; i++)
+        total += strlen(list[i]) + 1;
+    return total;
+}
+
+void _copy_string_list_to_buffer(char** string_list, int count, int offset, void* buffer, int buffer_size)
+{
+    int i, marker = 0;
+    for (i = 0; i < count; i++)
+    {
+        int l = strlen(string_list[i]) + 1;
+        if (marker + l >= offset)
+        {
+            int string_offset, copy_size;
+            string_offset = marker - offset;
+            if (string_offset < 0)
+                string_offset = -string_offset;
+            copy_size = l - string_offset;
+            if (copy_size > buffer_size)
+                copy_size = buffer_size;
+            memcpy(buffer, string_list[i] + string_offset, copy_size);
+            offset += copy_size;
+            buffer = (char*)buffer + copy_size;
+            buffer_size -= copy_size;
+        }
+        if (buffer_size == 0)
+            break;
+        marker += l;
+    }
+}
+
+void _send_string_list(struct kowhai_protocol_server_t* server, struct kowhai_protocol_t* prot,
+                    uint8_t cmd_ack, uint8_t cmd_ack_end,
+                    int string_list_count, char** string_list)
+{
+    int bytes_required;
+    int overhead, max_payload_size;
+    int size = _get_string_list_size(string_list, string_list_count);
+    // get protocol overhead
+    prot->header.command = cmd_ack;
+    kowhai_protocol_get_overhead(prot, &overhead);
+    // setup max payload size and payload offset
+    max_payload_size = server->max_packet_size - overhead;
+    prot->payload.spec.string_list.offset = 0;
+    prot->payload.spec.string_list.list_count = string_list_count;
+    prot->payload.spec.string_list.list_total_size = size;
+    prot->payload.buffer = (char*)server->packet_buffer + overhead;
+    // send packets
+    while (size > max_payload_size)
+    {
+        prot->payload.spec.string_list.size = max_payload_size;
+        _copy_string_list_to_buffer(string_list, string_list_count, prot->payload.spec.string_list.offset, prot->payload.buffer, max_payload_size);
+        kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
+        server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
+        // increment payload offset and decrement remaining payload size
+        prot->payload.spec.string_list.offset += max_payload_size;
+        size -= max_payload_size;
+    }
+    // send final packet
+    prot->header.command = cmd_ack_end;
+    prot->payload.spec.string_list.size = size;
+    _copy_string_list_to_buffer(string_list, string_list_count, prot->payload.spec.string_list.offset, prot->payload.buffer, max_payload_size);
     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
 }
@@ -470,7 +540,14 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
             server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
             break;
-
+        }
+        case KOW_CMD_GET_SYMBOL_LIST:
+        {
+            printf("    CMD get symbol list\n");
+            _send_string_list(server, &prot,
+                KOW_CMD_GET_SYMBOL_LIST_ACK, KOW_CMD_GET_SYMBOL_LIST_ACK_END,
+                server->symbol_list_count, server->symbol_list);
+            break;
         }
         default:
             printf("    invalid command (%d)\n", prot.header.command);

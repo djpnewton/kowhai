@@ -26,6 +26,13 @@ namespace kowhai_test
         public delegate void CallFunctionEventHandler(object sender, CallFunctionEventArgs e);
         public event CallFunctionEventHandler CallFunction;
 
+        string[] symbolStrings = null;
+        public string[] SymbolStrings
+        {
+            get { return symbolStrings; }
+            set { symbolStrings = value; }
+        }
+
         SymbolName funcName;
         public SymbolName FunctionName
         {
@@ -42,7 +49,7 @@ namespace kowhai_test
             get { return treeIn.GetDescriptor(); }
             set
             {
-                treeIn.UpdateDescriptor(value, KowhaiSymbols.Symbols.Strings, null);
+                treeIn.UpdateDescriptor(value, symbolStrings, null);
                 int dataSize;
                 Kowhai.GetNodeSize(value, out dataSize);
                 treeIn.UpdateData(new byte[dataSize], 0);
@@ -51,7 +58,7 @@ namespace kowhai_test
         public kowhai_sharp.Kowhai.kowhai_node_t[] TreeOutDescriptor
         {
             get { return treeOut.GetDescriptor(); }
-            set { treeOut.UpdateDescriptor(value, KowhaiSymbols.Symbols.Strings, null); }
+            set { treeOut.UpdateDescriptor(value, symbolStrings, null); }
         }
 
         public FunctionCallForm()
