@@ -47,6 +47,7 @@
             this.btnRefreshList = new System.Windows.Forms.Button();
             this.btnSocket = new System.Windows.Forms.Button();
             this.btnHID = new System.Windows.Forms.Button();
+            this.btnDisconnect = new System.Windows.Forms.Button();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel6.SuspendLayout();
             this.SuspendLayout();
@@ -270,11 +271,23 @@
             this.btnHID.UseVisualStyleBackColor = true;
             this.btnHID.Click += new System.EventHandler(this.btnHID_Click);
             // 
+            // btnDisconnect
+            // 
+            this.btnDisconnect.Location = new System.Drawing.Point(153, 36);
+            this.btnDisconnect.Name = "btnDisconnect";
+            this.btnDisconnect.Size = new System.Drawing.Size(100, 26);
+            this.btnDisconnect.TabIndex = 15;
+            this.btnDisconnect.Text = "Disconnect";
+            this.btnDisconnect.UseVisualStyleBackColor = true;
+            this.btnDisconnect.Visible = false;
+            this.btnDisconnect.Click += new System.EventHandler(this.btnDisconnect_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(940, 572);
+            this.Controls.Add(this.btnDisconnect);
             this.Controls.Add(this.btnHID);
             this.Controls.Add(this.btnSocket);
             this.Controls.Add(this.btnRefreshList);
@@ -318,5 +331,6 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Button btnSocket;
         private System.Windows.Forms.Button btnHID;
+        private System.Windows.Forms.Button btnDisconnect;
     }
 }

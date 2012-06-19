@@ -117,5 +117,10 @@ namespace kowhai_test
                 Disconnected(this, new EventArgs());
             sock = null;
         }
+
+        public string GetErrorString()
+        {
+            return "Not implemented :(";
+        }
     }
 }

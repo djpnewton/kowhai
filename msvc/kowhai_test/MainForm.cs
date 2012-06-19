@@ -366,7 +366,8 @@ namespace kowhai_test
         {
             byte[] buffer = new byte[3];
             buffer[0] = KowhaiProtocol.CMD_GET_VERSION;
-            comms.Send(buffer, buffer.Length);
+            if (comms.Send(buffer, buffer.Length) < 0)
+                ShowToast(string.Format("Error - CallGetVersion::Send() result: {0}", comms.GetErrorString()), 5000);
         }
 
         private void CallGetSymbolList()
@@ -565,6 +566,8 @@ namespace kowhai_test
             comms = new Sock();
             if (comms.Connect())
                 KowhaiConnected();
+            else
+                ConnectionFailed();
         }
 
         private void btnHID_Click(object sender, EventArgs e)
@@ -594,7 +597,14 @@ namespace kowhai_test
                 comms = new Hid(path, f.ReportId, f.ReportPrefix, f.ReportSize);
                 if (comms.Connect())
                     KowhaiConnected();
+                else
+                    ConnectionFailed();
             }
+        }
+
+        private void ConnectionFailed()
+        {
+            ShowToast("Connection Failed");
         }
 
         private void KowhaiConnected()
@@ -602,6 +612,8 @@ namespace kowhai_test
             btnRefreshList.Enabled = true;
             btnSocket.Enabled = false;
             btnHID.Enabled = false;
+            btnDisconnect.Visible = true;
+            ShowToast("Connected");
             comms.Disconnected += new EventHandler(comms_Disconnected);
             comms.CommsReceived += new CommsReceiveEventHandler(comms_CommsReceived);
             comms.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
@@ -622,11 +634,30 @@ namespace kowhai_test
                 btnRefreshList.Enabled = false;
                 btnSocket.Enabled = true;
                 btnHID.Enabled = true;
+                btnDisconnect.Visible = false;
                 // reset kowhai data
                 descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>(); ;
                 symbolListRaw = null;
                 symbolStrings = null;
+                // show disconnected state
+                ShowToast("Disconnected");
             }
+        }
+
+        private void btnDisconnect_Click(object sender, EventArgs e)
+        {
+            comms.Disconnect();
+        }
+
+        private void ShowToast(string message, int timeout)
+        {
+            ToastForm f = new ToastForm(this, message, timeout);
+            f.Show();
+        }
+
+        private void ShowToast(string message)
+        {
+            ShowToast(message, 3000);
         }
     }
 
@@ -643,6 +674,97 @@ namespace kowhai_test
         public override string ToString()
         {
             return this.Name;
+        }
+    }
+
+    public class ToastForm : Form
+    {
+        Timer timer;
+        Form parent;
+        string message;
+        static int refCount = 0;
+        static Point lastPosition = new Point(-1, -1);
+
+        public ToastForm(Form parent, string message, int timeout)
+        {
+            this.parent = parent;
+            this.message = message;
+            // customize form
+            BackColor = Color.LightYellow;
+            FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            ShowInTaskbar = false;
+            // Create timer for close timeout
+            timer = new Timer();
+            timer.Interval = timeout;
+            timer.Tick += timer_Tick;
+        }
+
+        protected override bool ShowWithoutActivation
+        {
+            get { return true; }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            // Set message size and position
+            int border = 25;
+            Label lb = new Label();
+            lb.AutoSize = false;
+            lb.TextAlign = ContentAlignment.MiddleCenter;
+            using (Graphics g = CreateGraphics())
+            {
+                SizeF size = g.MeasureString(message, lb.Font);
+                lb.Width = (int)Math.Ceiling(size.Width) + border * 2;
+                lb.Height = (int)Math.Ceiling(size.Height) + border * 2;
+            }
+            lb.Text = message;
+            lb.Click += new EventHandler(l_Click);
+            Width = lb.Width;
+            Height = lb.Height;
+            Controls.Add(lb);
+            if (lastPosition.X > -1)
+            {
+                Left = lastPosition.X;
+                Top = lastPosition.Y;
+            }
+            else
+            {
+                Left = parent.Left + parent.Width / 2 - Width / 2;
+                Top = parent.Top + parent.Height / 2 - Height / 2;
+            }
+            // update last position
+            refCount++;
+            lastPosition = new Point(Left, Bottom);
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            timer.Start();
+        }
+
+        protected override void OnClick(EventArgs e)
+        {
+            Close();
+        }
+
+        void timer_Tick(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        void l_Click(object sender, EventArgs e)
+        {
+            Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            refCount--;
+            if (refCount == 0)
+                lastPosition = new Point(-1, -1);
         }
     }
 }

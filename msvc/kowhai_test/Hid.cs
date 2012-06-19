@@ -131,5 +131,10 @@ namespace kowhai_test
                 Disconnected(this, new EventArgs());
             device = IntPtr.Zero;
         }
+
+        public string GetErrorString()
+        {
+            return HidAPI.hid_error(device);
+        }
     }
 }
