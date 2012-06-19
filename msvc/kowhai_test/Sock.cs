@@ -13,6 +13,8 @@ namespace kowhai_test
         static IPEndPoint ep = new IPEndPoint(addr, 55555);
 
         Socket sock;
+        public event EventHandler Connected;
+        public event EventHandler Disconnected;
         public event CommsReceiveEventHandler CommsReceived;
 
         public Sock()
@@ -25,6 +27,7 @@ namespace kowhai_test
             {
                 sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                 sock.Connect(ep);
+                DoConnected();
                 return true;
             }
             catch (Exception e)
@@ -37,11 +40,17 @@ namespace kowhai_test
 
         public void Disconnect()
         {
-            sock.Disconnect(true);
+            if (sock != null)
+            {
+                sock.Disconnect(true);
+                DoDisconnected();
+            }
         }
 
         public int Send(byte[] buffer, int size)
         {
+            if (sock == null)
+                return -1;
             return sock.Send(buffer, size, SocketFlags.None);
         }
 
@@ -63,6 +72,8 @@ namespace kowhai_test
 
         void ReceiveCallback(IAsyncResult ar)
         {
+            if (sock == null)
+                return;
             try
             {
                 StateObj state = (StateObj)ar.AsyncState;
@@ -79,7 +90,10 @@ namespace kowhai_test
             catch (SocketException e)
             {
                 if (e.ErrorCode == 10054) // Error code for Connection reset by peer
+                {
                     sock.Close();
+                    DoDisconnected();
+                }
                 else
                     throw e;
             }
@@ -89,6 +103,19 @@ namespace kowhai_test
         {
             StateObj state = new StateObj(buffer, size);
             sock.BeginReceive(buffer, 0, size, SocketFlags.None, new AsyncCallback(ReceiveCallback), state);
+        }
+
+        private void DoConnected()
+        {
+            if (Connected != null)
+                Connected(this, new EventArgs());
+        }
+
+        private void DoDisconnected()
+        {
+            if (Disconnected != null)
+                Disconnected(this, new EventArgs());
+            sock = null;
         }
     }
 }

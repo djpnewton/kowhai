@@ -25,6 +25,8 @@ namespace kowhai_test
         int Send(byte[] buffer, int size);
         int Receive(byte[] buffer, int size);
         void StartAsyncReceives(byte[] buffer, int size);
+        event EventHandler Connected;
+        event EventHandler Disconnected;
         event CommsReceiveEventHandler CommsReceived;
     }
 }

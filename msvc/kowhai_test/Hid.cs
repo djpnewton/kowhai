@@ -17,6 +17,8 @@ namespace kowhai_test
         bool readThreadKeepGoing;
         byte[] readBuffer;
         int readBufferSize;
+        public event EventHandler Connected;
+        public event EventHandler Disconnected;
         public event CommsReceiveEventHandler CommsReceived;
 
         public Hid(string path, byte reportId, byte[] reportPrefix, int reportSize)
@@ -29,22 +31,28 @@ namespace kowhai_test
 
         ~Hid()
         {
-            KillReadThread();
-            if (device.ToInt64() != 0)
-                HidAPI.hid_close(device);
+            Disconnect();
         }
 
         public bool Connect()
         {
             device = HidAPI.hid_open_path(path);
-            return device.ToInt64() != 0;
+            if (!device.Equals(IntPtr.Zero))
+            {
+                DoConnected();
+                return true;
+            }
+            return false;
         }
 
         public void Disconnect()
         {
             KillReadThread();
-            HidAPI.hid_close(device);
-            device = new IntPtr(0);
+            if (!device.Equals(IntPtr.Zero))
+            {
+                HidAPI.hid_close(device);
+                DoDisconnected();
+            }
         }
 
         private void KillReadThread()
@@ -56,6 +64,8 @@ namespace kowhai_test
 
         public int Send(byte[] buffer, int size)
         {
+            if (device.Equals(IntPtr.Zero))
+                return -1;
             byte[] report = new byte[reportSize];
             report[0] = reportId;
             Array.Copy(reportPrefix, 0, report, 1, Math.Min(reportSize, reportPrefix.Length));
@@ -102,9 +112,24 @@ namespace kowhai_test
                     if (!reportPrefix.SequenceEqual(reportPrefixCheck))
                         continue;
                     Array.Copy(report, reportPrefix.Length + 1, readBuffer, 0, Math.Min(readBufferSize, reportSize - reportPrefix.Length - 1));
-                    CommsReceived(this, new CommsReceiveEventArgs(readBuffer, Math.Min(readBufferSize, reportSize - reportPrefix.Length -  1)));
+                    CommsReceived(this, new CommsReceiveEventArgs(readBuffer, Math.Min(readBufferSize, reportSize - reportPrefix.Length - 1)));
                 }
+                else if (res == -1)
+                    DoDisconnected();
             }
+        }
+
+        private void DoConnected()
+        {
+            if (Connected != null)
+                Connected(this, new EventArgs());
+        }
+
+        private void DoDisconnected()
+        {
+            if (Disconnected != null)
+                Disconnected(this, new EventArgs());
+            device = IntPtr.Zero;
         }
     }
 }

@@ -602,11 +602,31 @@ namespace kowhai_test
             btnRefreshList.Enabled = true;
             btnSocket.Enabled = false;
             btnHID.Enabled = false;
+            comms.Disconnected += new EventHandler(comms_Disconnected);
             comms.CommsReceived += new CommsReceiveEventHandler(comms_CommsReceived);
             comms.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
             kowhaiTreeMain.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
             kowhaiTreeMain.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
             CallGetVersion();
+        }
+
+        void comms_Disconnected(object sender, EventArgs e)
+        {
+            if (IsDisposed || Disposing)
+                return;
+            if (InvokeRequired)
+                Invoke(new EventHandler(comms_Disconnected), new object[] {sender, e});
+            else
+            {
+                // reset GUI
+                btnRefreshList.Enabled = false;
+                btnSocket.Enabled = true;
+                btnHID.Enabled = true;
+                // reset kowhai data
+                descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>(); ;
+                symbolListRaw = null;
+                symbolStrings = null;
+            }
         }
     }
 
