@@ -1,4 +1,5 @@
 *.exe
+*.dll
 *.o
 *.a
 *.so
@@ -12,3 +13,5 @@ msvc/ipch
 *.sdf
 *.opensdf
 *.suo
+*.pyc
+*.pyo
