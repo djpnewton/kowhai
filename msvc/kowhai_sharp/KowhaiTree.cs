@@ -277,7 +277,8 @@ namespace kowhai_sharp
             int index = 0;
             ushort offset = 0;
             _UpdateDescriptor(descriptor, ref index, ref offset, null, info);
-            treeView1.ExpandAll();
+            if (treeView1.Nodes.Count > 0)
+                treeView1.Nodes[0].Expand();
             return;
         }
 
