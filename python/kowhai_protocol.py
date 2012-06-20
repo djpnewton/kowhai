@@ -43,6 +43,76 @@ KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE = 0xF5
 KOW_CMD_ERROR_INVALID_SEQUENCE = 0xF6
 KOW_CMD_ERROR_UNKNOWN = 0xFF
 
+class kowhai_protocol_header_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('command', uint8_t),
+                ('id', uint16_t)]
+
+class kowhai_protocol_symbol_spec_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('count', uint8_t),
+                ('array_', ctypes.POINTER(kowhai_symbol_t))]
+
+class kowhai_protocol_data_payload_memory_spec_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('type', uint16_t),
+                ('offset', uint16_t),
+                ('size', uint16_t)]
+
+class kowhai_protocol_data_payload_spec_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('symbols', kowhai_protocol_symbol_spec_t),
+                ('memory', kowhai_protocol_data_payload_memory_spec_t)]
+
+class kowhai_protocol_descriptor_payload_spec_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('node_count', uint16_t),
+                ('offset', uint16_t),
+                ('size', uint16_t)]
+
+class kowhai_protocol_id_list_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('list_count', uint16_t),
+                ('offset', uint16_t),
+                ('size', uint16_t)]
+
+class kowhai_protocol_string_list_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('list_count', uint16_t),
+                ('list_total_size', uint32_t),
+                ('offset', uint16_t),
+                ('size', uint16_t)]
+
+class kowhai_protocol_function_details_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('tree_in_id', uint16_t),
+                ('tree_out_id', uint16_t)]
+
+class kowhai_protocol_function_call_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('offset', uint16_t),
+                ('size', uint16_t)]
+
+class kowhai_protocol_payload_spec_t(ctypes.Union):
+    _pack_ = 1
+    _fields_ = [('version', uint32_t),
+                ('id_list', kowhai_protocol_id_list_t),
+                ('data', kowhai_protocol_data_payload_spec_t),
+                ('descriptor', kowhai_protocol_descriptor_payload_spec_t),
+                ('function_details', kowhai_protocol_function_details_t),
+                ('function_call', kowhai_protocol_function_call_t),
+                ('string_list', kowhai_protocol_string_list_t)]
+
+class kowhai_protocol_payload_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('spec', kowhai_protocol_payload_spec_t),
+                ('buffer', ctypes.c_void_p)]
+
+class kowhai_protocol_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('header', kowhai_protocol_header_t),
+                ('payload', kowhai_protocol_payload_t)]
+
 if __name__ == "__main__":
     print 'yoyo'
     print kowhai_lib
