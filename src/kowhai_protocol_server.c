@@ -31,8 +31,8 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_node_t** descriptors
 void kowhai_server_init(struct kowhai_protocol_server_t* server,
     size_t max_packet_size,
     void* packet_buffer,
-    kowhai_node_write_t node_pre_write,
-    kowhai_node_write_t node_post_write,
+    kowhai_node_pre_write_t node_pre_write,
+    kowhai_node_post_write_t node_post_write,
     void* node_write_param,
     kowhai_send_packet_t send_packet,
     void* send_packet_param,
@@ -330,6 +330,7 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     // set current write node
                     server->current_write_node = node_to_write;
                     server->current_write_node_offset = offset;
+                    server->current_write_node_bytes_written = 0;
                     // call node_pre_write callback
                     server->node_pre_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset);
                 }
@@ -341,10 +342,14 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 status = kowhai_write(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                 if (status == KOW_STATUS_OK)
                 {
+                    // update current_write_node_bytes_written
+                    int bytes_written = prot.payload.spec.data.memory.offset + prot.payload.spec.data.memory.size;
+                    if (bytes_written > server->current_write_node_bytes_written)
+                        server->current_write_node_bytes_written = bytes_written;
                     // call node_post_write callback
                     if (prot.header.command == KOW_CMD_WRITE_DATA_END)
                     {
-                        server->node_post_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset);
+                        server->node_post_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset, server->current_write_node_bytes_written);
                         // clear current write node if at end of write sequence
                         server->current_write_node = NULL;
                     }

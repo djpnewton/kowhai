@@ -618,9 +618,9 @@ void node_pre_write(pkowhai_protocol_server_t server, void* param, uint16_t tree
     printf("node_pre_write: tree_id: %d, node: %p, offset: %d\n", tree_id, node, offset);
 }
 
-void node_post_write(pkowhai_protocol_server_t server, void* param, uint16_t tree_id, struct kowhai_node_t* node, int offset)
+void node_post_write(pkowhai_protocol_server_t server, void* param, uint16_t tree_id, struct kowhai_node_t* node, int offset, int bytes_written)
 {
-    printf("node_post_write: tree_id: %d, node: %p, offset: %d\n", tree_id, node, offset);
+    printf("node_post_write: tree_id: %d, node: %p, offset: %d, bytes_written: %d\n", tree_id, node, offset, bytes_written);
 }
 
 void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buffer, size_t buffer_size)
