@@ -693,7 +693,6 @@ namespace kowhai_test
             // customize form
             BackColor = Color.LightYellow;
             FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            ShowInTaskbar = false;
             // Create timer for close timeout
             timer = new Timer();
             timer.Interval = timeout;
@@ -703,6 +702,20 @@ namespace kowhai_test
         protected override bool ShowWithoutActivation
         {
             get { return true; }
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams p = base.CreateParams;
+
+                p.Style |= 0x40000000; // WS_CHILD
+                p.ExStyle |= 0x8000000; // WS_EX_NOACTIVATE - requires Win 2000 or higher :)
+                p.ExStyle |= 0x0000080; // WS_EX_TOOLWINDOW
+
+                return p;
+            }
         }
 
         protected override void OnLoad(EventArgs e)
