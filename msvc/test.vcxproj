@@ -28,6 +28,9 @@
       <Project>{fbf87c77-b9aa-4151-99d2-2bdcaef1d5c0}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\tools\symbols.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D78EC7AF-466B-4E91-8AD6-C931790D29B3}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
