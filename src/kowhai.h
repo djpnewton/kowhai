@@ -77,6 +77,7 @@ union kowhai_symbol_t
 #define KOW_STATUS_BUFFER_INVALID          10
 #define KOW_STATUS_SCRATCH_TOO_SMALL       11
 #define KOW_STATUS_NOT_FOUND               12
+#define KOW_STATUS_INVALID_SEQUENCE        13
 
 /**
  * @brief return the version of the kowhai library
@@ -99,7 +100,7 @@ int kowhai_get_node_type_size(uint16_t type);
  * @param target_node, if return is successful this is the node that matches the symbol path
  * @return kowhai status value, ie KOW_STATUS_OK on success or other on error
  */
-int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
+int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node);
 
 /**
  * @brief calculate the complete size of a node including all the sub-elements and array items.

@@ -113,6 +113,8 @@ namespace kowhai_sharp
         public const int STATUS_TARGET_BUFFER_TOO_SMALL = 9;
         public const int STATUS_BUFFER_INVALID = 10;
         public const int STATUS_SCRATCH_TOO_SMALL = 11;
+        public const int STATUS_NOT_FOUND = 12;
+        public const int STATUS_INVALID_SEQUENCE = 13;
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint32_t kowhai_version();

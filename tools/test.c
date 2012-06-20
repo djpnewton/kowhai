@@ -260,7 +260,7 @@ union kowhai_symbol_t symbols13[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACIT
 
 void core_tests()
 {
-    uint16_t offset;
+    int offset;
     int size;
     int count;
     struct kowhai_node_t* node;
@@ -274,7 +274,7 @@ void core_tests()
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
     // test version
-    assert(kowhai_version() == 2);
+    assert(kowhai_version() == 3);
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
@@ -613,8 +613,14 @@ void create_symbol_path_tests()
     printf(" passed!\n");
 }
 
-void node_written(pkowhai_protocol_server_t server, void* param, struct kowhai_node_t* node)
+void node_pre_write(pkowhai_protocol_server_t server, void* param, uint16_t tree_id, struct kowhai_node_t* node, int offset)
 {
+    printf("node_pre_write: tree_id: %d, node: %p, offset: %d\n", tree_id, node, offset);
+}
+
+void node_post_write(pkowhai_protocol_server_t server, void* param, uint16_t tree_id, struct kowhai_node_t* node, int offset)
+{
+    printf("node_post_write: tree_id: %d, node: %p, offset: %d\n", tree_id, node, offset);
 }
 
 void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buffer, size_t buffer_size)
@@ -676,26 +682,28 @@ void test_server_protocol()
 {
     char packet_buffer[MAX_PACKET_SIZE];
     size_t tree_descriptor_sizes[COUNT_OF(tree_descriptors)];
-    struct kowhai_protocol_server_t server = {MAX_PACKET_SIZE,
-                                              packet_buffer,
-                                              node_written,
-                                              NULL,
-                                              server_buffer_send,
-                                              NULL,
-                                              COUNT_OF(tree_list),
-                                              tree_list,
-                                              tree_descriptors,
-                                              tree_descriptor_sizes,
-                                              tree_data_buffers,
-                                              COUNT_OF(function_list),
-                                              function_list,
-                                              function_list_details,
-                                              function_called,
-                                              NULL,
-                                              COUNT_OF(symbols),
-                                              symbols
-    };
+    struct kowhai_protocol_server_t server;
     kowhai_server_init_tree_descriptor_sizes(tree_descriptors, tree_descriptor_sizes, COUNT_OF(tree_descriptors));
+    kowhai_server_init(&server,
+        MAX_PACKET_SIZE,
+        packet_buffer,
+        node_pre_write,
+        node_post_write,
+        NULL,
+        server_buffer_send,
+        NULL,
+        COUNT_OF(tree_list),
+        tree_list,
+        tree_descriptors,
+        tree_descriptor_sizes,
+        tree_data_buffers,
+        COUNT_OF(function_list),
+        function_list,
+        function_list_details,
+        function_called,
+        NULL,
+        COUNT_OF(symbols),
+        symbols);
     printf("test server protocol...\n");
     xpsocket_init();
     xpsocket_serve(server_buffer_received, &server, MAX_PACKET_SIZE);
@@ -761,7 +769,7 @@ void test_client_protocol()
 
         // write oven.temp
         temp = 25;
-        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 3, symbols1, KOW_INT16, 0, sizeof(uint16_t), &temp);
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA_END, SYM_SETTINGS, 3, symbols1, KOW_INT16, 0, sizeof(uint16_t), &temp);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
@@ -777,7 +785,7 @@ void test_client_protocol()
         assert(*((uint16_t*)prot.payload.buffer) == temp);
         // write low byte of oven.temp
         value = 255;
-        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 3, symbols1, KOW_INT16, 1, 1, &value);
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA_END, SYM_SETTINGS, 3, symbols1, KOW_INT16, 1, 1, &value);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
@@ -800,7 +808,7 @@ void test_client_protocol()
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(*((uint16_t*)prot.payload.buffer) >> 8 == (uint8_t)value);
         // write oven
-        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 2, symbols11, 0, 0, sizeof(oven), &oven);
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA_END, SYM_SETTINGS, 2, symbols11, 0, 0, sizeof(oven), &oven);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
@@ -833,7 +841,7 @@ void test_client_protocol()
         assert(memcmp(prot.payload.buffer, flux_cap, MAX_PACKET_SIZE - overhead) == 0);
         offset = prot.payload.spec.data.memory.size;
         size = sizeof(struct flux_capacitor_t) * 2 - offset;
-        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 2, symbols3, 0, offset, size, (char*)flux_cap + offset);
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA_END, SYM_SETTINGS, 2, symbols3, 0, offset, size, (char*)flux_cap + offset);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
@@ -844,7 +852,7 @@ void test_client_protocol()
         assert(prot.payload.spec.data.memory.size == size);
         assert(memcmp(prot.payload.buffer, (char*)flux_cap + offset, size) == 0);
         // write flux capacitor[1]
-        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 2, symbols12, 0, 0, sizeof(struct flux_capacitor_t), &flux_cap[1]);
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA_END, SYM_SETTINGS, 2, symbols12, 0, 0, sizeof(struct flux_capacitor_t), &flux_cap[1]);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
         xpsocket_send(conn, buffer, bytes_required);
         memset(buffer, 0, MAX_PACKET_SIZE);
@@ -910,7 +918,7 @@ void test_client_protocol()
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(prot.header.id == SYM_SETTINGS);
         assert(prot.header.command == KOW_CMD_READ_DESCRIPTOR_ACK);
-        assert(prot.payload.spec.descriptor.node_count == sizeof(settings_descriptor) / sizeof(settings_descriptor[0]));
+        assert(prot.payload.spec.descriptor.node_count == COUNT_OF(settings_descriptor));
         assert(prot.payload.spec.data.memory.offset == 0);
         kowhai_protocol_get_overhead(&prot, &overhead);
         assert(overhead == 9);
@@ -959,6 +967,23 @@ void test_client_protocol()
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(prot.header.id == SYM_SETTINGS);
         assert(prot.header.command == KOW_CMD_ERROR_INVALID_SYMBOL_PATH);
+        // test invalid write sequence (write flux capacitor array)
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 2, symbols3, 0, 0, 8, flux_cap);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.id == SYM_SETTINGS);
+        assert(prot.header.command == KOW_CMD_WRITE_DATA_ACK);
+        POPULATE_PROTOCOL_WRITE(prot, KOW_CMD_WRITE_DATA, SYM_SETTINGS, 2, symbols2, 0, 0, 8, flux_cap);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.id == SYM_SETTINGS);
+        assert(prot.header.command == KOW_CMD_ERROR_INVALID_SEQUENCE);
 
         // test get function list
         POPULATE_PROTOCOL_GET_FUNCTION_LIST(prot);

@@ -71,6 +71,7 @@ KOW_STATUS_TARGET_BUFFER_TOO_SMALL  = 9
 KOW_STATUS_BUFFER_INVALID           = 10
 KOW_STATUS_SCRATCH_TOO_SMALL        = 11
 KOW_STATUS_NOT_FOUND                = 12
+KOW_STATUS_INVALID_SEQUENCE         = 13
 
 #uint32_t kowhai_version(void);
 def version():
@@ -80,7 +81,7 @@ def version():
 def get_node_type_size(type_):
     return kowhai_lib.kowhai_get_node_type_size(uint16_t(type_))
 
-#int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node);
+#int kowhai_get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node);
 def get_node(node, num_symbols, symbols, offset, target_node):
     return kowhai_lib.kowhai_get_node(ctypes.byref(node), ctypes.c_int(num_symbols), ctypes.byref(symbols),
             ctypes.byref(offset), ctypes.byref(target_node))
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     print "test kowhai wrapper"
     print "  kowhai_version() =", version()
     print "  KOW_INT32 size is", get_node_type_size(KOW_INT32)
-    offset = uint16_t()
+    offset = ctypes.c_int()
     target_node = ctypes.pointer(kowhai_node_t())
     res = get_node(descriptor, num_symbols, symbols_u8, offset, target_node)
     print "  kowhai_get_node() - res: %d, offset: %s, target_node: %s" % (res, offset, target_node.contents)

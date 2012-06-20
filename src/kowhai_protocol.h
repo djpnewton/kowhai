@@ -20,6 +20,8 @@
 
 // Write tree data
 #define KOW_CMD_WRITE_DATA                   0x20
+// Write tree data (this is the final write packet)
+#define KOW_CMD_WRITE_DATA_END               0x21
 // Acknowledge write tree data command
 #define KOW_CMD_WRITE_DATA_ACK               0x2F
 
@@ -75,6 +77,7 @@
 #define KOW_CMD_ERROR_INVALID_SYMBOL_PATH    0xF3
 #define KOW_CMD_ERROR_INVALID_PAYLOAD_OFFSET 0xF4
 #define KOW_CMD_ERROR_INVALID_PAYLOAD_SIZE   0xF5
+#define KOW_CMD_ERROR_INVALID_SEQUENCE       0xF6
 #define KOW_CMD_ERROR_UNKNOWN                0xFF
 
 //

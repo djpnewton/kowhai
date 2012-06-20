@@ -323,6 +323,7 @@ namespace kowhai_test
                 comms.Send(buffer, bytesRequired);
                 offset += maxPayloadSize;
             }
+            prot.header.command = KowhaiProtocol.CMD_WRITE_DATA_END;
             KowhaiProtocol.CreateWriteDataPacket(buffer, PACKET_SIZE, ref prot, symbols, CopyArray(e.Buffer, offset, e.Buffer.Length - offset), (ushort)offset, out bytesRequired);
             comms.Send(buffer, bytesRequired);
         }

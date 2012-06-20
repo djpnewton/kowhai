@@ -17,6 +17,7 @@ namespace kowhai_sharp
         public const int CMD_GET_TREE_LIST_ACK = 0x1F;
         public const int CMD_GET_TREE_LIST_ACK_END = 0x1E;
         public const int CMD_WRITE_DATA = 0x20;
+        public const int CMD_WRITE_DATA_END = 0x21;
         public const int CMD_WRITE_DATA_ACK = 0x2F;
         public const int CMD_READ_DATA = 0x30;
         public const int CMD_READ_DATA_ACK = 0x3F;
@@ -44,6 +45,7 @@ namespace kowhai_sharp
         public const int CMD_ERROR_INVALID_SYMBOL_PATH = 0xF3;
         public const int CMD_ERROR_INVALID_PAYLOAD_OFFSET = 0xF4;
         public const int CMD_ERROR_INVALID_PAYLOAD_SIZE = 0xF5;
+        public const int CMD_ERROR_INVALID_SEQUENCE = 0xF6;
         public const int CMD_ERROR_UNKNOWN = 0xFF;
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

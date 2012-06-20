@@ -10,8 +10,8 @@
 #endif
 
 // forward decalre this to bring it in from kowhai.c as we need it
-///@todo there should be a way to either use the public api or get at internal kowhia stuff more easily
-int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, uint16_t *offset, struct kowhai_node_t **target_node, int initial_branch);
+///@todo there should be a way to either use the public api or get at internal kowhai stuff more easily
+int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node, int initial_branch);
 
 /**
  * @brief diff_l2r diff left tree against right tree
@@ -31,7 +31,7 @@ int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowh
 static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
 {
     int ret;
-    uint16_t offset;
+    int offset;
     struct kowhai_node_t *right_node;
     union kowhai_symbol_t symbol[1];
     int size;
@@ -99,7 +99,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
                     // diff all the common elements in the array and call on_diff if the values do not match
                     for (i = 0; i < left->desc->count && i < right_node->count; i++)
                     {
-                        uint16_t left_offset, right_offset;
+                        int left_offset, right_offset;
                         uint8_t *left_data, *right_data;
                         int run_on_diff = 0;
 

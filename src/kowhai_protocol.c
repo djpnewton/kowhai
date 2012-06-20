@@ -180,6 +180,7 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
         case KOW_CMD_READ_DATA:
             return parse_symbols((void*)((uint8_t*)proto_packet + required_size), packet_size - required_size, &protocol->payload, &required_size);
         case KOW_CMD_WRITE_DATA:
+        case KOW_CMD_WRITE_DATA_END:
         case KOW_CMD_WRITE_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK_END:
@@ -257,6 +258,7 @@ int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_pr
             pkt += protocol->payload.spec.id_list.size;
             break;
         case KOW_CMD_WRITE_DATA:
+        case KOW_CMD_WRITE_DATA_END:
         case KOW_CMD_WRITE_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK:
         case KOW_CMD_READ_DATA:
@@ -377,6 +379,7 @@ int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhe
             *overhead = sizeof(struct kowhai_protocol_header_t) + sizeof(struct kowhai_protocol_descriptor_payload_spec_t);
             return KOW_STATUS_OK;
         case KOW_CMD_WRITE_DATA:
+        case KOW_CMD_WRITE_DATA_END:
         case KOW_CMD_WRITE_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK:
         case KOW_CMD_READ_DATA_ACK_END:
