@@ -448,7 +448,8 @@ namespace kowhai_test
         private void btnSave_Click(object sender, EventArgs e)
         {
             string text;
-            if (KowhaiSerialize.Serialize(kowhaiTreeMain.GetDescriptor(), kowhaiTreeMain.GetData(), out text, 0x1000, null, getSymbolName) == Kowhai.STATUS_OK)
+            int res = KowhaiSerialize.Serialize(kowhaiTreeMain.GetDescriptor(), kowhaiTreeMain.GetData(), out text, null, getSymbolName);
+            if (res == Kowhai.STATUS_OK)
             {
                 SaveFileDialog d = new SaveFileDialog();
                 d.Filter = "Kowhai Files | *.kowhai";
@@ -460,6 +461,8 @@ namespace kowhai_test
                     sw.Close();
                 }
             }
+            else
+                ShowToast(string.Format("Error: Serialize failed ({0})", res));
         }
 
         private void btnLoad_Click(object sender, EventArgs e)

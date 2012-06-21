@@ -19,20 +19,28 @@ namespace kowhai_sharp
 
         public delegate string GetSymbolName(Object param, UInt16 value);
 
-        public static int Serialize(Kowhai.kowhai_node_t[] descriptor, byte[] data, out string target, int targetBufferSize, Object getNameParam, GetSymbolName getName)
+        public static int Serialize(Kowhai.kowhai_node_t[] descriptor, byte[] data, out string target, Object getNameParam, GetSymbolName getName)
         {
             kowhai_get_symbol_name_t _getName = delegate(IntPtr param, UInt16 value)
             {
                 return getName(getNameParam, value);
             };
 
-            byte[] targetBuf = new byte[targetBufferSize];
+            byte[] targetBuf;
+            int targetBufferSize = 0x1000;
+            int result;
             Kowhai.kowhai_tree_t tree;
             GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
             tree.desc = h.AddrOfPinnedObject();
             GCHandle h2 = GCHandle.Alloc(data, GCHandleType.Pinned);
             tree.data = h2.AddrOfPinnedObject();
-            int result = kowhai_serialize(tree, targetBuf, ref targetBufferSize, IntPtr.Zero, _getName);
+            do
+            {
+                targetBufferSize *= 2;
+                targetBuf = new byte[targetBufferSize];
+                result = kowhai_serialize(tree, targetBuf, ref targetBufferSize, IntPtr.Zero, _getName);
+            }
+            while (result == Kowhai.STATUS_TARGET_BUFFER_TOO_SMALL);
             h2.Free();
             h.Free();
             ASCIIEncoding enc = new ASCIIEncoding();
