@@ -299,15 +299,6 @@ struct kowhai_protocol_t
 //
 
 /**
- * @brief Parse a protocol packet and return the id of the tree that this protocol is trying to access
- * @param proto_packet packet to parse for the tree id
- * @param packet_size bytes in the packet
- * @param tree_id if KOW_STATUS_OK is returned this contains the id of the tree the packet is accessing
- * @return KOW_STATUS_OK on success otherwise an error occurred
- */
-int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tree_id);
-
-/**
  * @brief Parse a packet read over the kowhai protocol in to a kowhai_protocol_t struct
  * @param proto_packet a packet read over the protocol that needs parsing
  * @param packet_size number of bytes in the proto_packet
@@ -327,7 +318,7 @@ int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_pro
 int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol, int* bytes_required);
 
 /**
- * @brief Return the protocol overhead (header, payload specification etc, ie the meta part of the protocol that describes the payload)
+ * @brief Returkn the protocol overhead (header, payload specification etc, ie the meta part of the protocol that describes the payload)
  * @param protocol parse this for the overhead
  * @param overhead number of bytes taken up by the header, payload etc)
  */

@@ -2,19 +2,7 @@
 
 #include <string.h>
 
-#define TREE_ID_SIZE 1
 #define SYM_COUNT_SIZE 1
-
-int kowhai_protocol_get_tree_id(void* proto_packet, int packet_size, uint8_t* tree_id)
-{
-    if (packet_size < TREE_ID_SIZE)
-        return KOW_STATUS_PACKET_BUFFER_TOO_SMALL;
-
-    // establish tree id
-    *tree_id = *((uint8_t*)proto_packet);
-
-    return KOW_STATUS_OK;
-}
 
 static int parse_version(void* payload_packet, int packet_size, struct kowhai_protocol_payload_t* payload)
 {

@@ -150,9 +150,6 @@ namespace kowhai_sharp
         }
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_protocol_get_tree_id(IntPtr proto_packet, int packet_size, out uint8_t tree_id);
-
-        [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl)]
         public static extern int kowhai_protocol_parse(IntPtr proto_packet, int packet_size, out kowhai_protocol_t protocol);
 
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl)]
