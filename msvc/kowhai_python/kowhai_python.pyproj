@@ -24,6 +24,7 @@
   <ItemGroup>
     <Compile Include="../../python/kowhai.py" />
     <Compile Include="../../python/kowhai_protocol.py" />
+    <Compile Include="hidapi.py" />
     <Compile Include="Program.py" />
   </ItemGroup>
 </Project>
