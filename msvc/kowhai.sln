@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kowhai", "kowhai.vcxproj", "{FBF87C77-B9AA-4151-99D2-2BDCAEF1D5C0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kowhai_core", "kowhai.vcxproj", "{FBF87C77-B9AA-4151-99D2-2BDCAEF1D5C0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcxproj", "{D78EC7AF-466B-4E91-8AD6-C931790D29B3}"
 EndProject
@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kowhai_test", "kowhai_test\
 	ProjectSection(ProjectDependencies) = postProject
 		{8F83DB64-759C-450F-90C6-A22AB8E55AF4} = {8F83DB64-759C-450F-90C6-A22AB8E55AF4}
 	EndProjectSection
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "kowhai_python", "kowhai_python\kowhai_python.pyproj", "{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -127,6 +129,18 @@ Global
 		{88353AD7-70F9-4F95-A47F-8F1D823A7B69}.Release|Win32.Build.0 = Release|x86
 		{88353AD7-70F9-4F95-A47F-8F1D823A7B69}.Release|x86.ActiveCfg = Release|x86
 		{88353AD7-70F9-4F95-A47F-8F1D823A7B69}.Release|x86.Build.0 = Release|x86
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.LinuxDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.LinuxDebug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.LinuxDebug|Win32.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.LinuxDebug|x86.ActiveCfg = Debug|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Release|Win32.ActiveCfg = Release|Any CPU
+		{D41CBCAB-4F2C-4BBD-B72E-FD0CA1C8FD89}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
