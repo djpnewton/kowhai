@@ -1,6 +1,5 @@
 #include "kowhai_protocol.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #define TREE_ID_SIZE 1

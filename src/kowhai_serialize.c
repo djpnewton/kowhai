@@ -9,16 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include <stdarg.h>
-//#define snprintf debug_printf
-int debug_printf(char* buf, size_t buf_size, char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    return vprintf(format, args);
-    va_end(args);
-}
 
 #define NAME "name"
 #define TYPE "type"

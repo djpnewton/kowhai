@@ -2,12 +2,9 @@
 
 #include <string.h>
 
-#ifdef KOWHAI_DBG
-#include <stdio.h>
 #define KOWHAI_UTILS_ERR "KOWHAI_UTILS ERROR:"
 #define KOWHAI_UTILS_INFO "KOWHAI_UTILS INFO: "
 #define KOWHAI_TABS "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
-#endif
 
 // forward decalre this to bring it in from kowhai.c as we need it
 ///@todo there should be a way to either use the public api or get at internal kowhai stuff more easily
@@ -44,9 +41,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
         // are we at the end of this branch
         if (left->desc->type == KOW_BRANCH_END)
         {
-            #ifdef KOWHAI_DBG
-            printf(KOWHAI_UTILS_INFO "(%d)%.*s pop\n", depth, depth, KOWHAI_TABS);
-            #endif
+            KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s pop\n", depth, depth, KOWHAI_TABS);
             return KOW_STATUS_OK;
         }
 
@@ -77,9 +72,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
                         __left.desc = left->desc + 1;
 
                         // diff this branch array item (drill). NB recursive call to diff_l2r increments __left.data for each array item
-                        #ifdef KOWHAI_DBG
-                        printf(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
-                        #endif
+                        KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
                         ret = diff_l2r(&__left, &__right, on_diff_param, on_unique, on_diff, swap_cb_param, depth + 1);
                         if (ret != KOW_STATUS_OK)
                             return ret;
@@ -201,9 +194,7 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* o
     int ret;
 
     // we use diff_l2r to find nodes that are unique in the left tree, or nodes that differ in value between left and right first
-    #ifdef KOWHAI_DBG
-    printf(KOWHAI_UTILS_INFO "diff left against right\n");
-    #endif
+    KOW_LOG(KOWHAI_UTILS_INFO "diff left against right\n");
     _left = *left;
     _right = *right;
     ret = diff_l2r(&_left, &_right, on_diff_param, on_diff, on_diff, 0, 0);
@@ -212,9 +203,7 @@ int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* o
 
     // we just have to find nodes that are unique in the right tree. to do this we reuse diff_l2r with left and right swapped
     // and ask diff_l2r to reverse the params to the callbacks
-    #ifdef KOWHAI_DBG
-    printf(KOWHAI_UTILS_INFO "diff right against left\n");
-    #endif
+    KOW_LOG(KOWHAI_UTILS_INFO "diff right against left\n");
     _left = *left;
     _right = *right;
     ret = diff_l2r(&_right, &_left, on_diff_param, on_diff, NULL, 1, 0);
@@ -239,17 +228,13 @@ static int on_diff_merge(void* param, const struct kowhai_node_t *dst_node, void
 
     if (dst_node == NULL)
     {
-        #ifdef KOWHAI_DBG
-        printf(KOWHAI_UTILS_INFO "(%d)%.*s unique node %d in src[%d]\n", depth, depth, KOWHAI_TABS, src_node->symbol, index);
-        #endif
+        KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s unique node %d in src[%d]\n", depth, depth, KOWHAI_TABS, src_node->symbol, index);
         return KOW_STATUS_OK;
     }
 
     if (src_node == NULL)
     {
-        #ifdef KOWHAI_DBG
-        printf(KOWHAI_UTILS_INFO "(%d)%.*s unique node %d in dst[%d]\n", depth, depth, KOWHAI_TABS, dst_node->symbol, index);
-        #endif
+        KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s unique node %d in dst[%d]\n", depth, depth, KOWHAI_TABS, dst_node->symbol, index);
         return KOW_STATUS_OK;
     }
 
@@ -257,9 +242,7 @@ static int on_diff_merge(void* param, const struct kowhai_node_t *dst_node, void
     ///@todo maybe we should allow upcasting ?
     if (dst_node->type != src_node->type)
     {
-        #ifdef KOWHAI_DBG
-        printf(KOWHAI_UTILS_INFO "(%d)%.*s cannot merge dst type %d in to src type %d\n", depth, depth, KOWHAI_TABS, dst_node->type, src_node->type);
-        #endif
+        KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s cannot merge dst type %d in to src type %d\n", depth, depth, KOWHAI_TABS, dst_node->type, src_node->type);
         return KOW_STATUS_OK;
     }
 
@@ -267,9 +250,7 @@ static int on_diff_merge(void* param, const struct kowhai_node_t *dst_node, void
     ///@todo maybe we should merge as much as possible
     if (dst_node->count != src_node->count)
     {
-        #ifdef KOWHAI_DBG
-        printf(KOWHAI_UTILS_INFO "(%d)%.*s cannot merge arrays off different sizes [dst.count = %d, src.count = %d]\n", depth, depth, KOWHAI_TABS, dst_node->count, src_node->count);
-        #endif
+        KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s cannot merge arrays off different sizes [dst.count = %d, src.count = %d]\n", depth, depth, KOWHAI_TABS, dst_node->count, src_node->count);
         return KOW_STATUS_OK;
     }
 
@@ -282,9 +263,7 @@ static int on_diff_merge(void* param, const struct kowhai_node_t *dst_node, void
         ///@todo need a better error code here !!
         return KOW_STATUS_OK;
 
-    #ifdef KOWHAI_DBG
-    printf(KOWHAI_UTILS_INFO "(%d)%.*s merging %d bytes of %d[%d] from src into dst\n", depth, depth, KOWHAI_TABS, size, dst_node->symbol, index);
-    #endif
+    KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s merging %d bytes of %d[%d] from src into dst\n", depth, depth, KOWHAI_TABS, size, dst_node->symbol, index);
     memcpy(dst_data, src_data, size);
     
     return KOW_STATUS_OK;
@@ -295,9 +274,7 @@ int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 {
     struct kowhai_tree_t *_dst = dst;
 
-    #ifdef KOWHAI_DBG
-    printf("\n");
-    #endif
+    KOW_LOG("\n");
     // we only support merging of well formed tree's (both src and dst)
     if (dst->desc->type != KOW_BRANCH_START ||
         src->desc->type != KOW_BRANCH_START)

@@ -1237,9 +1237,7 @@ int main(int argc, char* argv[])
 {
     int test_command = TEST_BASIC;
 
-#ifdef KOWHAI_DBG
-    printf("kowhai debugging enabled!\n");
-#endif
+    KOW_LOG("kowhai logging enabled!\n");
 
     // determine test command
     if (argc > 1)

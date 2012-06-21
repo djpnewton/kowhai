@@ -17,6 +17,7 @@
   <ItemGroup>
     <ClCompile Include="..\3rdparty\jsmn\jsmn.c" />
     <ClCompile Include="..\src\kowhai.c" />
+    <ClCompile Include="..\src\kowhai_log.c" />
     <ClCompile Include="..\src\kowhai_protocol.c" />
     <ClCompile Include="..\src\kowhai_protocol_server.c" />
     <ClCompile Include="..\src\kowhai_serialize.c" />
@@ -25,6 +26,7 @@
   <ItemGroup>
     <ClInclude Include="..\3rdparty\jsmn\jsmn.h" />
     <ClInclude Include="..\src\kowhai.h" />
+    <ClInclude Include="..\src\kowhai_log.h" />
     <ClInclude Include="..\src\kowhai_protocol.h" />
     <ClInclude Include="..\src\kowhai_protocol_server.h" />
     <ClInclude Include="..\src\kowhai_serialize.h" />
@@ -81,7 +83,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;KOWHAI_DBG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

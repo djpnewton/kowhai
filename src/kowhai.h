@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "kowhai_log.h"
+
 #pragma pack(1)
 
 #define KOW_UNDEFINED_SYMBOL 65535

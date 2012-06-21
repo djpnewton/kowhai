@@ -2,12 +2,6 @@
 
 #include <string.h>
 
-#ifdef KOWHAI_DBG
-#include <stdio.h>
-#define KOWHAI_ERR "KOWHAI ERROR:"
-#define KOWHAI_INFO "KOWHAI INFO: "
-#endif
-
 #define VERSION 3
 
 uint32_t kowhai_version(void)
@@ -37,9 +31,7 @@ int kowhai_get_node_type_size(uint16_t type)
         case KOW_FLOAT:
             return 4;
         default:
-#ifdef KOWHAI_DBG
-            printf(KOWHAI_ERR" unknown item type: %d\n", type);
-#endif
+            KOW_LOG(KOW_ERR" unknown item type: %d\n", type);
             return -1;
     }
 }
