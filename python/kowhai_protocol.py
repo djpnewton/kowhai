@@ -46,7 +46,7 @@ KOW_CMD_ERROR_UNKNOWN = 0xFF
 class kowhai_protocol_header_t(ctypes.Structure):
     _pack_ = 1
     _fields_ = [('command', uint8_t),
-                ('id', uint16_t)]
+                ('id_', uint16_t)]
 
 class kowhai_protocol_symbol_spec_t(ctypes.Structure):
     _pack_ = 1
@@ -113,6 +113,29 @@ class kowhai_protocol_t(ctypes.Structure):
     _fields_ = [('header', kowhai_protocol_header_t),
                 ('payload', kowhai_protocol_payload_t)]
 
+#int kowhai_protocol_parse(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol);
+def parse(proto_packet, packet_size, protocol):
+    return kowhai_lib.kowhai_protocol_parse(ctypes.byref(proto_packet), ctypes.c_int(packet_size), ctypes.byref(protocol))
+
+#int kowhai_protocol_create(void* proto_packet, int packet_size, struct kowhai_protocol_t* protocol, int* bytes_required);
+def create(proto_packet, packet_size, protocol, bytes_required):
+    return kowhai_lib.kowhai_protocol_create(ctypes.byref(proto_packet), ctypes.c_int(packet_size), ctypes.byref(protocol), ctypes.byref(bytes_required))
+
+#int kowhai_protocol_get_overhead(struct kowhai_protocol_t* protocol, int* overhead);
+def get_overhead(protocol, overhead):
+    return kowhai_lib.kowhai_protocol_get_overhead(ctypes.byref(protocol), ctypes.byref(overhead))
+
 if __name__ == "__main__":
-    print 'yoyo'
-    print kowhai_lib
+    print "test kowhai protocol wrapper"
+    buf = ctypes.create_string_buffer("\x10\x01\x00")
+    prot = kowhai_protocol_t()
+    res = parse(buf, 3, prot) 
+    print "kowhai_protocol_parse() - res %d, prot.command: %d, prot.id: %d" % (res, prot.header.command, prot.header.id_)
+    prot.header.command = KOW_CMD_READ_DESCRIPTOR
+    prot.header.id_ = 65535
+    bytes_required = ctypes.c_int()
+    res = create(buf, 3, prot, bytes_required)
+    print "kowhai_protocol_create() - res %d, bytes_required: %d, buf: %s" % (res, bytes_required.value, repr(buf.raw))
+    overhead = ctypes.c_int()
+    res = get_overhead(prot, overhead)
+    print "kowhai_protocol_get_overhead() - res: %d, overhead: %d" % (res, overhead.value)
