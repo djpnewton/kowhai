@@ -43,7 +43,7 @@ class kowhai_tree_t(ctypes.Structure):
     _fields_ = [('desc', ctypes.POINTER(kowhai_node_t)),
                 ('data', ctypes.c_void_p)]
 
-class _kowhai_symbol_parts_t(ctypes.Structure):
+class kowhai_symbol_parts_t(ctypes.Structure):
     _pack_ = 1
     _fields_ = [('name', uint16_t),
                 ('array_index', uint16_t)]
@@ -52,7 +52,7 @@ class _kowhai_symbol_parts_t(ctypes.Structure):
 class kowhai_symbol_t(ctypes.Union):
     _pack_ = 1
     _fields_ = [('symbol', uint32_t),
-                ('parts', _kowhai_symbol_parts_t)]
+                ('parts', kowhai_symbol_parts_t)]
 
 def KOWHAI_SYMBOL(name, array_index):
     return (array_index << 16) + name
