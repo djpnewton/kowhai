@@ -111,8 +111,11 @@ namespace kowhai_test
                     Array.Copy(report, 1, reportPrefixCheck, 0, Math.Min(reportPrefix.Length, reportSize - 1));
                     if (!reportPrefix.SequenceEqual(reportPrefixCheck))
                         continue;
-                    Array.Copy(report, reportPrefix.Length + 1, readBuffer, 0, Math.Min(readBufferSize, reportSize - reportPrefix.Length - 1));
-                    CommsReceived(this, new CommsReceiveEventArgs(readBuffer, Math.Min(readBufferSize, reportSize - reportPrefix.Length - 1)));
+                    int reportIdSize = 0;
+                    if (reportId != 0)
+                        reportIdSize = 1;
+                    Array.Copy(report, reportPrefix.Length + reportIdSize, readBuffer, 0, Math.Min(readBufferSize, reportSize - reportPrefix.Length - reportIdSize));
+                    CommsReceived(this, new CommsReceiveEventArgs(readBuffer, Math.Min(readBufferSize, reportSize - reportPrefix.Length - reportIdSize)));
                 }
                 else if (res == -1)
                     DoDisconnected();
