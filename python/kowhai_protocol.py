@@ -55,7 +55,7 @@ class kowhai_protocol_symbol_spec_t(ctypes.Structure):
 
 class kowhai_protocol_data_payload_memory_spec_t(ctypes.Structure):
     _pack_ = 1
-    _fields_ = [('type', uint16_t),
+    _fields_ = [('type_', uint16_t),
                 ('offset', uint16_t),
                 ('size', uint16_t)]
 
@@ -106,7 +106,7 @@ class kowhai_protocol_payload_spec_t(ctypes.Union):
 class kowhai_protocol_payload_t(ctypes.Structure):
     _pack_ = 1
     _fields_ = [('spec', kowhai_protocol_payload_spec_t),
-                ('buffer', ctypes.c_void_p)]
+                ('buffer_', ctypes.c_void_p)]
 
 class kowhai_protocol_t(ctypes.Structure):
     _pack_ = 1
