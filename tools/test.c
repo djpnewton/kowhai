@@ -406,9 +406,7 @@ void serialization_tests()
     assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
     buf_size = 0x1000;
     assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_OK);
-    printf("---\n");
-    printf(js);
-    printf("\n***\n");
+    printf("---\n%s\n***\n", js);
     printf("js length: %d\n", strlen(js));
     printf("---\n");
     // kowhai_deserialize
@@ -646,12 +644,12 @@ int function_called(pkowhai_protocol_server_t server, void* param, uint16_t func
             shadow.status = 0;
             break;
         case SYM_STATUS:
-            printf("Function: Status (time: %d)\n", time(NULL));
+            printf("Function: Status (time: %d)\n", (int)time(NULL));
             status.status = STATUS_RESULT;
             status.time = (uint32_t)time(NULL);
             break;
         case SYM_BIG:
-            printf("Function: Big (time: %d)\n", time(NULL));
+            printf("Function: Big (time: %d)\n", (int)time(NULL));
             big.status = STATUS_RESULT;
             big.time = (uint32_t)time(NULL);
         case SYM_BEEP:
@@ -1091,6 +1089,7 @@ void test_client_protocol()
             struct big_data_t b;
             void* data = &big;
             int bytes_written = 0;
+            int bytes_to_write;
             big.coeff[BIG_COEFF_COUNT-1] = BIG_COEFF_RESULT;
             prot.header.command = KOW_CMD_CALL_FUNCTION;
             assert(kowhai_protocol_get_overhead(&prot, &overhead) == KOW_STATUS_OK);
@@ -1144,7 +1143,10 @@ void test_client_protocol()
                     assert(bytes_read == sizeof(big));
                     assert(b.coeff[BIG_COEFF_COUNT-1] == BIG_COEFF_RESULT);
                 }
-                POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BIG, bytes_written, min(MAX_PACKET_SIZE - overhead, (int)sizeof(big) - bytes_written), (char*)data + bytes_written);
+                bytes_to_write = MAX_PACKET_SIZE - overhead;
+                if (bytes_to_write > sizeof(big) - bytes_written)
+                    bytes_to_write = sizeof(big) - bytes_written;
+                POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_BIG, bytes_written, bytes_to_write, (char*)data + bytes_written);
             }
             assert(bytes_written == sizeof(big));
         }
