@@ -106,7 +106,7 @@
             this.btnCall.Location = new System.Drawing.Point(280, 361);
             this.btnCall.Name = "btnCall";
             this.btnCall.Size = new System.Drawing.Size(75, 25);
-            this.btnCall.TabIndex = 3;
+            this.btnCall.TabIndex = 0;
             this.btnCall.Text = "Call";
             this.btnCall.UseVisualStyleBackColor = true;
             this.btnCall.Click += new System.EventHandler(this.btnCall_Click);
@@ -117,9 +117,12 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(382, 413);
             this.Controls.Add(this.tableLayoutPanel1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
+            this.KeyPreview = true;
             this.Name = "FunctionCallForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "FunctionCallForm";
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FunctionCallForm_KeyUp);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
             this.ResumeLayout(false);

@@ -76,5 +76,11 @@ namespace kowhai_test
         {
             treeOut.UpdateData(buf, offset);
         }
+
+        private void FunctionCallForm_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape)
+                Close();
+        }
     }
 }

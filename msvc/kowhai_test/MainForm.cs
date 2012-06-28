@@ -16,6 +16,8 @@ namespace kowhai_test
         string initialFormText;
         IComms comms;
         const int PACKET_SIZE = 64;
+        ushort[] trees = null;
+        ushort[] funcs = null;
         Dictionary<int, Kowhai.kowhai_node_t[]> descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>();
         byte[] symbolListRaw = null;
         List<string> symbolStrings = null;
@@ -79,7 +81,8 @@ namespace kowhai_test
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK_END:
                     {
-                        ushort[] trees = new ushort[prot.payload.spec.id_list.list_count];
+                        if (trees == null || trees.Length != prot.payload.spec.id_list.list_count)
+                            trees = new ushort[prot.payload.spec.id_list.list_count];
                         KowhaiProtocol.CopyIdList(trees, prot.payload);
                         InitTreeList(trees);
 
@@ -189,7 +192,8 @@ namespace kowhai_test
                     }
                     case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK_END:
-                        ushort[] funcs = new ushort[prot.payload.spec.id_list.list_count];
+                        if (funcs == null || funcs.Length != prot.payload.spec.id_list.list_count)
+                            funcs = new ushort[prot.payload.spec.id_list.list_count];
                         KowhaiProtocol.CopyIdList(funcs, prot.payload);
                         InitFunctionList(funcs);
                         break;
@@ -226,13 +230,14 @@ namespace kowhai_test
                         {
                             byte[] buf = KowhaiProtocol.GetBuffer(prot);
                             functionCallForm.SetFunctionOutData(buf, prot.payload.spec.function_call.offset);
+                            if (prot.header.command == KowhaiProtocol.CMD_CALL_FUNCTION_RESULT_END)
+                                ShowToast("Function Call Succeded", 800);
                         }
                         else
                             MessageBox.Show("Why am I here?");
                         break;
                     case KowhaiProtocol.CMD_CALL_FUNCTION_FAILED:
-                        MessageBox.Show(string.Format("ProcessPacket(): Function call failed ({0})", prot.header.command),
-                            "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ShowToast(string.Format("Error - ProcessPacket(): Function call failed ({0})", prot.header.command));
                         break;
                     case KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_SYMBOL_LIST_ACK_END:
