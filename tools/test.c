@@ -636,11 +636,12 @@ void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buf
 }
 
 uint32_t unsolicited_mode_start;
-void unsolicited_event(void* param)
+void unsolicited_event(struct timer_t* tmr, void* param)
 {
     pkowhai_protocol_server_t server = (pkowhai_protocol_server_t)param;
     unsolicited_mode_start = (uint32_t)time(NULL) - unsolicited_mode_start;
     kowhai_server_process_event(server, SYM_UNSOLICITEDEVENT, &unsolicited_mode_start, sizeof(time_t));
+    timer_free(tmr);
 }
 
 #define STATUS_RESULT 0xff00ff00
@@ -676,9 +677,13 @@ int function_called(pkowhai_protocol_server_t server, void* param, uint16_t func
             printf("Function: Fail\n");
             return 0;
         case SYM_UNSOLICITEDMODE:
+        {
+            struct timer_t* tmr;
             printf("Function: Unsolicited Mode\n");
             unsolicited_mode_start = (uint32_t)time(NULL);
-            timer_one_shot(2000, unsolicited_event, server);
+            tmr = timer_create(2000, unsolicited_event, server);
+            timer_one_shot(tmr);
+        }
     }
     return 1;
 }
@@ -1188,6 +1193,7 @@ void test_client_protocol()
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(prot.header.command == KOW_CMD_CALL_FUNCTION_FAILED);
 
+        // test events
         {
             uint32_t seconds;
             POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_UNSOLICITEDMODE, 0, 0, NULL);

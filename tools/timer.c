@@ -6,43 +6,67 @@
 #include <pthread.h>
 #endif
 
+#include <stdlib.h>
+
 #include "timer.h"
 
-void* _event_param; // ugly! (unthread-safe) *shrug*
+struct timer_t
+{
+    int duration;
+    timer_callback_t callback;
+    void* callback_param;
+#ifdef WIN32
+#else
+    pthread_t thread;
+#endif
+};
+
 #ifdef WIN32
 void CALLBACK timer_proc(UINT uID, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2)
 {
-    timer_callback_t tc = (timer_callback_t)dwUser;
-    tc(_event_param);
+    struct timer_t* tmr = (struct timer_t*)dwUser;
+    tmr->callback(tmr, tmr->callback_param);
 }
 #else
-pthread_t _thread;
-int _duration;
 void* timer_proc(void* param)
 {
+    struct timer_t* tmr = param;
     struct timespec time;
     struct timespec timeRemaining;
     
     time.tv_sec = 0;
-    time.tv_nsec = _duration * 1000000;
+    time.tv_nsec = tmr->duration * 1000000;
 
     if (nanosleep(&time, &timeRemaining) == 0)
     {
-        timer_callback_t tc = (timer_callback_t)param;
-        tc(_event_param);
+        tmr->callback(tmr, tmr->callback_param);
     }
     return NULL;
 }
 #endif
 
-int timer_one_shot(int duration, timer_callback_t callback, void* param)
+struct timer_t* timer_create(int duration, timer_callback_t callback, void* callback_param)
 {
-    _event_param = param;
+    struct timer_t* tmr = (struct timer_t*)malloc(sizeof(struct timer_t));
+    if (tmr == NULL)
+        return NULL;
+    tmr->duration = duration;
+    tmr->callback = callback;
+    tmr->callback_param = callback_param;
+    return tmr;
+}
+
+void timer_free(struct timer_t* tmr)
+{
+    free(tmr);
+}
+
+int timer_one_shot(struct timer_t* tmr)
+{
 #ifdef WIN32
-    return timeSetEvent(duration, 0, timer_proc, (ULONG)callback, TIME_ONESHOT | TIME_CALLBACK_FUNCTION) != 0;
+    return timeSetEvent(tmr->duration, 0, timer_proc, (ULONG)tmr, TIME_ONESHOT | TIME_CALLBACK_FUNCTION) != 0;
 #else
-    _duration = duration;
-    return pthread_create(&_thread, NULL, timer_proc, callback) != 0;
+    return pthread_create(&_thread, NULL, timer_proc, tmr) != 0;
 #endif
 }
 
