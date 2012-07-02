@@ -27,6 +27,8 @@ namespace KowhaiSymbols
             "Time",
             "Big",
             "Fail",
+            "UnsolicitedMode",
+            "UnsolicitedEvent",
         };
         public enum Constants
         {
@@ -53,6 +55,8 @@ namespace KowhaiSymbols
             Time,
             Big,
             Fail,
+            UnsolicitedMode,
+            UnsolicitedEvent,
         };
     }
 }

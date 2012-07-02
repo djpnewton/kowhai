@@ -2,19 +2,21 @@ CC 	   = gcc
 CFLAGS = -g -DKOWHAI_DBG -fPIC
 KOWHAI_VER = 0.0.1
 
-SOCKET_LIB = 
+LIBS = 
 TEST_EXECUTABLE = test
 ifeq ($(OS),Windows_NT)
 	# on windows we need the winsock library
-	SOCKET_LIB = -lws2_32
+	LIBS += -lws2_32
+	# on windows we need the multimedia library
+	LIBS += -lwinmm
 	# on windows we need the file extension
 	TEST_EXECUTABLE = test.exe
 endif
 
 all: jsmn kowhai test
 
-test: tools/test.o tools/xpsocket.o tools/beep.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(SOCKET_LIB) -L. -Wl,-Bstatic -lkowhai -Wl,-Bdynamic
+test: tools/test.o tools/xpsocket.o tools/beep.o tools/timer.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) -L. -Wl,-Bstatic -lkowhai -Wl,-Bdynamic
 
 kowhai: src/kowhai.o src/kowhai_log.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o src/kowhai_utils.o 3rdparty/jsmn/jsmn.o
 	ar rs lib$@.a $?
@@ -52,6 +54,9 @@ src/xpsocket.o: tools/xpsocket.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 src/beep.o: tools/beep.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+src/timer.o: tools/timer.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean: 

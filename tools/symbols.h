@@ -25,6 +25,8 @@ char* symbols[] = {
 	"Time",
 	"Big",
 	"Fail",
+	"UnsolicitedMode",
+	"UnsolicitedEvent",
 };
 
 #define SYM_SETTINGS		0
@@ -50,5 +52,7 @@ char* symbols[] = {
 #define SYM_TIME		20
 #define SYM_BIG		21
 #define SYM_FAIL		22
+#define SYM_UNSOLICITEDMODE		23
+#define SYM_UNSOLICITEDEVENT		24
 
 #endif

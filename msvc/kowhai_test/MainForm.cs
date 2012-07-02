@@ -267,6 +267,13 @@ namespace kowhai_test
                         }
                         break;
                     }
+                    case KowhaiProtocol.CMD_EVENT:
+                    case KowhaiProtocol.CMD_EVENT_END:
+                        ShowToast(string.Format("Event: {0}", getSymbolName(null, prot.header.id)));
+                        break;
+                    case KowhaiProtocol.CMD_ERROR_NO_DATA:
+                        ShowToast("No tree data");
+                        break;
                     default:
                         MessageBox.Show(string.Format("ProcessPacket(): Unknown command ({0})", prot.header.command),
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);

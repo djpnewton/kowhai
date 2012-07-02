@@ -9,6 +9,7 @@
 #include "../src/kowhai_serialize.h"
 #include "xpsocket.h"
 #include "beep.h"
+#include "timer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -93,13 +94,19 @@ struct kowhai_node_t big_descriptor[] =
     { KOW_BRANCH_END,       SYM_BIG,            0,                 0 },
 };
 
-
 struct kowhai_node_t beep_descriptor[] =
 {
     { KOW_BRANCH_START,     SYM_BEEP,           1,                 0},
     { KOW_INT32,            SYM_FREQUENCY,      1,                 0 },
     { KOW_INT32,            SYM_DURATION,       1,                 0 },
     { KOW_BRANCH_END,       SYM_BEEP,           0,                 0 },
+};
+
+struct kowhai_node_t unsolicited_event_descriptor[] =
+{
+    { KOW_BRANCH_START,     SYM_UNSOLICITEDEVENT,1,                 0},
+    { KOW_INT32,            SYM_TIME,           1,                 0 },
+    { KOW_BRANCH_END,       SYM_UNSOLICITEDEVENT,0,                 0 },
 };
 
 //
@@ -221,17 +228,18 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 // test server structures
 //
 
-uint16_t tree_list[] = {SYM_SETTINGS, SYM_SHADOW, SYM_SCOPE, SYM_START, SYM_STATUS, SYM_BEEP, SYM_BIG};
-struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor, big_descriptor};
-void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd, &big};
-uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP, SYM_BIG, SYM_FAIL};
+uint16_t tree_list[] = {SYM_SETTINGS, SYM_SHADOW, SYM_SCOPE, SYM_START, SYM_STATUS, SYM_BEEP, SYM_BIG, SYM_UNSOLICITEDEVENT};
+struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor, big_descriptor, unsolicited_event_descriptor};
+void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd, &big, NULL};
+uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP, SYM_BIG, SYM_FAIL, SYM_UNSOLICITEDMODE};
 struct kowhai_protocol_function_details_t function_list_details[] = {
     {SYM_START, KOW_UNDEFINED_SYMBOL},
     {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
     {KOW_UNDEFINED_SYMBOL, SYM_STATUS},
     {SYM_BEEP, KOW_UNDEFINED_SYMBOL},
     {SYM_BIG, SYM_BIG},
-    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL}
+    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
+    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
 };
 
 //
@@ -274,7 +282,7 @@ void core_tests()
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
     // test version
-    assert(kowhai_version() == 3);
+    assert(kowhai_version() == 4);
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
@@ -627,6 +635,14 @@ void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buf
     xpsocket_send(conn, buffer, buffer_size);
 }
 
+uint32_t unsolicited_mode_start;
+void unsolicited_event(void* param)
+{
+    pkowhai_protocol_server_t server = (pkowhai_protocol_server_t)param;
+    unsolicited_mode_start = (uint32_t)time(NULL) - unsolicited_mode_start;
+    kowhai_server_process_event(server, SYM_UNSOLICITEDEVENT, &unsolicited_mode_start, sizeof(time_t));
+}
+
 #define STATUS_RESULT 0xff00ff00
 #define BIG_COEFF_RESULT 0xff00ff00
 int function_called(pkowhai_protocol_server_t server, void* param, uint16_t function_id)
@@ -659,6 +675,10 @@ int function_called(pkowhai_protocol_server_t server, void* param, uint16_t func
         case SYM_FAIL:
             printf("Function: Fail\n");
             return 0;
+        case SYM_UNSOLICITEDMODE:
+            printf("Function: Unsolicited Mode\n");
+            unsolicited_mode_start = (uint32_t)time(NULL);
+            timer_one_shot(2000, unsolicited_event, server);
     }
     return 1;
 }
@@ -907,6 +927,15 @@ void test_client_protocol()
         assert(prot.payload.spec.data.memory.offset == MAX_PACKET_SIZE - overhead);
         assert(prot.payload.spec.data.memory.size == sizeof(struct flux_capacitor_t) * 2 - prot.payload.spec.data.memory.offset);
         assert(memcmp(prot.payload.buffer, (char*)flux_cap + prot.payload.spec.data.memory.offset, prot.payload.spec.data.memory.size) == 0);
+        // read tree with no data
+        POPULATE_PROTOCOL_READ(prot, KOW_CMD_READ_DATA, SYM_UNSOLICITEDEVENT, 2, symbols3);
+        assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+        xpsocket_send(conn, buffer, bytes_required);
+        memset(buffer, 0, MAX_PACKET_SIZE);
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        kowhai_protocol_parse(buffer, received_size, &prot);
+        assert(prot.header.command == KOW_CMD_ERROR_NO_DATA);
+        assert(prot.header.id == SYM_UNSOLICITEDEVENT);
         // read settings tree descriptor
         POPULATE_PROTOCOL_CMD(prot, KOW_CMD_READ_DESCRIPTOR, SYM_SETTINGS);
         assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
@@ -1159,6 +1188,30 @@ void test_client_protocol()
         kowhai_protocol_parse(buffer, received_size, &prot);
         assert(prot.header.command == KOW_CMD_CALL_FUNCTION_FAILED);
 
+        {
+            uint32_t seconds;
+            POPULATE_PROTOCOL_CALL_FUNCTION(prot, SYM_UNSOLICITEDMODE, 0, 0, NULL);
+            assert(kowhai_protocol_create(buffer, MAX_PACKET_SIZE, &prot, &bytes_required) == KOW_STATUS_OK);
+            xpsocket_send(conn, buffer, bytes_required);
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_CALL_FUNCTION_RESULT_END);
+            assert(prot.header.id == SYM_UNSOLICITEDMODE);
+
+            seconds = (uint32_t)time(NULL);
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            seconds = (uint32_t)time(NULL) - seconds;
+
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_EVENT_END);
+            assert(prot.header.id == SYM_UNSOLICITEDEVENT);
+            assert(prot.payload.spec.function_call.offset == 0);
+            assert(prot.payload.spec.function_call.size == sizeof(uint32_t));
+            assert(memcmp(prot.payload.buffer, &seconds, sizeof(uint32_t)) == 0);
+        }
+
         // test get symbol list
         {
             char** symbols2;
@@ -1211,7 +1264,7 @@ void test_client_protocol()
             assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
             assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
             assert(prot.payload.spec.string_list.offset == 153);
-            assert(prot.payload.spec.string_list.size == 9);
+            assert(prot.payload.spec.string_list.size == 42);
             memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
             // validate results
             sym_offset = 0;

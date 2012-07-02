@@ -24,6 +24,9 @@
     <ClCompile Include="..\tools\beep.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\tools\timer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\tools\xpsocket.h">
