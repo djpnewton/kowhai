@@ -96,6 +96,11 @@ class kowhai_protocol_function_call_t(ctypes.Structure):
     _fields_ = [('offset', uint16_t),
                 ('size', uint16_t)]
 
+class kowhai_protocol_event_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('offset', uint16_t),
+                ('size', uint16_t)]
+
 class kowhai_protocol_payload_spec_t(ctypes.Union):
     _pack_ = 1
     _fields_ = [('version', uint32_t),
@@ -104,6 +109,7 @@ class kowhai_protocol_payload_spec_t(ctypes.Union):
                 ('descriptor', kowhai_protocol_descriptor_payload_spec_t),
                 ('function_details', kowhai_protocol_function_details_t),
                 ('function_call', kowhai_protocol_function_call_t),
+                ('event', kowhai_protocol_event_t),
                 ('string_list', kowhai_protocol_string_list_t)]
 
 class kowhai_protocol_payload_t(ctypes.Structure):

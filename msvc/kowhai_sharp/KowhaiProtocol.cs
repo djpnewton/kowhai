@@ -119,6 +119,13 @@ namespace kowhai_sharp
             public uint16_t size;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_protocol_event_t
+        {
+            public uint16_t offset;
+            public uint16_t size;
+        }
+
         [StructLayout(LayoutKind.Explicit, Pack = 1)]
         public struct kowhai_protocol_payload_spec_t
         {
@@ -134,6 +141,8 @@ namespace kowhai_sharp
             public kowhai_protocol_function_details_t function_details;
             [FieldOffset(0)]
             public kowhai_protocol_function_call_t function_call;
+            [FieldOffset(0)]
+            public kowhai_protocol_function_call_t event_;
             [FieldOffset(0)]
             public kowhai_protocol_string_list_t string_list;
         }
@@ -230,6 +239,17 @@ namespace kowhai_sharp
             return false;
         }
 
+        private static bool IsEventCommand(uint8_t command)
+        {
+            switch (command)
+            {
+                case KowhaiProtocol.CMD_EVENT:
+                case KowhaiProtocol.CMD_EVENT_END:
+                    return true;
+            }
+            return false;
+        }
+
         private static bool IsStringListResultCommand(uint8_t command)
         {
             switch (command)
@@ -310,6 +330,8 @@ namespace kowhai_sharp
                 buffer = new byte[prot.payload.spec.data.memory.size];
             else if (IsFunctionResultCommand(prot.header.command))
                 buffer = new byte[prot.payload.spec.function_call.size];
+            else if (IsEventCommand(prot.header.command))
+                buffer = new byte[prot.payload.spec.event_.size];
             else if (IsStringListResultCommand(prot.header.command))
                 buffer = new byte[prot.payload.spec.string_list.size];
             else
