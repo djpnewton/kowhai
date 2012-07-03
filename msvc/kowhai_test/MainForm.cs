@@ -269,7 +269,10 @@ namespace kowhai_test
                     }
                     case KowhaiProtocol.CMD_EVENT:
                     case KowhaiProtocol.CMD_EVENT_END:
-                        ShowToast(string.Format("Event: {0}", getSymbolName(null, prot.header.id)));
+                        if (GetTreeId() == prot.header.id)
+                            kowhaiTreeMain.UpdateData(KowhaiProtocol.GetBuffer(prot), prot.payload.spec.event_.offset);
+                        else
+                            ShowToast(string.Format("Event: {0}", getSymbolName(null, prot.header.id)));
                         break;
                     case KowhaiProtocol.CMD_ERROR_NO_DATA:
                         ShowToast("No tree data");
@@ -533,6 +536,8 @@ namespace kowhai_test
 
         private ushort GetTreeId()
         {
+            if (lbTreeList.SelectedItem == null)
+                return Kowhai.KOW_UNDEFINED_SYMBOL;
             return ((SymbolName)lbTreeList.SelectedItem).Symbol;
         }
 
