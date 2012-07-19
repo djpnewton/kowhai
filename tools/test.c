@@ -681,7 +681,7 @@ int function_called(pkowhai_protocol_server_t server, void* param, uint16_t func
             struct timer_t* tmr;
             printf("Function: Unsolicited Mode\n");
             unsolicited_mode_start = (uint32_t)time(NULL);
-            tmr = timer_create(2000, unsolicited_event, server);
+            tmr = timer_create_(2000, unsolicited_event, server);
             timer_one_shot(tmr);
         }
     }

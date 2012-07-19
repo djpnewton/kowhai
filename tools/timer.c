@@ -45,7 +45,7 @@ void* timer_proc(void* param)
 }
 #endif
 
-struct timer_t* timer_create(int duration, timer_callback_t callback, void* callback_param)
+struct timer_t* timer_create_(int duration, timer_callback_t callback, void* callback_param)
 {
     struct timer_t* tmr = (struct timer_t*)malloc(sizeof(struct timer_t));
     if (tmr == NULL)
@@ -66,7 +66,7 @@ int timer_one_shot(struct timer_t* tmr)
 #ifdef WIN32
     return timeSetEvent(tmr->duration, 0, timer_proc, (ULONG)tmr, TIME_ONESHOT | TIME_CALLBACK_FUNCTION) != 0;
 #else
-    return pthread_create(&_thread, NULL, timer_proc, tmr) != 0;
+    return pthread_create(&tmr->thread, NULL, timer_proc, tmr) != 0;
 #endif
 }
 

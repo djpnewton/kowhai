@@ -1,5 +1,9 @@
 CC 	   = gcc
-CFLAGS = -g -DKOWHAI_DBG -fPIC
+CFLAGS     = -g -DKOWHAI_DBG -fPIC
+## ARM stuff
+#CC 	   = arm-none-eabi-gcc
+#CFLAGS    = -fpic -static
+
 KOWHAI_VER = 0.0.1
 
 LIBS = 
@@ -11,6 +15,9 @@ ifeq ($(OS),Windows_NT)
 	LIBS += -lwinmm
 	# on windows we need the file extension
 	TEST_EXECUTABLE = test.exe
+else
+	# on linux we need pthreads
+	LIBS += -lpthread
 endif
 
 all: jsmn kowhai test
@@ -60,6 +67,6 @@ src/timer.o: tools/timer.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean: 
-	rm -f ${TEST_EXECUTABLE} libjsmn.a libkowhai.a tools/*.o src/*.o 3rdparty/jsmn/*.o
+	rm -f ${TEST_EXECUTABLE} libjsmn.a libkowhai.a libkowhai.so tools/*.o src/*.o 3rdparty/jsmn/*.o
 
 .PHONY: clean
