@@ -640,6 +640,8 @@ namespace kowhai_test
             comms.StartAsyncReceives(new byte[PACKET_SIZE], PACKET_SIZE);
             kowhaiTreeMain.DataChange += new KowhaiTree.DataChangeEventHandler(kowhaiTree_DataChange);
             kowhaiTreeMain.NodeRead += new KowhaiTree.NodeReadEventHandler(kowhaiTree_NodeRead);
+            // this seems to help, when previously disconnected from a HID *shrug* (otherwise a freeze in hidapi.hid_write occurs)
+            System.Threading.Thread.Sleep(250);
             CallGetVersion();
         }
 
