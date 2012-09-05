@@ -228,10 +228,27 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 // test server structures
 //
 
-uint16_t tree_list[] = {SYM_SETTINGS, SYM_SHADOW, SYM_SCOPE, SYM_START, SYM_STATUS, SYM_BEEP, SYM_BIG, SYM_UNSOLICITEDEVENT};
+struct kowhai_protocol_id_list_item_t tree_list[] = {
+    KOW_TREE_ID(SYM_SETTINGS),
+    KOW_TREE_ID(SYM_SHADOW),
+    KOW_TREE_ID(SYM_SCOPE),
+    KOW_TREE_ID_FUNCTION_ONLY(SYM_START),
+    KOW_TREE_ID_FUNCTION_ONLY(SYM_STATUS),
+    KOW_TREE_ID_FUNCTION_ONLY(SYM_BEEP),
+    KOW_TREE_ID_FUNCTION_ONLY(SYM_BIG),
+    KOW_TREE_ID(SYM_UNSOLICITEDEVENT),
+};
 struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor, big_descriptor, unsolicited_event_descriptor};
 void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd, &big, NULL};
-uint16_t function_list[] = {SYM_START, SYM_STOP, SYM_STATUS, SYM_BEEP, SYM_BIG, SYM_FAIL, SYM_UNSOLICITEDMODE};
+struct kowhai_protocol_id_list_item_t function_list[] = {
+    KOW_FUNCTION_ID(SYM_START),
+    KOW_FUNCTION_ID(SYM_STOP),
+    KOW_FUNCTION_ID(SYM_STATUS),
+    KOW_FUNCTION_ID(SYM_BEEP),
+    KOW_FUNCTION_ID(SYM_BIG),
+    KOW_FUNCTION_ID(SYM_FAIL),
+    KOW_FUNCTION_ID(SYM_UNSOLICITEDMODE),
+};
 struct kowhai_protocol_function_details_t function_list_details[] = {
     {SYM_START, KOW_UNDEFINED_SYMBOL},
     {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
@@ -282,7 +299,7 @@ void core_tests()
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
     // test version
-    assert(kowhai_version() == 4);
+    assert(kowhai_version() == 5);
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
@@ -638,9 +655,9 @@ void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buf
 uint32_t unsolicited_mode_start;
 void unsolicited_event(struct timer_t* tmr, void* param)
 {
+    uint32_t time_delta = (uint32_t)time(NULL) - unsolicited_mode_start;
     pkowhai_protocol_server_t server = (pkowhai_protocol_server_t)param;
-    unsolicited_mode_start = (uint32_t)time(NULL) - unsolicited_mode_start;
-    kowhai_server_process_event(server, SYM_UNSOLICITEDEVENT, &unsolicited_mode_start, sizeof(time_t));
+    kowhai_server_process_event(server, SYM_UNSOLICITEDEVENT, &time_delta, sizeof(uint32_t));
     timer_free(tmr);
 }
 

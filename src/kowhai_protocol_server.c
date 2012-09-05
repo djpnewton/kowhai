@@ -36,12 +36,12 @@ void kowhai_server_init(struct kowhai_protocol_server_t* server,
     kowhai_send_packet_t send_packet,
     void* send_packet_param,
     int tree_list_count,
-    uint16_t* tree_list,
+    struct kowhai_protocol_id_list_item_t* tree_list,
     struct kowhai_node_t** tree_descriptors,
     size_t* tree_descriptor_sizes,
     void** tree_data_buffers,
     int function_list_count,
-    uint16_t* function_list,
+    struct kowhai_protocol_id_list_item_t* function_list,
     struct kowhai_protocol_function_details_t* function_list_details,
     kowhai_function_called_t function_called,
     void* function_called_param,
@@ -75,7 +75,7 @@ int _get_tree_index(struct kowhai_protocol_server_t* server , uint16_t id, int* 
     int i = 0;
     while (i < server->tree_list_count)
     {
-        if (server->tree_list[i] == id)
+        if (server->tree_list[i].id == id)
         {
             *index = i;
             return 1;
@@ -92,7 +92,6 @@ struct kowhai_tree_t _populate_tree(struct kowhai_protocol_server_t* server, uin
     if (tree_id != KOW_UNDEFINED_SYMBOL &&
         _get_tree_index(server, tree_id, &index))
     {
-
         tree.desc = server->tree_descriptors[index];
         tree.data = server->tree_data_buffers[index];
     }
@@ -104,7 +103,7 @@ int _check_tree_id(struct kowhai_protocol_server_t* server, uint16_t id)
     int i;
     for (i = 0; i < server->tree_list_count; i++)
     {
-        if (server->tree_list[i] == id)
+        if (server->tree_list[i].id == id)
             return 1;
     }
     return 0;
@@ -124,7 +123,7 @@ int _get_function_index(struct kowhai_protocol_server_t* server , uint16_t id, i
     int i = 0;
     while (i < server->function_list_count)
     {
-        if (server->function_list[i] == id)
+        if (server->function_list[i].id == id)
         {
             *index = i;
             return 1;
@@ -136,11 +135,11 @@ int _get_function_index(struct kowhai_protocol_server_t* server , uint16_t id, i
 
 void _send_id_list(struct kowhai_protocol_server_t* server, struct kowhai_protocol_t* prot,
                     uint8_t cmd_ack, uint8_t cmd_ack_end,
-                    int id_list_count, uint16_t* id_list)
+                    int id_list_count, struct kowhai_protocol_id_list_item_t* id_list)
 {
     int bytes_required;
     int overhead, max_payload_size;
-    int size = id_list_count * sizeof(uint16_t);
+    int size = id_list_count * sizeof(struct kowhai_protocol_id_list_item_t);
     // get protocol overhead
     prot->header.command = cmd_ack;
     kowhai_protocol_get_overhead(prot, &overhead);

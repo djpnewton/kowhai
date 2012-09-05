@@ -56,12 +56,12 @@ struct kowhai_protocol_server_t
     kowhai_send_packet_t send_packet;
     void* send_packet_param;
     int tree_list_count;
-    uint16_t* tree_list;
+    struct kowhai_protocol_id_list_item_t* tree_list;
     struct kowhai_node_t** tree_descriptors;
     size_t* tree_descriptor_sizes;
     void** tree_data_buffers;
     int function_list_count;
-    uint16_t* function_list;
+    struct kowhai_protocol_id_list_item_t* function_list;
     struct kowhai_protocol_function_details_t* function_list_details;
     kowhai_function_called_t function_called;
     void* function_called_param;
@@ -84,12 +84,12 @@ void kowhai_server_init(struct kowhai_protocol_server_t* server,
     kowhai_send_packet_t send_packet,
     void* send_packet_param,
     int tree_list_count,
-    uint16_t* tree_list,
+    struct kowhai_protocol_id_list_item_t* tree_list,
     struct kowhai_node_t** tree_descriptors,
     size_t* tree_descriptor_sizes,
     void** tree_data_buffers,
     int function_list_count,
-    uint16_t* function_list,
+    struct kowhai_protocol_id_list_item_t* function_list,
     struct kowhai_protocol_function_details_t* function_list_details,
     kowhai_function_called_t function_called,
     void* function_called_param,

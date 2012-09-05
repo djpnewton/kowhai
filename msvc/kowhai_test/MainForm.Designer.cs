@@ -178,6 +178,7 @@
             // 
             this.lbTreeList.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.lbTreeList.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.lbTreeList.FormattingEnabled = true;
             this.lbTreeList.ItemHeight = 16;
             this.lbTreeList.Location = new System.Drawing.Point(3, 2);
@@ -185,6 +186,7 @@
             this.lbTreeList.Name = "lbTreeList";
             this.lbTreeList.Size = new System.Drawing.Size(297, 164);
             this.lbTreeList.TabIndex = 8;
+            this.lbTreeList.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.lbTreeList_DrawItem);
             this.lbTreeList.SelectedIndexChanged += new System.EventHandler(this.lbTreeList_SelectedIndexChanged);
             // 
             // pnlScope

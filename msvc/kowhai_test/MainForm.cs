@@ -16,8 +16,8 @@ namespace kowhai_test
         string initialFormText;
         IComms comms;
         const int PACKET_SIZE = 64;
-        ushort[] trees = null;
-        ushort[] funcs = null;
+        KowhaiProtocol.kowhai_protocol_id_list_item_t[] trees = null;
+        KowhaiProtocol.kowhai_protocol_id_list_item_t[] funcs = null;
         Dictionary<int, Kowhai.kowhai_node_t[]> descriptors = new Dictionary<int, Kowhai.kowhai_node_t[]>();
         byte[] symbolListRaw = null;
         List<string> symbolStrings = null;
@@ -82,7 +82,7 @@ namespace kowhai_test
                     case KowhaiProtocol.CMD_GET_TREE_LIST_ACK_END:
                     {
                         if (trees == null || trees.Length != prot.payload.spec.id_list.list_count)
-                            trees = new ushort[prot.payload.spec.id_list.list_count];
+                            trees = new KowhaiProtocol.kowhai_protocol_id_list_item_t[prot.payload.spec.id_list.list_count];
                         KowhaiProtocol.CopyIdList(trees, prot.payload);
                         InitTreeList(trees);
 
@@ -193,7 +193,7 @@ namespace kowhai_test
                     case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK:
                     case KowhaiProtocol.CMD_GET_FUNCTION_LIST_ACK_END:
                         if (funcs == null || funcs.Length != prot.payload.spec.id_list.list_count)
-                            funcs = new ushort[prot.payload.spec.id_list.list_count];
+                            funcs = new KowhaiProtocol.kowhai_protocol_id_list_item_t[prot.payload.spec.id_list.list_count];
                         KowhaiProtocol.CopyIdList(funcs, prot.payload);
                         InitFunctionList(funcs);
                         break;
@@ -201,7 +201,7 @@ namespace kowhai_test
                         // setup function call form
                         functionCallForm = new FunctionCallForm();
                         functionCallForm.SymbolStrings = SymbolStrings;
-                        functionCallForm.FunctionName = new SymbolName(prot.header.id, SymbolStrings[prot.header.id]);
+                        functionCallForm.FunctionName = new SymbolName(prot.header.id, SymbolStrings[prot.header.id], 0);
                         functionCallForm.FunctionDetails = prot.payload.spec.function_details;
                         functionCallForm.FormClosed += new FormClosedEventHandler(delegate (object sender, FormClosedEventArgs e)
                             { functionCallForm = null; });
@@ -290,18 +290,18 @@ namespace kowhai_test
             }
         }
 
-        private void InitTreeList(ushort[] trees)
+        private void InitTreeList(KowhaiProtocol.kowhai_protocol_id_list_item_t[] trees)
         {
             lbTreeList.Items.Clear();
-            foreach (ushort tree in trees)
-                lbTreeList.Items.Add(new SymbolName(tree, SymbolStrings[tree]));
+            foreach (KowhaiProtocol.kowhai_protocol_id_list_item_t tree in trees)
+                lbTreeList.Items.Add(new SymbolName(tree.id, SymbolStrings[tree.id], tree.type));
         }
 
-        private void InitFunctionList(ushort[] funcs)
+        private void InitFunctionList(KowhaiProtocol.kowhai_protocol_id_list_item_t[] funcs)
         {
             lbFunctionList.Items.Clear();
-            foreach (ushort func in funcs)
-                lbFunctionList.Items.Add(new SymbolName(func, SymbolStrings[func]));
+            foreach (KowhaiProtocol.kowhai_protocol_id_list_item_t func in funcs)
+                lbFunctionList.Items.Add(new SymbolName(func.id, SymbolStrings[func.id], func.type));
         }
 
         private List<Kowhai.kowhai_symbol_t> CreateNodeInfoSymbolList(KowhaiTree.KowhaiNodeInfo info)
@@ -643,6 +643,13 @@ namespace kowhai_test
             // this seems to help, when previously disconnected from a HID *shrug* (otherwise a freeze in hidapi.hid_write occurs)
             System.Threading.Thread.Sleep(250);
             CallGetVersion();
+
+            Application.DoEvents();
+            System.Threading.Thread.Sleep(250);
+            Application.DoEvents();
+            btnRefreshList_Click(btnRefreshList, new EventArgs());
+
+
         }
 
         void comms_Disconnected(object sender, EventArgs e)
@@ -682,16 +689,43 @@ namespace kowhai_test
         {
             ShowToast(message, 3000);
         }
+
+        private void lbTreeList_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            e.DrawBackground();
+
+            bool selected = ((e.State & DrawItemState.Selected) == DrawItemState.Selected);
+
+            int index = e.Index;
+            if (index >= 0 && index < lbTreeList.Items.Count)
+            {
+                string text = lbTreeList.Items[index].ToString();
+                ushort treetype = ((SymbolName)lbTreeList.Items[index]).Type;
+                Graphics g = e.Graphics;
+
+                // de-emphasise trees that are only used for function calls
+                Color color = (selected) ? Color.FromKnownColor(KnownColor.Highlight) : ((treetype == Kowhai.KOW_TREE_FOR_FUNCTION_CALL_ONLY) ? Color.LightGray : Color.White);
+                g.FillRectangle(new SolidBrush(color), e.Bounds);
+
+                g.DrawString(text, e.Font, (selected) ? SystemBrushes.HighlightText : SystemBrushes.ControlText,
+                    lbTreeList.GetItemRectangle(index).Location);
+            }
+
+            e.DrawFocusRectangle();
+
+        }
     }
 
     public class SymbolName
     {
         public ushort Symbol;
         public string Name;
-        public SymbolName(ushort symbol, string name)
+        public ushort Type;
+        public SymbolName(ushort symbol, string name, ushort type)
         {
             this.Symbol = symbol;
             this.Name = name;
+            this.Type = type;
         }
 
         public override string ToString()

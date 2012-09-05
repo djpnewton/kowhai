@@ -97,6 +97,13 @@ namespace kowhai_sharp
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct kowhai_protocol_id_list_item_t
+        {
+            public uint16_t id;
+            public uint16_t type;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct kowhai_protocol_string_list_t
         {
             public uint16_t list_count;
@@ -314,7 +321,7 @@ namespace kowhai_sharp
             h.Free();
         }
 
-        public static void CopyIdList(uint16_t[] target, kowhai_protocol_payload_t payload)
+        public static void CopyIdList(kowhai_protocol_id_list_item_t[] target, kowhai_protocol_payload_t payload)
         {
             GCHandle h = GCHandle.Alloc(target, GCHandleType.Pinned);
             CopyIntPtrs(new IntPtr(h.AddrOfPinnedObject().ToInt64() + payload.spec.id_list.offset), payload.buffer, payload.spec.id_list.size);

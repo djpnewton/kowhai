@@ -79,6 +79,11 @@ class kowhai_protocol_id_list_t(ctypes.Structure):
                 ('offset', uint16_t),
                 ('size', uint16_t)]
 
+class kowhai_protocol_id_list_item_t(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('id', uint16_t),
+                ('type_', uint16_t)]
+
 class kowhai_protocol_string_list_t(ctypes.Structure):
     _pack_ = 1
     _fields_ = [('list_count', uint16_t),

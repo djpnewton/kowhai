@@ -8,6 +8,7 @@
 #pragma pack(1)
 
 #define KOW_UNDEFINED_SYMBOL 65535
+#define KOW_TREE_FOR_FUNCTION_CALL_ONLY 1
 
 /**
  * @brief basic types found in a tree descriptor
