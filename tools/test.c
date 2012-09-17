@@ -56,6 +56,8 @@ struct kowhai_node_t settings_descriptor[] =
     { KOW_CHAR,             SYM_OWNER,          OWNER_MAX_LEN,    0 },
     { KOW_BRANCH_END,       SYM_UNION,          0,                0 },
 
+    { KOW_UINT32,           SYM_CHECK,          1,                0 },
+
     { KOW_BRANCH_END,       SYM_SETTINGS,       0,                0 },
 };
 
@@ -162,6 +164,7 @@ struct settings_data_t
     struct flux_capacitor_t flux_capacitor[FLUX_CAP_COUNT];
     struct oven_t oven;
     union union_t union_;
+    uint32_t check;
 };
 
 //
@@ -302,6 +305,7 @@ union kowhai_symbol_t symbols14[] = {SYM_SETTINGS, SYM_UNION, SYM_TEMP};
 union kowhai_symbol_t symbols15[] = {SYM_SETTINGS, SYM_UNION, SYM_TIMEOUT};
 union kowhai_symbol_t symbols16[] = {SYM_SETTINGS, SYM_UNION, SYM_BEEP};
 union kowhai_symbol_t symbols17[] = {SYM_SETTINGS, SYM_UNION, SYM_OWNER};
+union kowhai_symbol_t symbols99[] = {SYM_SETTINGS, SYM_CHECK};
 
 void core_tests()
 {
@@ -313,7 +317,7 @@ void core_tests()
     uint8_t status, beep;
     uint16_t temp;
     uint16_t timeout;
-    uint32_t gain;
+    uint32_t gain, check;
     float coeff;
     char owner_initial;
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
@@ -425,7 +429,10 @@ void core_tests()
     assert(kowhai_set_char(&settings_tree, 3, symbols13, 'B') == KOW_STATUS_OK);
     assert(kowhai_get_char(&settings_tree, 3, symbols13, &owner_initial) == KOW_STATUS_OK);
     assert(owner_initial == 'B');
-    printf(" passed!\n");
+    assert(kowhai_set_int32(&settings_tree, COUNT_OF(symbols99), symbols99, 1234567890) == KOW_STATUS_OK);
+    assert(settings.check == 1234567890);
+    assert(kowhai_get_int32(&settings_tree, COUNT_OF(symbols99), symbols99, &check) == KOW_STATUS_OK);
+    assert(check == 1234567890);
 
     // test get/set settings of a union branch
     assert(kowhai_set_int16(&settings_tree, COUNT_OF(symbols14), symbols14, 7337) == KOW_STATUS_OK);
@@ -435,6 +442,7 @@ void core_tests()
     assert(beep == (7337 & 0xff));
     assert(kowhai_get_char(&settings_tree, COUNT_OF(symbols17), symbols17, &owner_initial) == KOW_STATUS_OK);
     assert((uint8_t)owner_initial == beep);
+    printf(" passed!\n");
 }
 
 char* get_symbol_name(void* param, uint16_t symbol)

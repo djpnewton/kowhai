@@ -27,6 +27,7 @@ Temp
 Timeout
 Beep
 Owner
+Check
 
 # beep tree
 Frequency

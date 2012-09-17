@@ -114,7 +114,7 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     return chars;
 }
 
-int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer, size_t target_size, int level, void* get_name_param, kowhai_get_symbol_name_t get_name)
+int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer, size_t target_size, int level, void* get_name_param, kowhai_get_symbol_name_t get_name, int in_union, int* largest_data_field)
 {
     int target_offset = 0;
     struct kowhai_node_t* node;
@@ -142,6 +142,8 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
             case KOW_BRANCH_START:
             case KOW_BRANCH_U_START:
             {
+                int node_is_union = node->type == KOW_BRANCH_U_START;
+                int largest_child_data_field = 0;
                 // write header
                 chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name_param, get_name);
                 if (chars < 0)
@@ -167,7 +169,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         if (chars < 0)
                             return chars;
                         // write branch children
-                        chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name);
+                        chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name, node_is_union, &largest_child_data_field);
                         if (chars < 0)
                             return chars;
                         target_offset += chars;
@@ -203,7 +205,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         return chars;
                     // write branch children
                     (*desc) += 1;
-                    chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name);
+                    chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name, node_is_union, &largest_child_data_field);
                     if (chars < 0)
                         return chars;
                     target_offset += chars;
@@ -222,6 +224,9 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                 chars = add_string(&target_buffer, &target_size, &target_offset, node_end_str);
                 if (chars < 0)
                     return chars;
+                // increment data pointer if node is a union
+                if (node_is_union)
+                    *data = (char*)*data + largest_child_data_field;
                 break;
             }
             default:
@@ -238,17 +243,16 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                 // write value/s
                 if (node->count > 1)
                 {
+                    // write start bracket
                     chars = add_string(&target_buffer, &target_size, &target_offset, "[");
                     if (chars < 0)
                         return chars;
                     for (i = 0; i < node->count; i++)
                     {
                         // write leaf node array item value
-                        chars = add_value(&target_buffer, &target_size, &target_offset, node->type, *data);
+                        chars = add_value(&target_buffer, &target_size, &target_offset, node->type, (char*)*data + i * value_size);
                         if (chars < 0)
                             return chars;
-                        // increment data pointer
-                        *data = (char*)*data + value_size;
                         // write comma if there is another array item
                         if (i < node->count - 1)
                         {
@@ -257,6 +261,12 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                                 return chars;
                         }
                     }
+                    // increment data pointer
+                    if (!in_union)
+                        *data = (char*)*data + value_size * node->count;
+                    else if (value_size * node->count > *largest_data_field)
+                        *largest_data_field = value_size * node->count;
+                    // write end bracket
                     chars = add_string(&target_buffer, &target_size, &target_offset, "]");
                     if (chars < 0)
                         return chars;
@@ -268,7 +278,10 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                     if (chars < 0)
                         return chars;
                     // increment data pointer
-                    *data = (char*)*data + value_size;
+                    if (!in_union)
+                        *data = (char*)*data + value_size;
+                    else if (value_size > *largest_data_field)
+                        *largest_data_field = value_size;
                 }
                 // write node end
                 if (level == 0 || node[1].type == KOW_BRANCH_END)
@@ -291,7 +304,8 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
 
 int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name)
 {
-    int chars = serialize_node(&tree.desc, &tree.data, target_buffer, *target_size, 0, get_name_param, get_name);
+    int largest_data_field;
+    int chars = serialize_node(&tree.desc, &tree.data, target_buffer, *target_size, 0, get_name_param, get_name, tree.desc->type == KOW_BRANCH_U_START, &largest_data_field);
     if (chars < 0)
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
     *target_size = chars;

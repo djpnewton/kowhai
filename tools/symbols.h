@@ -23,6 +23,7 @@ char* symbols[] = {
 	"Timeout",
 	"Union",
 	"Owner",
+	"Check",
 	"Duration",
 	"Pixels",
 	"Running",
@@ -51,10 +52,11 @@ char* symbols[] = {
 #define SYM_TIMEOUT		18
 #define SYM_UNION		19
 #define SYM_OWNER		20
-#define SYM_DURATION		21
-#define SYM_PIXELS		22
-#define SYM_RUNNING		23
-#define SYM_DELAY		24
-#define SYM_TIME		25
+#define SYM_CHECK		21
+#define SYM_DURATION		22
+#define SYM_PIXELS		23
+#define SYM_RUNNING		24
+#define SYM_DELAY		25
+#define SYM_TIME		26
 
 #endif
