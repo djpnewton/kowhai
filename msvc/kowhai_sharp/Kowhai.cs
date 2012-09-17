@@ -84,8 +84,9 @@ namespace kowhai_sharp
         public const int KOW_UNDEFINED_SYMBOL = 65535;
         public const int KOW_TREE_FOR_FUNCTION_CALL_ONLY = 1;
 
-        public const int BRANCH = 0;
+        public const int BRANCH_START = 0;
         public const int BRANCH_END = 1;
+        public const int BRANCH_U_START = 2;
 
         public const int INT8 = 0x0070;
         public const int UINT8 = 0x0071;
@@ -177,7 +178,10 @@ namespace kowhai_sharp
             int result = kowhai_get_node(hDesc.AddrOfPinnedObject(), symbols.Length, hSyms.AddrOfPinnedObject(), out offset, ref targetNode);
             hSyms.Free();
             hDesc.Free();
-            node = (kowhai_node_t)Marshal.PtrToStructure(targetNode, typeof(kowhai_node_t));
+            if (result == Kowhai.STATUS_OK)
+                node = (kowhai_node_t)Marshal.PtrToStructure(targetNode, typeof(kowhai_node_t));
+            else
+                node = new kowhai_node_t();
             return result;
         }
 

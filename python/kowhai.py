@@ -18,6 +18,7 @@ uint32_t = ctypes.c_uint32
 # kowhai node types
 KOW_BRANCH_START = 0x00
 KOW_BRANCH_END = 0x01
+KOW_BRANCH_U_START = 0x02
 KOW_INT8 = 0x70
 KOW_UINT8 = 0x71
 KOW_INT16 = 0x72

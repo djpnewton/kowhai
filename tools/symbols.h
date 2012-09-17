@@ -6,9 +6,14 @@ char* symbols[] = {
 	"Shadow",
 	"Actions",
 	"Scope",
+	"UnsolicitedEvent",
 	"Start",
 	"Stop",
-	"Running",
+	"Status",
+	"Beep",
+	"Big",
+	"Fail",
+	"UnsolicitedMode",
 	"FluxCapacitor",
 	"Frequency",
 	"Coefficient",
@@ -16,43 +21,40 @@ char* symbols[] = {
 	"Oven",
 	"Temp",
 	"Timeout",
-	"Delay",
-	"Status",
-	"Beep",
+	"Union",
+	"Owner",
 	"Duration",
 	"Pixels",
-	"Owner",
+	"Running",
+	"Delay",
 	"Time",
-	"Big",
-	"Fail",
-	"UnsolicitedMode",
-	"UnsolicitedEvent",
 };
 
 #define SYM_SETTINGS		0
 #define SYM_SHADOW		1
 #define SYM_ACTIONS		2
 #define SYM_SCOPE		3
-#define SYM_START		4
-#define SYM_STOP		5
-#define SYM_RUNNING		6
-#define SYM_FLUXCAPACITOR		7
-#define SYM_FREQUENCY		8
-#define SYM_COEFFICIENT		9
-#define SYM_GAIN		10
-#define SYM_OVEN		11
-#define SYM_TEMP		12
-#define SYM_TIMEOUT		13
-#define SYM_DELAY		14
-#define SYM_STATUS		15
-#define SYM_BEEP		16
-#define SYM_DURATION		17
-#define SYM_PIXELS		18
-#define SYM_OWNER		19
-#define SYM_TIME		20
-#define SYM_BIG		21
-#define SYM_FAIL		22
-#define SYM_UNSOLICITEDMODE		23
-#define SYM_UNSOLICITEDEVENT		24
+#define SYM_UNSOLICITEDEVENT		4
+#define SYM_START		5
+#define SYM_STOP		6
+#define SYM_STATUS		7
+#define SYM_BEEP		8
+#define SYM_BIG		9
+#define SYM_FAIL		10
+#define SYM_UNSOLICITEDMODE		11
+#define SYM_FLUXCAPACITOR		12
+#define SYM_FREQUENCY		13
+#define SYM_COEFFICIENT		14
+#define SYM_GAIN		15
+#define SYM_OVEN		16
+#define SYM_TEMP		17
+#define SYM_TIMEOUT		18
+#define SYM_UNION		19
+#define SYM_OWNER		20
+#define SYM_DURATION		21
+#define SYM_PIXELS		22
+#define SYM_RUNNING		23
+#define SYM_DELAY		24
+#define SYM_TIME		25
 
 #endif

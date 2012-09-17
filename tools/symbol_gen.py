@@ -1,15 +1,21 @@
 # get symbol tokens
 f = open("symbols.txt")
-syms = f.read().split()
+syms = f.read().split('\n')
 
-# strip duplicates
+# remove empty strings
+for i in range(len(syms)-1, -1, -1):
+    if not syms[i]:
+        del syms[i]
+# strip duplicates and comments
 def check_exists(sym, syms):
     for s in syms:
         if s.lower() == sym.lower():
             return True
+def is_comment(sym):
+    return sym[0] == '#'
 syms2 = []
 for sym in syms:
-    if not check_exists(sym, syms2):
+    if not check_exists(sym, syms2) and not is_comment(sym):
         syms2.append(sym)
 syms = syms2
 

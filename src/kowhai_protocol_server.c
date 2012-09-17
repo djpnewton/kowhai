@@ -18,7 +18,7 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_node_t** descriptors
                 sizes[i] += sizeof(struct kowhai_node_t);
                 if (desc->type == KOW_BRANCH_END)
                     c--;
-                else if (desc->type == KOW_BRANCH_START)
+                else if (desc->type == KOW_BRANCH_START || desc->type == KOW_BRANCH_U_START)
                     c++;
                 desc++;
             }

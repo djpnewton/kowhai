@@ -140,6 +140,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
         switch (node->type)
         {
             case KOW_BRANCH_START:
+            case KOW_BRANCH_U_START:
             {
                 // write header
                 chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name_param, get_name);
@@ -508,6 +509,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                     int parent_array_index;
                     int parent_array_size = 1, start_nodes_populated = *desc_nodes_populated;
                     int k, nodes_populated, _data_offset;
+                    int largest_child_offset = 0;
                     jsmntok_t* array_tok = tok + 1;
                     i++;
                     token_index++;
@@ -531,6 +533,10 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 res = process_token(parser, token_index, desc + 1, desc_size - 1, &nodes_populated, data, data_size, &_data_offset);
                                 if (res >= 0)
                                 {
+                                    if (largest_child_offset < _data_offset)
+                                        largest_child_offset = _data_offset;
+                                    if (initial_desc->type == KOW_BRANCH_U_START)
+                                        _data_offset = 0;
                                     token_index += res;
                                     if (k < array_tok->size - 1)
                                         token_index++;
@@ -544,6 +550,12 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                                 else
                                     return res;
                             }
+                            if (initial_desc->type == KOW_BRANCH_U_START)
+                            {
+                                data = (char*)data + largest_child_offset;
+                                data_size -= largest_child_offset;
+                                *data_offset += largest_child_offset;
+                            }
                         }
                         if (parent_array_index < parent_array_size - 1)
                             token_index++;
@@ -551,7 +563,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                 }
             }
         }
-        token_is_branch = initial_desc->type == KOW_BRANCH_START;
+        token_is_branch = initial_desc->type == KOW_BRANCH_START || initial_desc->type == KOW_BRANCH_U_START;
         if (token_is_branch)
         {
             desc++;
@@ -561,7 +573,9 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                 return -2;
 
             desc->type = KOW_BRANCH_END;
-            desc->symbol = desc->symbol;
+            desc->symbol = initial_desc->symbol;
+            desc->count = 0;
+            desc->tag = 0;
             (*desc_nodes_populated)++;
         }
         (*desc_nodes_populated)++;

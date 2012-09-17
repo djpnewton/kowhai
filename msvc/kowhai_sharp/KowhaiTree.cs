@@ -191,7 +191,7 @@ namespace kowhai_sharp
 
         string GetNodeName(Kowhai.kowhai_node_t node, KowhaiNodeInfo info)
         {
-            if (node.type == Kowhai.BRANCH)
+            if (node.type == Kowhai.BRANCH_START || node.type == Kowhai.BRANCH_U_START)
                 return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
             if (info != null && info.IsArrayItem)
                 return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
@@ -210,7 +210,8 @@ namespace kowhai_sharp
                 Kowhai.kowhai_node_t descNode = descriptor[index];
                 switch (descNode.type)
                 {
-                    case Kowhai.BRANCH:
+                    case Kowhai.BRANCH_START:
+                    case Kowhai.BRANCH_U_START:
                         if (node == null)
                             node = treeView1.Nodes.Add(GetNodeName(descNode, null));
                         else
@@ -424,7 +425,7 @@ namespace kowhai_sharp
             if (selectedNode != null && selectedNode.Tag != null)
             {
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-                bool branch = info.KowhaiNode.type == Kowhai.BRANCH;
+                bool branch = info.KowhaiNode.type == Kowhai.BRANCH_START || info.KowhaiNode.type == Kowhai.BRANCH_U_START;
                 bool leafArrayParent = !branch && info.KowhaiNode.count > 1 && info.IsArrayItem == false;
                 if (branch | leafArrayParent)
                 {
@@ -439,7 +440,7 @@ namespace kowhai_sharp
                         {
                             Kowhai.kowhai_node_t node = descriptor[i];
                             descBranch.Add(node);
-                            if (node.type == Kowhai.BRANCH)
+                            if (node.type == Kowhai.BRANCH_START || node.type == Kowhai.BRANCH_U_START)
                                 depth++;
                             else if (node.type == Kowhai.BRANCH_END)
                                 depth--;
@@ -497,8 +498,8 @@ namespace kowhai_sharp
         public void _diffAt(Kowhai.kowhai_symbol_t[] symbolPath, bool[] symbolPathMatchesArrayIndex, int symbolPathIndex, TreeNode node)
         {
             KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-            bool isBranchArrayItem = info.IsArrayItem && info.KowhaiNode.type == Kowhai.BRANCH;
-            bool isLeafArrayParent = node.Nodes.Count > 0 && info.KowhaiNode.type != Kowhai.BRANCH;
+            bool isBranchArrayItem = info.IsArrayItem && (info.KowhaiNode.type == Kowhai.BRANCH_START || info.KowhaiNode.type == Kowhai.BRANCH_U_START);
+            bool isLeafArrayParent = node.Nodes.Count > 0 && (info.KowhaiNode.type != Kowhai.BRANCH_START && info.KowhaiNode.type != Kowhai.BRANCH_U_START);
             // poplulate symbolPathMatchesArrayIndex to ensure we are on the correct branch of the treeview
             if (isBranchArrayItem)
                 symbolPathMatchesArrayIndex[symbolPathIndex - 1] = info.ArrayIndex == symbolPath[symbolPathIndex - 1].parts.array_index;

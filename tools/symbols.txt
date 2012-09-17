@@ -1,10 +1,20 @@
+# tree ids
 Settings
 Shadow
 Actions
 Scope
+UnsolicitedEvent
+
+# function ids
 Start
 Stop
-Running
+Status
+Beep
+Big
+Fail
+UnsolicitedMode
+
+# settings tree
 FluxCapacitor
 Frequency
 Coefficient
@@ -12,14 +22,28 @@ Gain
 Oven
 Temp
 Timeout
-Delay
-Status
+Union
+Temp
+Timeout
 Beep
-Duration
-Pixels
 Owner
+
+# beep tree
+Frequency
+Duration
+
+# scope tree
+Pixels
+
+# shadow tree
+Running
+Status
+
+# start tree
+Delay
+
+# UnsolicitedMode tree
 Time
-Big
-Fail
-UnsolicitedMode
+
+
 UnsolicitedEvent
