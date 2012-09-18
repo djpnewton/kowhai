@@ -93,46 +93,6 @@ static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_n
                 }
             }
             break;
-/*
-        case KOW_UNION_START:
-            while (1)
-            {
-                int child_node_size;
-                i++;
-                *num_nodes_processed = i;
-                switch ((enum kowhai_node_type)node[i].type)
-                {
-                    // navigate the hierarchy info
-                    case KOW_BRANCH_START:
-                    case KOW_UNION_START:
-                    {
-                        int _num_child_nodes_processed;
-                        int ret;
-                        ret = get_node_size(node + i, &child_node_size, &_num_child_nodes_processed);
-                        if (ret != KOW_STATUS_OK)
-                            return ret;
-                        // find the largest union field size
-                        if (child_node_size > _size)
-                        _size = child_node_size;
-                        // skip the already processed nodes
-                        i += _num_child_nodes_processed;
-                        break;
-                    }
-                    case KOW_UNION_END:
-                        // accumulate the whole array
-                        _size *= node->count;
-                        goto done;
-
-                    // find the largest union field size
-                    default:
-                        child_node_size = kowhai_get_node_type_size(node[i].type) * node[i].count;
-                        if (child_node_size > _size)
-                            _size = child_node_size;
-                        break;
-                }
-            }
-            break;
-*/
         default:
             // if this is not a branch then just return the size of the node item (otherwise we need to drill baby)
             _size = kowhai_get_node_type_size(node->type) * node->count;
