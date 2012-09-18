@@ -203,8 +203,9 @@ namespace kowhai_sharp
                 return string.Format("{0}{1}: {2} = {3}", symbols[node.symbol], GetNodeTagString(node), GetDataTypeString(node.type), GetDataValue(info));
         }
 
-        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node, KowhaiNodeInfo initialNodeInfo)
+        void _UpdateDescriptor(Kowhai.kowhai_node_t[] descriptor, ref int index, ref ushort offset, TreeNode node, KowhaiNodeInfo initialNodeInfo, bool inUnion)
         {
+            ushort maxChildOffset = 0;
             while (index < descriptor.Length)
             {
                 Kowhai.kowhai_node_t descNode = descriptor[index];
@@ -231,17 +232,19 @@ namespace kowhai_sharp
                                 TreeNode arrayNode = node.Nodes.Add("#" + i.ToString());
                                 arrayNode.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentInfo);
                                 index++;
-                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode, null);
+                                _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode, null, descNode.type == Kowhai.BRANCH_U_START);
                             }
                         }
                         else
                         {
                             index++;
-                            _UpdateDescriptor(descriptor, ref index, ref offset, node, null);
+                            _UpdateDescriptor(descriptor, ref index, ref offset, node, null, descNode.type == Kowhai.BRANCH_U_START);
                         }
                         node = node.Parent;
                         break;
                     case Kowhai.BRANCH_END:
+                        if (inUnion)
+                            offset += maxChildOffset;
                         return;
                     default:
                         TreeNode leaf;
@@ -253,17 +256,19 @@ namespace kowhai_sharp
                         if (leaf.Parent != null)
                             parentNodeInfo = (KowhaiNodeInfo)leaf.Parent.Tag;
                         leaf.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentNodeInfo);
+                        ushort valueSize = (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
                         if (descNode.count > 1 && descNode.type != Kowhai.CHAR)
                         {
                             for (ushort i = 0; i < descNode.count; i++)
                             {
                                 TreeNode child = leaf.Nodes.Add("#" + i.ToString());
-                                child.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentNodeInfo);
-                                offset += (ushort)Kowhai.kowhai_get_node_type_size(descNode.type);
+                                child.Tag = new KowhaiNodeInfo(descNode, index, true, i, (ushort)(offset + valueSize * i), parentNodeInfo);
                             }
                         }
-                        else
-                            offset += (ushort)(Kowhai.kowhai_get_node_type_size(descNode.type) * descNode.count);
+                        if (!inUnion)
+                            offset += (ushort)(valueSize * descNode.count);
+                        else if (maxChildOffset < valueSize * descNode.count)
+                            maxChildOffset = (ushort)(valueSize * descNode.count);
                         break;
                 }
                 index++;
@@ -277,7 +282,7 @@ namespace kowhai_sharp
             treeView1.Nodes.Clear();
             int index = 0;
             ushort offset = 0;
-            _UpdateDescriptor(descriptor, ref index, ref offset, null, info);
+            _UpdateDescriptor(descriptor, ref index, ref offset, null, info, descriptor[0].type == Kowhai.BRANCH_U_START);
             if (treeView1.Nodes.Count > 0)
                 treeView1.Nodes[0].Expand();
             return;
