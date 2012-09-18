@@ -8,7 +8,7 @@
 
 // forward decalre this to bring it in from kowhai.c as we need it
 ///@todo there should be a way to either use the public api or get at internal kowhai stuff more easily
-int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node, int initial_branch);
+int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node, int initial_branch, int branch_union);
 
 /**
  * @brief diff_l2r diff left tree against right tree
@@ -50,7 +50,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
         i = 0;
         symbol[0].parts.name = left->desc->symbol;
         symbol[0].parts.array_index = 0;
-        ret = get_node(right->desc, 1, symbol, &offset, &right_node, 0);
+        ret = get_node(right->desc, 1, symbol, &offset, &right_node, 0, right->desc->type == KOW_BRANCH_U_START);
         switch (ret)
         {
             case KOW_STATUS_OK:
@@ -64,7 +64,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
                     {
                         // get the offset into right for the branch array item to update
                         symbol[0].parts.array_index = i;
-                        ret = get_node(right->desc, 1, symbol, &offset, NULL, 0);
+                        ret = get_node(right->desc, 1, symbol, &offset, NULL, 0, right->desc->type == KOW_BRANCH_U_START);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                         __right.desc = &right_node[1];
@@ -98,11 +98,11 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
 
                         // get offsets into the left and right arrays for this array item
                         symbol[0].parts.array_index = i;
-                        ret = get_node(left->desc, 1, symbol, &left_offset, NULL, 0);
+                        ret = get_node(left->desc, 1, symbol, &left_offset, NULL, 0, left->desc->type == KOW_BRANCH_U_START);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                         left_data = (uint8_t*)left->data + left_offset;
-                        ret = get_node(right_node, 1, symbol, &right_offset, NULL, 0);
+                        ret = get_node(right_node, 1, symbol, &right_offset, NULL, 0, right_node->type == KOW_BRANCH_U_START);
                         if (ret != KOW_STATUS_OK)
                             return ret;
                         right_data = (uint8_t*)right->data + offset + right_offset;
@@ -137,7 +137,7 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
                     void* left_data;
                     // get the offset where array item i starts in the left branch
                     symbol[0].parts.array_index = i;
-                    ret = get_node(left->desc, 1, symbol, &offset, NULL, 0);
+                    ret = get_node(left->desc, 1, symbol, &offset, NULL, 0, left->desc->type == KOW_BRANCH_U_START);
                     if (ret != KOW_STATUS_OK)
                         return ret;
                     left_data = (uint8_t*)left->data + offset;

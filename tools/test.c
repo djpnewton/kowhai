@@ -1332,12 +1332,23 @@ void test_client_protocol()
             memset(buffer, 0, MAX_PACKET_SIZE);
             xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
             kowhai_protocol_parse(buffer, received_size, &prot);
-            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK_END);
+            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK);
             assert(prot.header.id == 0);
             assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
             assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
             assert(prot.payload.spec.string_list.offset == 153);
-            assert(prot.payload.spec.string_list.size == 48);
+            assert(prot.payload.spec.string_list.size == 51);
+            memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
+            // get packet 5
+            memset(buffer, 0, MAX_PACKET_SIZE);
+            xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+            kowhai_protocol_parse(buffer, received_size, &prot);
+            assert(prot.header.command == KOW_CMD_GET_SYMBOL_LIST_ACK_END);
+            assert(prot.header.id == 0);
+            assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
+            assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
+            assert(prot.payload.spec.string_list.offset == 204);
+            assert(prot.payload.spec.string_list.size == 3);
             memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
             // validate results
             sym_offset = 0;
