@@ -323,7 +323,7 @@ void core_tests()
     struct flux_capacitor_t flux_capacitor = {"empty", 1, 2, 10, 20, 30, 40, 50, 60};
 
     // test version
-    assert(kowhai_version() == 5);
+    assert(kowhai_version() == 6);
 
     // test tree parsing
     printf("test kowhai_get_node...\t\t\t");
