@@ -21,6 +21,7 @@ char* symbols[] = {
 	"Oven",
 	"Temp",
 	"Timeout",
+	"UnionContainer",
 	"Union",
 	"Owner",
 	"Check",
@@ -50,13 +51,14 @@ char* symbols[] = {
 #define SYM_OVEN		16
 #define SYM_TEMP		17
 #define SYM_TIMEOUT		18
-#define SYM_UNION		19
-#define SYM_OWNER		20
-#define SYM_CHECK		21
-#define SYM_DURATION		22
-#define SYM_PIXELS		23
-#define SYM_RUNNING		24
-#define SYM_DELAY		25
-#define SYM_TIME		26
+#define SYM_UNIONCONTAINER		19
+#define SYM_UNION		20
+#define SYM_OWNER		21
+#define SYM_CHECK		22
+#define SYM_DURATION		23
+#define SYM_PIXELS		24
+#define SYM_RUNNING		25
+#define SYM_DELAY		26
+#define SYM_TIME		27
 
 #endif

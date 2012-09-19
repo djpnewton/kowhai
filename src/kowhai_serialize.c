@@ -175,6 +175,9 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         target_offset += chars;
                         target_buffer += chars;
                         target_size -= chars;
+                        // increment data pointer if node is a union
+                        if (node_is_union)
+                            *data = (char*)*data + largest_child_data_field;
                         // indent to current level using tab
                         chars = add_indent(&target_buffer, &target_size, &target_offset, level + 1);
                         if (chars < 0)
@@ -211,6 +214,9 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                     target_offset += chars;
                     target_buffer += chars;
                     target_size -= chars;
+                    // increment data pointer if node is a union
+                    if (node_is_union)
+                        *data = (char*)*data + largest_child_data_field;
                 }
                 // indent to current level using tab
                 chars = add_indent(&target_buffer, &target_size, &target_offset, level);
@@ -224,9 +230,6 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                 chars = add_string(&target_buffer, &target_size, &target_offset, node_end_str);
                 if (chars < 0)
                     return chars;
-                // increment data pointer if node is a union
-                if (node_is_union)
-                    *data = (char*)*data + largest_child_data_field;
                 break;
             }
             default:

@@ -191,8 +191,10 @@ namespace kowhai_sharp
 
         string GetNodeName(Kowhai.kowhai_node_t node, KowhaiNodeInfo info)
         {
-            if (node.type == Kowhai.BRANCH_START || node.type == Kowhai.BRANCH_U_START)
+            if (node.type == Kowhai.BRANCH_START)
                 return string.Format("{0}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
+            if (node.type == Kowhai.BRANCH_U_START)
+                return string.Format("{0}{{U}}{1}{2}", symbols[node.symbol], GetNodeArrayString(node), GetNodeTagString(node));
             if (info != null && info.IsArrayItem)
                 return string.Format("#{0}{1} = {2}", info.ArrayIndex, GetNodeTagString(node), GetDataValue(info));
             else if (node.type == Kowhai.CHAR)

@@ -31,6 +31,7 @@
 
 #define FLUX_CAP_COUNT 2
 #define COEFF_COUNT    6
+#define UNION_COUNT    2
 #define OWNER_MAX_LEN  12
 
 struct kowhai_node_t settings_descriptor[] =
@@ -49,12 +50,15 @@ struct kowhai_node_t settings_descriptor[] =
     { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
     { KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
 
-    { KOW_BRANCH_U_START,   SYM_UNION,          1,                0 },
+    { KOW_BRANCH_START,     SYM_UNIONCONTAINER, UNION_COUNT,      0 },
+    { KOW_BRANCH_U_START,   SYM_UNION,          UNION_COUNT,      0 },
     { KOW_INT16,            SYM_TEMP,           1,                0 },
     { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
     { KOW_UINT8,            SYM_BEEP,           1,                0 },
     { KOW_CHAR,             SYM_OWNER,          OWNER_MAX_LEN,    0 },
     { KOW_BRANCH_END,       SYM_UNION,          0,                0 },
+    { KOW_UINT32,           SYM_CHECK,          1,                0 },
+    { KOW_BRANCH_END,       SYM_UNIONCONTAINER, 0,                0 },
 
     { KOW_UINT32,           SYM_CHECK,          1,                0 },
 
@@ -159,11 +163,17 @@ union union_t
     char owner[OWNER_MAX_LEN];
 };
 
+struct union_container_t
+{
+    union union_t union_[UNION_COUNT];
+    uint32_t check;
+};
+
 struct settings_data_t
 {
     struct flux_capacitor_t flux_capacitor[FLUX_CAP_COUNT];
     struct oven_t oven;
-    union union_t union_;
+    struct union_container_t union_container[UNION_COUNT];
     uint32_t check;
 };
 
@@ -301,10 +311,12 @@ union kowhai_symbol_t symbols10[] = {SYM_SETTINGS, SYM_FLUXCAPACITOR, KOWHAI_SYM
 union kowhai_symbol_t symbols11[] = {SYM_SETTINGS, SYM_OVEN};
 union kowhai_symbol_t symbols12[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 1)};
 union kowhai_symbol_t symbols13[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_FLUXCAPACITOR, 0), KOWHAI_SYMBOL(SYM_OWNER, 3)};
-union kowhai_symbol_t symbols14[] = {SYM_SETTINGS, SYM_UNION, SYM_TEMP};
-union kowhai_symbol_t symbols15[] = {SYM_SETTINGS, SYM_UNION, SYM_TIMEOUT};
-union kowhai_symbol_t symbols16[] = {SYM_SETTINGS, SYM_UNION, SYM_BEEP};
-union kowhai_symbol_t symbols17[] = {SYM_SETTINGS, SYM_UNION, SYM_OWNER};
+union kowhai_symbol_t symbols14[] = {SYM_SETTINGS, SYM_UNIONCONTAINER, SYM_UNION, SYM_TEMP};
+union kowhai_symbol_t symbols15[] = {SYM_SETTINGS, SYM_UNIONCONTAINER, SYM_UNION, SYM_TIMEOUT};
+union kowhai_symbol_t symbols16[] = {SYM_SETTINGS, SYM_UNIONCONTAINER, SYM_UNION, SYM_BEEP};
+union kowhai_symbol_t symbols17[] = {SYM_SETTINGS, SYM_UNIONCONTAINER, SYM_UNION, SYM_OWNER};
+union kowhai_symbol_t symbols18[] = {SYM_SETTINGS, SYM_UNIONCONTAINER, SYM_CHECK};
+union kowhai_symbol_t symbols19[] = {SYM_SETTINGS, KOWHAI_SYMBOL(SYM_UNIONCONTAINER, 1), SYM_CHECK};
 union kowhai_symbol_t symbols99[] = {SYM_SETTINGS, SYM_CHECK};
 
 void core_tests()
@@ -436,12 +448,21 @@ void core_tests()
 
     // test get/set settings of a union branch
     assert(kowhai_set_int16(&settings_tree, COUNT_OF(symbols14), symbols14, 7337) == KOW_STATUS_OK);
+    assert(settings.union_container[0].union_[0].temp == 7337);
     assert(kowhai_get_int16(&settings_tree, COUNT_OF(symbols15), symbols15, &timeout) == KOW_STATUS_OK);
     assert(timeout == 7337);
     assert(kowhai_get_int8(&settings_tree, COUNT_OF(symbols16), symbols16, &beep) == KOW_STATUS_OK);
     assert(beep == (7337 & 0xff));
     assert(kowhai_get_char(&settings_tree, COUNT_OF(symbols17), symbols17, &owner_initial) == KOW_STATUS_OK);
     assert((uint8_t)owner_initial == beep);
+    assert(kowhai_set_int32(&settings_tree, COUNT_OF(symbols18), symbols18, 10) == KOW_STATUS_OK);
+    assert(settings.union_container[0].check == 10);
+    assert(kowhai_get_int32(&settings_tree, COUNT_OF(symbols18), symbols18, &check) == KOW_STATUS_OK);
+    assert(check == 10);
+    assert(kowhai_set_int32(&settings_tree, COUNT_OF(symbols19), symbols19, 20) == KOW_STATUS_OK);
+    assert(settings.union_container[1].check == 20);
+    assert(kowhai_get_int32(&settings_tree, COUNT_OF(symbols19), symbols19, &check) == KOW_STATUS_OK);
+    assert(check == 20);
     printf(" passed!\n");
 }
 
@@ -452,13 +473,14 @@ char* get_symbol_name(void* param, uint16_t symbol)
 
 void serialization_tests()
 {
-    int buf_size = 0x2000;
-    int desc_size = buf_size;
-    int data_size = buf_size;
-    char* js = (char*)malloc(buf_size);
-    char* scratch = (char*)malloc(buf_size);
-    struct kowhai_node_t* desc = (struct kowhai_node_t*)malloc(desc_size);
-    char* data = (char*)malloc(data_size);
+#define BUF_SIZE 0x3000
+    int buf_size = BUF_SIZE;
+    int desc_size = BUF_SIZE;
+    int data_size = BUF_SIZE;
+    char* js = (char*)malloc(BUF_SIZE);
+    char* scratch = (char*)malloc(BUF_SIZE);
+    struct kowhai_node_t* desc = (struct kowhai_node_t*)malloc(BUF_SIZE);
+    char* data = (char*)malloc(BUF_SIZE);
 
     printf("test kowhai_serialize/kowhai_deserialize...\n");
 
@@ -466,13 +488,13 @@ void serialization_tests()
     assert(js != NULL && scratch != NULL && desc != NULL && data != NULL);
     buf_size = 100;
     assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
-    buf_size = 0x2000;
+    buf_size = BUF_SIZE;
     assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_OK);
     printf("---\n%s\n***\n", js);
     printf("js length: %d\n", strlen(js));
     printf("---\n");
     // kowhai_deserialize
-    buf_size = 0x2000;
+    buf_size = BUF_SIZE;
     desc_size = 10;
     data_size = 10;
     assert(kowhai_deserialize(js, scratch, 100, desc, &desc_size, data, &data_size) == KOW_STATUS_SCRATCH_TOO_SMALL);
@@ -1011,6 +1033,7 @@ void test_client_protocol()
         assert(prot.payload.spec.descriptor.offset == 0);
         kowhai_protocol_get_overhead(&prot, &overhead);
         assert(overhead == 9);
+        assert(prot.payload.spec.descriptor.node_count == COUNT_OF(settings_descriptor));
         assert(prot.payload.spec.descriptor.size == MAX_PACKET_SIZE - overhead);
         assert(memcmp(prot.payload.buffer, settings_descriptor, prot.payload.spec.data.memory.size) == 0);
         // get packet 2
@@ -1018,7 +1041,6 @@ void test_client_protocol()
         assert(kowhai_protocol_parse(buffer, received_size, &prot) == KOW_STATUS_OK);
         assert(prot.header.id == SYM_SETTINGS);
         assert(prot.header.command == KOW_CMD_READ_DESCRIPTOR_ACK);
-        assert(prot.payload.spec.descriptor.node_count == COUNT_OF(settings_descriptor));
         assert(prot.payload.spec.descriptor.offset == MAX_PACKET_SIZE - overhead);
         assert(prot.payload.spec.descriptor.size == MAX_PACKET_SIZE - overhead);
         assert(memcmp(prot.payload.buffer, (char*)settings_descriptor + prot.payload.spec.data.memory.offset, prot.payload.spec.data.memory.size) == 0);
@@ -1026,9 +1048,16 @@ void test_client_protocol()
         xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
         assert(kowhai_protocol_parse(buffer, received_size, &prot) == KOW_STATUS_OK);
         assert(prot.header.id == SYM_SETTINGS);
-        assert(prot.header.command == KOW_CMD_READ_DESCRIPTOR_ACK_END);
-        assert(prot.payload.spec.descriptor.node_count == COUNT_OF(settings_descriptor));
+        assert(prot.header.command == KOW_CMD_READ_DESCRIPTOR_ACK);
         assert(prot.payload.spec.descriptor.offset == (MAX_PACKET_SIZE - overhead) * 2);
+        assert(prot.payload.spec.descriptor.size == MAX_PACKET_SIZE - overhead);
+        assert(memcmp(prot.payload.buffer, (char*)settings_descriptor + prot.payload.spec.data.memory.offset, prot.payload.spec.data.memory.size) == 0);
+        // get packet 4
+        xpsocket_receive(conn, buffer, MAX_PACKET_SIZE, &received_size);
+        assert(kowhai_protocol_parse(buffer, received_size, &prot) == KOW_STATUS_OK);
+        assert(prot.header.id == SYM_SETTINGS);
+        assert(prot.header.command == KOW_CMD_READ_DESCRIPTOR_ACK_END);
+        assert(prot.payload.spec.descriptor.offset == (MAX_PACKET_SIZE - overhead) * 3);
         assert(prot.payload.spec.descriptor.size == sizeof(settings_descriptor) - prot.payload.spec.descriptor.offset);
         assert(memcmp(prot.payload.buffer, (char*)settings_descriptor + prot.payload.spec.data.memory.offset, prot.payload.spec.data.memory.size) == 0);
         // test invalid tree id
@@ -1348,7 +1377,7 @@ void test_client_protocol()
             assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
             assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
             assert(prot.payload.spec.string_list.offset == 204);
-            assert(prot.payload.spec.string_list.size == 3);
+            assert(prot.payload.spec.string_list.size == 18);
             memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
             // validate results
             sym_offset = 0;
