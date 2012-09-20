@@ -28,6 +28,9 @@ Temp
 Timeout
 Beep
 Owner
+Parts
+Part1
+Part2
 Check
 
 # beep tree

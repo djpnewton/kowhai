@@ -56,6 +56,10 @@ struct kowhai_node_t settings_descriptor[] =
     { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
     { KOW_UINT8,            SYM_BEEP,           1,                0 },
     { KOW_CHAR,             SYM_OWNER,          OWNER_MAX_LEN,    0 },
+    { KOW_BRANCH_START,     SYM_PARTS,          1,                0 },
+    { KOW_UINT8,            SYM_PART1,          1,                0 },
+    { KOW_UINT8,            SYM_PART2,          1,                0 },
+    { KOW_BRANCH_END,       SYM_PARTS,          0,                0 },
     { KOW_BRANCH_END,       SYM_UNION,          0,                0 },
     { KOW_UINT32,           SYM_CHECK,          1,                0 },
     { KOW_BRANCH_END,       SYM_UNIONCONTAINER, 0,                0 },
@@ -1377,7 +1381,7 @@ void test_client_protocol()
             assert(prot.payload.spec.string_list.list_count == COUNT_OF(symbols));
             assert(prot.payload.spec.string_list.list_total_size == _get_string_list_size(symbols, COUNT_OF(symbols)));
             assert(prot.payload.spec.string_list.offset == 204);
-            assert(prot.payload.spec.string_list.size == 18);
+            assert(prot.payload.spec.string_list.size == 36);
             memcpy(symbols2_buf + prot.payload.spec.string_list.offset, prot.payload.buffer, prot.payload.spec.string_list.size);
             // validate results
             sym_offset = 0;

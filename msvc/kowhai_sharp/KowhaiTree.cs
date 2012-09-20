@@ -223,6 +223,7 @@ namespace kowhai_sharp
                         if (node.Parent != null)
                             parentInfo = (KowhaiNodeInfo)node.Parent.Tag;
                         node.Tag = new KowhaiNodeInfo(descNode, index, false, 0, offset, parentInfo);
+                        ushort initialOffset = offset;
                         if (descNode.count > 1)
                         {
                             int prevIndex = index;
@@ -235,12 +236,16 @@ namespace kowhai_sharp
                                 arrayNode.Tag = new KowhaiNodeInfo(descNode, index, true, i, offset, parentInfo);
                                 index++;
                                 _UpdateDescriptor(descriptor, ref index, ref offset, arrayNode, null, descNode.type == Kowhai.BRANCH_U_START);
+                                if (inUnion)
+                                    offset = initialOffset;
                             }
                         }
                         else
                         {
                             index++;
                             _UpdateDescriptor(descriptor, ref index, ref offset, node, null, descNode.type == Kowhai.BRANCH_U_START);
+                            if (inUnion)
+                                offset = initialOffset;
                         }
                         node = node.Parent;
                         break;

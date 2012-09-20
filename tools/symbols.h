@@ -24,6 +24,9 @@ char* symbols[] = {
 	"UnionContainer",
 	"Union",
 	"Owner",
+	"Parts",
+	"Part1",
+	"Part2",
 	"Check",
 	"Duration",
 	"Pixels",
@@ -54,11 +57,14 @@ char* symbols[] = {
 #define SYM_UNIONCONTAINER		19
 #define SYM_UNION		20
 #define SYM_OWNER		21
-#define SYM_CHECK		22
-#define SYM_DURATION		23
-#define SYM_PIXELS		24
-#define SYM_RUNNING		25
-#define SYM_DELAY		26
-#define SYM_TIME		27
+#define SYM_PARTS		22
+#define SYM_PART1		23
+#define SYM_PART2		24
+#define SYM_CHECK		25
+#define SYM_DURATION		26
+#define SYM_PIXELS		27
+#define SYM_RUNNING		28
+#define SYM_DELAY		29
+#define SYM_TIME		30
 
 #endif

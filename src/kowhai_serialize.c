@@ -144,6 +144,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
             {
                 int node_is_union = node->type == KOW_BRANCH_U_START;
                 int largest_child_data_field = 0;
+                void* initial_data = *data;
                 // write header
                 chars = add_header(&target_buffer, &target_size, &target_offset, node, get_name_param, get_name);
                 if (chars < 0)
@@ -177,7 +178,10 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         target_size -= chars;
                         // increment data pointer if node is a union
                         if (node_is_union)
-                            *data = (char*)*data + largest_child_data_field;
+                        {
+                            *data = (char*)initial_data + largest_child_data_field;
+                            initial_data = *data;
+                        }
                         // indent to current level using tab
                         chars = add_indent(&target_buffer, &target_size, &target_offset, level + 1);
                         if (chars < 0)
@@ -216,7 +220,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                     target_size -= chars;
                     // increment data pointer if node is a union
                     if (node_is_union)
-                        *data = (char*)*data + largest_child_data_field;
+                        *data = (char*)initial_data + largest_child_data_field;
                 }
                 // indent to current level using tab
                 chars = add_indent(&target_buffer, &target_size, &target_offset, level);
