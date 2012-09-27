@@ -41,7 +41,7 @@ int kowhai_get_node_type_size(uint16_t type)
 static int get_node_size(const struct kowhai_node_t *node, int *size, int *num_nodes_processed)
 {
     int _size = 0;
-    uint16_t i = 0;
+    int i = 0;
 
     *num_nodes_processed = 0;
 
@@ -136,7 +136,7 @@ int kowhai_get_node_count(const struct kowhai_node_t *node, int *count)
 int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node, int initial_branch, int branch_union)
 {
     int i = 0;
-    uint16_t _offset = 0;
+    int _offset = 0;
     int ret;
 
     // look through all the items in the node list
