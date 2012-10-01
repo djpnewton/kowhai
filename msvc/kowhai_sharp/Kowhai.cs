@@ -74,10 +74,34 @@ namespace kowhai_sharp
         {
             public kowhai_node_t[] Descriptor;
             public byte[] Data;
+
             public Tree(kowhai_node_t[] desc, byte[] data)
             {
                 Descriptor = desc;
                 Data = data;
+            }
+
+            public static Tree CreateFromNativeTree(kowhai_tree_t nativeTree)
+            {
+                Tree tree = new Tree();
+                int count;
+                if (kowhai_get_node_count(nativeTree.desc, out count) == STATUS_OK)
+                {
+                    // copy descriptor
+                    tree.Descriptor = new kowhai_node_t[count];
+                    byte[] temp = new byte[count * Marshal.SizeOf(typeof(kowhai_node_t))];
+                    Marshal.Copy(nativeTree.desc, temp, 0, temp.Length);
+                    GCHandle p = GCHandle.Alloc(tree.Descriptor, GCHandleType.Pinned);
+                    Marshal.Copy(temp, 0, p.AddrOfPinnedObject(), temp.Length);
+                    p.Free();
+                    // copy data
+                    if (kowhai_get_node_size(nativeTree.desc, out count) == STATUS_OK)
+                    {
+                        tree.Data = new byte[count];
+                        Marshal.Copy(nativeTree.data, tree.Data, 0, tree.Data.Length);
+                    }
+                }
+                return tree;
             }
         }
 

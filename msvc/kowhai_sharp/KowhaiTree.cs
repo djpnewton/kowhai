@@ -28,6 +28,18 @@ namespace kowhai_sharp
                 Offset = offset;
                 Parent = parent;
             }
+
+            public static List<Kowhai.kowhai_symbol_t> CreateNodeInfoSymbolList(KowhaiTree.KowhaiNodeInfo info)
+            {
+                List<Kowhai.kowhai_symbol_t> syms = new List<Kowhai.kowhai_symbol_t>();
+                while (info != null)
+                {
+                    syms.Add(new Kowhai.kowhai_symbol_t(info.KowhaiNode.symbol, info.ArrayIndex));
+                    info = info.Parent;
+                }
+                syms.Reverse();
+                return syms;
+            }
         }
 
         public class DataChangeEventArgs : EventArgs
