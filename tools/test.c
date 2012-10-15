@@ -261,36 +261,27 @@ struct kowhai_tree_t scope_tree = {scope_descriptor, &scope};
 // test server structures
 //
 
-struct kowhai_protocol_id_list_item_t tree_list[] = {
-    KOW_TREE_ID(SYM_SETTINGS),
-    KOW_TREE_ID(SYM_SHADOW),
-    KOW_TREE_ID(SYM_SCOPE),
-    KOW_TREE_ID_FUNCTION_ONLY(SYM_START),
-    KOW_TREE_ID_FUNCTION_ONLY(SYM_STATUS),
-    KOW_TREE_ID_FUNCTION_ONLY(SYM_BEEP),
-    KOW_TREE_ID_FUNCTION_ONLY(SYM_BIG),
-    KOW_TREE_ID(SYM_UNSOLICITEDEVENT),
+struct kowhai_protocol_server_tree_item_t tree_list[] = {
+    { KOW_TREE_ID(SYM_SETTINGS),                settings_descriptor,            sizeof(settings_descriptor),            &settings },
+    { KOW_TREE_ID(SYM_SHADOW),                  shadow_descriptor,              sizeof(shadow_descriptor),              &shadow },
+    { KOW_TREE_ID(SYM_SCOPE),                   scope_descriptor,               sizeof(scope_descriptor),               &scope },
+    { KOW_TREE_ID_FUNCTION_ONLY(SYM_START),     start_descriptor,               sizeof(start_descriptor),               &start },
+    { KOW_TREE_ID_FUNCTION_ONLY(SYM_STATUS),    status_descriptor,              sizeof(status_descriptor),              &status },
+    { KOW_TREE_ID_FUNCTION_ONLY(SYM_BEEP),      beep_descriptor,                sizeof(beep_descriptor),                &beepd },
+    { KOW_TREE_ID_FUNCTION_ONLY(SYM_BIG),       big_descriptor,                 sizeof(big_descriptor),                 &big },
+    { KOW_TREE_ID(SYM_UNSOLICITEDEVENT),        unsolicited_event_descriptor,   sizeof(unsolicited_event_descriptor),   NULL },
 };
-struct kowhai_node_t* tree_descriptors[] = {settings_descriptor, shadow_descriptor, scope_descriptor, start_descriptor, status_descriptor, beep_descriptor, big_descriptor, unsolicited_event_descriptor};
-void* tree_data_buffers[] = {&settings, &shadow, &scope, &start, &status, &beepd, &big, NULL};
-struct kowhai_protocol_id_list_item_t function_list[] = {
-    KOW_FUNCTION_ID(SYM_START),
-    KOW_FUNCTION_ID(SYM_STOP),
-    KOW_FUNCTION_ID(SYM_STATUS),
-    KOW_FUNCTION_ID(SYM_BEEP),
-    KOW_FUNCTION_ID(SYM_BIG),
-    KOW_FUNCTION_ID(SYM_FAIL),
-    KOW_FUNCTION_ID(SYM_UNSOLICITEDMODE),
+struct kowhai_protocol_id_list_item_t tree_id_list[COUNT_OF(tree_list)];
+struct kowhai_protocol_server_function_item_t function_list[] = {
+    { KOW_FUNCTION_ID(SYM_START),               {SYM_START, KOW_UNDEFINED_SYMBOL} },
+    { KOW_FUNCTION_ID(SYM_STOP),                {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL} },
+    { KOW_FUNCTION_ID(SYM_STATUS),              {KOW_UNDEFINED_SYMBOL, SYM_STATUS} },
+    { KOW_FUNCTION_ID(SYM_BEEP),                {SYM_BEEP, KOW_UNDEFINED_SYMBOL} },
+    { KOW_FUNCTION_ID(SYM_BIG),                 {SYM_BIG, SYM_BIG} },
+    { KOW_FUNCTION_ID(SYM_FAIL),                {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL}},
+    { KOW_FUNCTION_ID(SYM_UNSOLICITEDMODE),     {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL}},
 };
-struct kowhai_protocol_function_details_t function_list_details[] = {
-    {SYM_START, KOW_UNDEFINED_SYMBOL},
-    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
-    {KOW_UNDEFINED_SYMBOL, SYM_STATUS},
-    {SYM_BEEP, KOW_UNDEFINED_SYMBOL},
-    {SYM_BIG, SYM_BIG},
-    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
-    {KOW_UNDEFINED_SYMBOL, KOW_UNDEFINED_SYMBOL},
-};
+struct kowhai_protocol_id_list_item_t function_id_list[COUNT_OF(function_list)];
 
 //
 // test protocol packet size
@@ -786,9 +777,7 @@ void server_buffer_received(xpsocket_handle conn, void* param, void* buffer, int
 void test_server_protocol()
 {
     char packet_buffer[MAX_PACKET_SIZE];
-    size_t tree_descriptor_sizes[COUNT_OF(tree_descriptors)];
     struct kowhai_protocol_server_t server;
-    kowhai_server_init_tree_descriptor_sizes(tree_descriptors, tree_descriptor_sizes, COUNT_OF(tree_descriptors));
     kowhai_server_init(&server,
         MAX_PACKET_SIZE,
         packet_buffer,
@@ -799,12 +788,10 @@ void test_server_protocol()
         NULL,
         COUNT_OF(tree_list),
         tree_list,
-        tree_descriptors,
-        tree_descriptor_sizes,
-        tree_data_buffers,
+        tree_id_list,
         COUNT_OF(function_list),
         function_list,
-        function_list_details,
+        function_id_list,
         function_called,
         NULL,
         COUNT_OF(symbols),
