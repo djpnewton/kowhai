@@ -78,6 +78,7 @@ void kowhai_server_init(struct kowhai_protocol_server_t* server,
     server->function_list = function_list;
     server->function_id_list = function_id_list;
     server->function_called = function_called;
+    server->function_called_param = function_called_param;
     server->symbol_list_count = symbol_list_count;
     server->symbol_list = symbol_list;
 
@@ -160,21 +161,21 @@ void _send_id_list(struct kowhai_protocol_server_t* server, struct kowhai_protoc
     // setup max payload size and payload offset
     max_payload_size = server->max_packet_size - overhead;
     prot->payload.spec.id_list.offset = 0;
-    prot->payload.spec.id_list.list_count = id_list_count;
+    prot->payload.spec.id_list.list_count = (uint16_t)id_list_count;
     // send packets
     while (size > max_payload_size)
     {
-        prot->payload.spec.id_list.size = max_payload_size;
+        prot->payload.spec.id_list.size = (uint16_t)max_payload_size;
         prot->payload.buffer = (char*)id_list + prot->payload.spec.id_list.offset;
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
         server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
         // increment payload offset and decrement remaining payload size
-        prot->payload.spec.id_list.offset += max_payload_size;
+        prot->payload.spec.id_list.offset += (uint16_t)max_payload_size;
         size -= max_payload_size;
     }
     // send final packet
     prot->header.command = cmd_ack_end;
-    prot->payload.spec.id_list.size = size;
+    prot->payload.spec.id_list.size = (uint16_t)size;
     prot->payload.buffer = (char*)id_list + prot->payload.spec.id_list.offset;
     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
@@ -228,23 +229,23 @@ void _send_string_list(struct kowhai_protocol_server_t* server, struct kowhai_pr
     // setup max payload size and payload offset
     max_payload_size = server->max_packet_size - overhead;
     prot->payload.spec.string_list.offset = 0;
-    prot->payload.spec.string_list.list_count = string_list_count;
+    prot->payload.spec.string_list.list_count = (uint16_t)string_list_count;
     prot->payload.spec.string_list.list_total_size = size;
     prot->payload.buffer = (char*)server->packet_buffer + overhead;
     // send packets
     while (size > max_payload_size)
     {
-        prot->payload.spec.string_list.size = max_payload_size;
+        prot->payload.spec.string_list.size = (uint16_t)max_payload_size;
         _copy_string_list_to_buffer(string_list, string_list_count, prot->payload.spec.string_list.offset, prot->payload.buffer, max_payload_size);
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
         server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
         // increment payload offset and decrement remaining payload size
-        prot->payload.spec.string_list.offset += max_payload_size;
+        prot->payload.spec.string_list.offset += (uint16_t)max_payload_size;
         size -= max_payload_size;
     }
     // send final packet
     prot->header.command = cmd_ack_end;
-    prot->payload.spec.string_list.size = size;
+    prot->payload.spec.string_list.size = (uint16_t)size;
     _copy_string_list_to_buffer(string_list, string_list_count, prot->payload.spec.string_list.offset, prot->payload.buffer, max_payload_size);
     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, prot, &bytes_required);
     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
@@ -426,17 +427,17 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                 // send packets
                 while (size > max_payload_size)
                 {
-                    prot.payload.spec.data.memory.size = max_payload_size;
+                    prot.payload.spec.data.memory.size = (uint16_t)max_payload_size;
                     kowhai_read(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
                     // increment payload offset and decrement remaining payload size
-                    prot.payload.spec.data.memory.offset += max_payload_size;
+                    prot.payload.spec.data.memory.offset += (uint16_t)max_payload_size;
                     size -= max_payload_size;
                 }
                 // send final packet
                 prot.header.command = KOW_CMD_READ_DATA_ACK_END;
-                prot.payload.spec.data.memory.size = size;
+                prot.payload.spec.data.memory.size = (uint16_t)size;
                 kowhai_read(&tree, prot.payload.spec.data.symbols.count, prot.payload.spec.data.symbols.array_, prot.payload.spec.data.memory.offset, prot.payload.buffer, prot.payload.spec.data.memory.size);
                 kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                 server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
@@ -474,17 +475,17 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
             // send packets
             while (size > max_payload_size)
             {
-                prot.payload.spec.descriptor.size = max_payload_size;
+                prot.payload.spec.descriptor.size = (uint16_t)max_payload_size;
                 prot.payload.buffer = (char*)tree.desc + prot.payload.spec.descriptor.offset;
                 kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                 server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
                 // increment payload offset and decrement remaining payload size
-                prot.payload.spec.descriptor.offset += max_payload_size;
+                prot.payload.spec.descriptor.offset += (uint16_t)max_payload_size;
                 size -= max_payload_size;
             }
             // send final packet
             prot.header.command = KOW_CMD_READ_DESCRIPTOR_ACK_END;
-            prot.payload.spec.descriptor.size = size;
+            prot.payload.spec.descriptor.size = (uint16_t)size;
             prot.payload.buffer = (char*)tree.desc + prot.payload.spec.descriptor.offset;
             kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
             server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
@@ -575,22 +576,22 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                                     // setup max payload size and payload offset
                                     max_payload_size = server->max_packet_size - overhead;
                                     prot.payload.spec.function_call.offset = 0;
-                                    prot.payload.spec.function_call.size = max_payload_size;
+                                    prot.payload.spec.function_call.size = (uint16_t)max_payload_size;
                                     prot.payload.buffer = tree.data;
                                     // send packets
                                     while (size > max_payload_size)
                                     {
-                                        prot.payload.spec.function_call.size = max_payload_size;
+                                        prot.payload.spec.function_call.size = (uint16_t)max_payload_size;
                                         prot.payload.buffer = (char*)tree.data + prot.payload.spec.function_call.offset;
                                         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                                         server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
                                         // increment payload offset and decrement remaining payload size
-                                        prot.payload.spec.function_call.offset += max_payload_size;
+                                        prot.payload.spec.function_call.offset += (uint16_t)max_payload_size;
                                         size -= max_payload_size;
                                     }
                                     // send final packet
                                     prot.header.command = KOW_CMD_CALL_FUNCTION_RESULT_END;
-                                    prot.payload.spec.function_call.size = size;
+                                    prot.payload.spec.function_call.size = (uint16_t)size;
                                     prot.payload.buffer = (char*)tree.data + prot.payload.spec.function_call.offset;
                                     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
                                     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
@@ -663,17 +664,17 @@ int kowhai_server_process_event(struct kowhai_protocol_server_t* server, uint16_
     // send packets
     while (buffer_size > max_payload_size)
     {
-        prot.payload.spec.event.size = max_payload_size;
+        prot.payload.spec.event.size = (uint16_t)max_payload_size;
         prot.payload.buffer = (char*)buffer + prot.payload.spec.event.offset;
         kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
         server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
         // increment payload offset and decrement remaining payload size
-        prot.payload.spec.event.offset += max_payload_size;
+        prot.payload.spec.event.offset += (uint16_t)max_payload_size;
         buffer_size -= max_payload_size;
     }
     // send final packet
     prot.header.command = KOW_CMD_EVENT_END;
-    prot.payload.spec.event.size = buffer_size;
+    prot.payload.spec.event.size = (uint16_t)buffer_size;
     prot.payload.buffer = (char*)buffer + prot.payload.spec.event.offset;
     kowhai_protocol_create(server->packet_buffer, server->max_packet_size, &prot, &bytes_required);
     server->send_packet(server, server->send_packet_param, server->packet_buffer, bytes_required);
