@@ -234,7 +234,7 @@ namespace kowhai_test
                                 ShowToast("Function Call Succeded", 800);
                         }
                         else
-                            MessageBox.Show("Why am I here?");
+                            ShowToast("Why am I here?");
                         break;
                     case KowhaiProtocol.CMD_CALL_FUNCTION_FAILED:
                         ShowToast(string.Format("Error - ProcessPacket(): Function call failed ({0})", prot.header.command));
@@ -669,8 +669,10 @@ namespace kowhai_test
 
         private void ShowToast(string message, int timeout)
         {
-            Toast f = new Toast(this, message, timeout);
-            f.Show();
+            Toast t = new Toast(this, message, timeout);
+            t.Closed += (s, e) => Controls.Remove((Control)s);
+            Controls.Add(t);
+            t.BringToFront();
         }
 
         private void ShowToast(string message)
