@@ -102,6 +102,9 @@
     </Compile>
     <Compile Include="Sock.cs" />
     <Compile Include="Symbols.cs" />
+    <Compile Include="Toast.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\kowhai_sharp\kowhai_sharp.csproj">
