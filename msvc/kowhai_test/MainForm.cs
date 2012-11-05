@@ -669,9 +669,12 @@ namespace kowhai_test
 
         private void ShowToast(string message, int timeout)
         {
-            Toast t = new Toast(this, message, timeout);
-            t.Closed += (s, e) => Controls.Remove((Control)s);
-            Controls.Add(t);
+            Form toastparent = this;
+            if (functionCallForm != null && functionCallForm.Visible)
+                toastparent = functionCallForm;
+            Toast t = new Toast(toastparent, message, timeout);
+            t.Closed += (s, e) => toastparent.Controls.Remove((Control)s);
+            toastparent.Controls.Add(t);
             t.BringToFront();
         }
 
