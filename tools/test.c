@@ -702,7 +702,7 @@ void node_post_write(pkowhai_protocol_server_t server, void* param, uint16_t tre
     printf("node_post_write: tree_id: %d, node: %p, offset: %d, bytes_written: %d\n", tree_id, node, offset, bytes_written);
 }
 
-void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buffer, size_t buffer_size)
+void server_buffer_send(pkowhai_protocol_server_t server, void* param, void* buffer, size_t buffer_size, struct kowhai_protocol_t* protocol)
 {
     xpsocket_handle conn = (xpsocket_handle)param;
     xpsocket_send(conn, buffer, buffer_size);
