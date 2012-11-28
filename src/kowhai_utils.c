@@ -1,14 +1,82 @@
 #include "kowhai_utils.h"
 
 #include <string.h>
+#include <assert.h>
 
 #define KOWHAI_UTILS_ERR "KOWHAI_UTILS ERROR:"
 #define KOWHAI_UTILS_INFO "KOWHAI_UTILS INFO: "
 #define KOWHAI_TABS "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 
-// forward decalre this to bring it in from kowhai.c as we need it
-///@todo there should be a way to either use the public api or get at internal kowhai stuff more easily
-int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowhai_symbol_t *symbols, int *offset, struct kowhai_node_t **target_node, int initial_branch, int branch_union);
+static int check_nodes_match(struct kowhai_node_t* left, struct kowhai_node_t* right)
+{
+    if (left->type != right->type)
+        return 0;
+    if (left->symbol != right->symbol)
+        return 0;
+    return 1;
+}
+
+static int compare_simple_node_contents(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_diff, int depth)
+{
+    int i, ret, left_size, right_size;
+
+    left_size = kowhai_get_node_type_size(left->desc->type);
+    right_size = kowhai_get_node_type_size(right->desc->type);
+
+    assert(left_size > 0 && right_size > 0);
+
+    for (i = 0; i < left->desc->count; i++)
+    {
+        int offset = left_size * i;
+
+        if (i < right->desc->count)
+        {
+            // these array elements differ if the sizes dont match or the values dont match
+            int run_on_diff = 0;
+            if (left_size != right_size)
+                run_on_diff = 1;
+            else if (memcmp((uint8_t*)left->data + offset, (uint8_t*)right->data + offset, left_size) != 0)
+                run_on_diff = 1;
+
+            // if a difference is detected then run on_diff
+            if (run_on_diff && on_diff != NULL)
+            {
+                ret = on_diff(on_diff_param, left->desc, (uint8_t*)left->data + offset, right->desc, (uint8_t*)right->data + offset, i, depth);
+                if (ret != KOW_STATUS_OK)
+                    return ret;
+            }
+        }
+        else
+        {
+            // call on_diff for unique array items
+            if (on_diff != NULL)
+            {
+                ret = on_diff(on_diff_param, left->desc, (uint8_t*)left->data + offset, NULL, NULL, i, depth);
+                if (ret != KOW_STATUS_OK)
+                    return ret;
+            }
+        }
+    }
+
+    return KOW_STATUS_OK;
+}
+
+static int increment_tree(struct kowhai_tree_t* tree, int in_union)
+{
+    int res, size, count;
+    if (!in_union)
+    {
+        res = kowhai_get_node_size(tree->desc, &size);
+        if (res != KOW_STATUS_OK)
+            return res;
+        tree->data = (uint8_t*)tree->data + size;
+    }
+    res = kowhai_get_node_count(tree->desc, &count);
+    if (res != KOW_STATUS_OK)
+        return res;
+    tree->desc = tree->desc + count;
+    return KOW_STATUS_OK;
+}
 
 /**
  * @brief diff_l2r diff left tree against right tree
@@ -20,193 +88,117 @@ int get_node(const struct kowhai_node_t *node, int num_symbols, const union kowh
  * @param right, diff this tree against left
  * @param right_node_index, the index of the right node in the original descriptor (used in recursive calls, original caller should pass 0)
  * @param on_diff_param, application specific parameter passed through the on_diff callback
- * @param on_unique, call this when a unique node is found in the left tree
- * @param on_diff, call this when a common node is found in both left and right trees and the values do not match
- * @param swap_cb_param, change the order of swap_cb_param so right if first then left, otherwise it is left then right
+ * @param on_diff, call this when a unique node in the left tree is found... or a common node is found in both left and right trees and the values do not match
  * @param depth, how deep in the tree are we (0 root, 1 first branch, etc)
  */
-static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_unique, kowhai_on_diff_t on_diff, int swap_cb_param, int depth)
+static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_diff, int depth)
 {
     int ret;
-    int offset;
-    struct kowhai_node_t *right_node;
-    union kowhai_symbol_t symbol;
-    int size;
-    int i;
-    unsigned int skip_nodes;
+    int in_union = left->desc->type == KOW_BRANCH_U_START;
+    struct kowhai_tree_t left_leafs, right_leafs;
 
-    // go through all the left nodes and look for matches in right 
-    while (1)
+    assert(left->desc->type == KOW_BRANCH_START || in_union);
+    assert(left->desc->type == right->desc->type);
+    assert(left->desc->symbol == right->desc->symbol);
+
+    // init left tree (first node to compare at this level)
+    left_leafs.desc = left->desc + 1;
+    left_leafs.data = left->data;
+
+    while (left_leafs.desc->type != KOW_BRANCH_END)
     {
-        // are we at the end of this branch
-        if (left->desc->type == KOW_BRANCH_END)
-        {
-            KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s pop\n", depth, depth, KOWHAI_TABS);
-            return KOW_STATUS_OK;
-        }
+        int found_node_match = 0;
 
-        // does the left path exist in the right path
-        skip_nodes = 0;
-        i = 0;
-        symbol.parts.name = left->desc->symbol;
-        symbol.parts.array_index = 0;
-        ret = get_node(right->desc, 1, &symbol, &offset, &right_node, 0, right->desc->type == KOW_BRANCH_U_START);
-        switch (ret)
+        // init right tree (compare against left tree at this level)
+        right_leafs.desc = right->desc + 1;
+        right_leafs.data = right->data;
+
+        while (right_leafs.desc->type != KOW_BRANCH_END)
         {
-            case KOW_STATUS_OK:
-                // found matching node in left and right tree's so diff all the common array items
-                if (left->desc->type == KOW_BRANCH_START || left->desc->type == KOW_BRANCH_U_START)
+            if (check_nodes_match(left_leafs.desc, right_leafs.desc))
+            {
+                // node metadata matches, do data comparison
+                int node_is_union = left_leafs.desc->type == KOW_BRANCH_U_START;
+                int node_is_branch = node_is_union || left_leafs.desc->type == KOW_BRANCH_START;
+                found_node_match = 1;
+                if (node_is_branch)
                 {
-                    // diff all the common array items one by one
-                    struct kowhai_tree_t __left = *left;
-                    struct kowhai_tree_t __right;
-                    for (i = 0; i < left->desc->count && i < right_node->count; i++)
+                    // compare a complex (branch) node
+                    int left_size, right_size, i;
+                    ret = kowhai_get_node_size(left_leafs.desc, &left_size);
+                    if (ret != KOW_STATUS_OK)
+                        return ret;
+                    ret = kowhai_get_node_size(right_leafs.desc, &right_size);
+                    if (ret != KOW_STATUS_OK)
+                        return ret;
+                    for (i = 0; i < left_leafs.desc->count; i++)
                     {
-                        // get the offset into right for the branch array item to update
-                        symbol.parts.array_index = i;
-                        ret = get_node(right->desc, 1, &symbol, &offset, NULL, 0, right->desc->type == KOW_BRANCH_U_START);
-                        if (ret != KOW_STATUS_OK)
-                            return ret;
-                        __right.desc = right_node + 1;
-                        __right.data = (uint8_t *)right->data + offset;
-                        __left.desc = left->desc + 1;
-
-                        // diff this branch array item (drill). NB recursive call to diff_l2r increments __left.data for each array item
-                        KOW_LOG(KOWHAI_UTILS_INFO "(%d)%.*s drill\n", depth, depth, KOWHAI_TABS, left->desc->symbol);
-                        ret = diff_l2r(&__left, &__right, on_diff_param, on_unique, on_diff, swap_cb_param, depth + 1);
-                        if (ret != KOW_STATUS_OK)
-                            return ret;
+                        // check for data diff in right branch array items
+                        if (i < right_leafs.desc->count)
+                        {
+                            ret = diff_l2r(&left_leafs, &right_leafs, on_diff_param, on_diff, depth + 1);
+                            if (ret != KOW_STATUS_OK)
+                                return ret;
+                            right_leafs.data = (uint8_t*)right_leafs.data + right_size / right_leafs.desc->count;
+                        }
+                        else if (on_diff != NULL)
+                            // missing array items from right branch
+                            on_diff(on_diff_param, left_leafs.desc, left_leafs.data, NULL, NULL, i, depth);
+                        left_leafs.data = (uint8_t*)left_leafs.data + left_size / left_leafs.desc->count;
                     }
+                    // rewind as increment tree will increment the data pointer
+                    left_leafs.data = (uint8_t*)left_leafs.data - left_size;
+                    right_leafs.data = (uint8_t*)right_leafs.data - right_size;
                 }
                 else
                 {
-                    // get the size of each element in the array (not the whole node size)
-                    int left_size, right_size;
-                    ret = kowhai_get_node_size(left->desc, &left_size);
+                    // compare a simple (non branch) node
+                    ret = compare_simple_node_contents(&left_leafs, &right_leafs, on_diff_param, on_diff, depth + 1);
                     if (ret != KOW_STATUS_OK)
                         return ret;
-                    ret = kowhai_get_node_size(right_node, &right_size);
-                    if (ret != KOW_STATUS_OK)
-                        return ret;
-
-                    // diff all the common elements in the array and call on_diff if the values do not match
-                    for (i = 0; i < left->desc->count && i < right_node->count; i++)
-                    {
-                        int left_offset, right_offset;
-                        uint8_t *left_data, *right_data;
-                        int run_on_diff = 0;
-
-                        // get offsets into the left and right arrays for this array item
-                        symbol.parts.array_index = i;
-                        ret = get_node(left->desc, 1, &symbol, &left_offset, NULL, 0, left->desc->type == KOW_BRANCH_U_START);
-                        if (ret != KOW_STATUS_OK)
-                            return ret;
-                        left_data = (uint8_t*)left->data + left_offset;
-                        ret = get_node(right_node, 1, &symbol, &right_offset, NULL, 0, right_node->type == KOW_BRANCH_U_START);
-                        if (ret != KOW_STATUS_OK)
-                            return ret;
-                        right_data = (uint8_t*)right->data + offset + right_offset;
-                        
-                        // these array elements differ is the sizes dont match or the values dont match
-                        if (left_size != right_size)
-                            run_on_diff = 1;
-                        else if (memcmp(left_data, right_data, left_size / left->desc->count) != 0)
-                            run_on_diff = 1;
-
-                        // if a difference is detected then run on_diff
-                        if (run_on_diff && (on_diff != NULL))
-                        {
-                            struct kowhai_node_t* left_node = left->desc;
-
-                            if (!swap_cb_param)
-                                ret = on_diff(on_diff_param, left_node, left_data, right_node, right_data, i, depth);
-                            else
-                                ret = on_diff(on_diff_param, right_node, right_data, left_node, left_data, i, depth);
-                            if (ret != KOW_STATUS_OK)
-                                return ret;
-                        }
-                    }
-                }
-                // allow fall through to call on_unqiue for any remaining nodes in the left but not right trees
-            case KOW_STATUS_INVALID_SYMBOL_PATH:
-                // we got here either becuase we could not find the left node in the right tree, or we fell through from above after 
-                // processing all the common array elements for nodes that appear in the left and right trees; now we need to call
-                // on unique for all unprocessed nodes (unqiue nodes in the left tree)
-                for (; i < left->desc->count; i++)
-                {
-                    void* left_data;
-                    // get the offset where array item i starts in the left branch
-                    symbol.parts.array_index = i;
-                    ret = get_node(left->desc, 1, &symbol, &offset, NULL, 0, left->desc->type == KOW_BRANCH_U_START);
-                    if (ret != KOW_STATUS_OK)
-                        return ret;
-                    left_data = (uint8_t*)left->data + offset;
-
-                    // call on unique
-                    if (on_unique != NULL)
-                    {
-                        if (!swap_cb_param)
-                            ret = on_unique(on_diff_param, left->desc, left_data, NULL, NULL, i, depth);
-                        else
-                            ret = on_unique(on_diff_param, NULL, NULL, left->desc, left_data, i, depth);
-                        if (ret != KOW_STATUS_OK)
-                            return ret;
-                    }
                 }
                 break;
-            default:
-                // fail boat
-                return ret;
+            }
+            else
+            {
+                // node metadata does not match increment right tree
+                ret = increment_tree(&right_leafs, in_union);
+                if (ret != KOW_STATUS_OK)
+                    return ret;
+            }
         }
 
-        // done with this node increment our position in the left tree
-        // note if this was a branch skip_nodes will != 0 and contain the number of nodes and
-        // kowhai_get_node_size will give the size of the whole branch
-        ret = kowhai_get_node_size(left->desc, &size);
+        if (!found_node_match && on_diff != NULL)
+            // node not found in right tree, call on_diff
+            on_diff(on_diff_param, left_leafs.desc, left_leafs.data, NULL, NULL, 1, depth);
+
+        // increment left tree (next node to compare at this level)
+        ret = increment_tree(&left_leafs, in_union);
         if (ret != KOW_STATUS_OK)
             return ret;
-        ret = kowhai_get_node_count(left->desc, &skip_nodes);
-        if (ret != KOW_STATUS_OK)
-            return ret;
-        left->data = (uint8_t *)left->data + size;
-        left->desc += skip_nodes;
-
-        // if this tree is not nicely formed (ie wrapped in a branch start/end) then the next item may not be a 
-        // branch end, instead we might just run off the end of the buffer so force a stop
-        if (depth == 0)
-            return KOW_STATUS_OK;
-
     }
+
+    return KOW_STATUS_OK;
 }
 
 /**
- * @brief diff left and right tree
- * If a node is found in the left tree that is not in the right tree (ie symbol path and types/array size match) or visa versa, call on_diff
+ * @brief diff left against right tree
+ * If a node is found in the left tree that is not in the right tree (ie symbol path and types/array size match), call on_diff
  * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
  * @param left, diff this tree against right
  * @param right, diff this tree against left
  * @param on_diff_param, application specific parameter passed through the on_diff callback
- * @param on_diff, call this when a unique node or common nodes that have different values are found
+ * @param on_diff, call this when a unique (to left) node or common nodes that have different values are found
  */
 int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_diff)
 {
-    struct kowhai_tree_t _left, _right;
     int ret;
 
     // we use diff_l2r to find nodes that are unique in the left tree, or nodes that differ in value between left and right first
     KOW_LOG(KOWHAI_UTILS_INFO "diff left against right\n");
-    _left = *left;
-    _right = *right;
-    ret = diff_l2r(&_left, &_right, on_diff_param, on_diff, on_diff, 0, 0);
+    ret = diff_l2r(left, right, on_diff_param, on_diff, 0);
     if (ret != KOW_STATUS_OK)
         return ret;
-
-    // we just have to find nodes that are unique in the right tree. to do this we reuse diff_l2r with left and right swapped
-    // and ask diff_l2r to reverse the params to the callbacks
-    KOW_LOG(KOWHAI_UTILS_INFO "diff right against left\n");
-    _left = *left;
-    _right = *right;
-    ret = diff_l2r(&_right, &_left, on_diff_param, on_diff, NULL, 1, 0);
 
     return ret;
 }
@@ -272,8 +264,6 @@ static int on_diff_merge(void* param, const struct kowhai_node_t *dst_node, void
 // merge nodes that are common to src and dst from src into dst leaving unique nodes unchanged
 int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
 {
-    struct kowhai_tree_t *_dst = dst;
-
     KOW_LOG("\n");
     // we only support merging of well formed tree's (both src and dst)
     if (dst->desc->type != KOW_BRANCH_START ||
@@ -281,7 +271,7 @@ int kowhai_merge(struct kowhai_tree_t *dst, struct kowhai_tree_t *src)
         return KOW_STATUS_INVALID_DESCRIPTOR;
     
     // update all the notes in dst that are common to dst and src
-    return kowhai_diff(_dst, src, NULL, on_diff_merge);
+    return kowhai_diff(dst, src, NULL, on_diff_merge);
 }
 
 int kowhai_create_symbol_path(struct kowhai_node_t* descriptor, struct kowhai_node_t* node, union kowhai_symbol_t* target, int* target_size)

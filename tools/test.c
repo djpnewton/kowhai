@@ -506,11 +506,98 @@ void serialization_tests()
     printf(" passed!\n");
 }
 
+#define DIFF_NONE           0
+#define DIFF_LEFT_UNIQUE    1
+#define DIFF_RIGHT_UNIQUE   2
+#define DIFF_DATA           3
+int diff_status;
+void* diff_address;
+int _on_diff(void* param, const struct kowhai_node_t *left_node, void *left_data, const struct kowhai_node_t *right_node, void *right_data, int index, int depth)
+{
+    if (left_node == NULL)
+    {
+        printf("    _on_diff: DIFF_RIGHT_UNIQUE\n");
+        diff_status = DIFF_RIGHT_UNIQUE;
+    }
+    else if (right_node == NULL)
+    {
+        printf("    _on_diff: DIFF_LEFT_UNIQUE\n");
+        diff_status = DIFF_LEFT_UNIQUE;
+    }
+    else
+    {
+        printf("    _on_diff: DIFF_DATA\n");
+        diff_status = DIFF_DATA;
+        diff_address = right_data;
+    }
+    return KOW_STATUS_OK;
+}
+
 void diff_tests()
 {
+    struct kowhai_node_t test_descriptor[] =
+    {
+        { KOW_BRANCH_START,     SYM_SETTINGS,       1,                0 },
+
+        { KOW_BRANCH_U_START,   SYM_FLUXCAPACITOR,  FLUX_CAP_COUNT,   0 },
+        { KOW_UINT32,           SYM_FREQUENCY,      1,                0 },
+        { KOW_UINT32,           SYM_GAIN,           1,                0 },
+        { KOW_FLOAT,            SYM_COEFFICIENT,    COEFF_COUNT,      0 },
+        { KOW_BRANCH_END,       SYM_FLUXCAPACITOR,  0,                0 },
+
+        { KOW_BRANCH_START,     SYM_OVEN,           1,                0 },
+        { KOW_INT16,            SYM_TEMP,           1,                0 },
+        { KOW_UINT16,           SYM_TIMEOUT,        1,                0 },
+        { KOW_BRANCH_END,       SYM_OVEN,           0,                0 },
+
+        { KOW_BRANCH_END,       SYM_SETTINGS,       1,                0 },
+    };
+    struct test_settings_t
+    {
+        union
+        {
+            uint32_t freq;
+            uint32_t gain;
+            float coeff[COEFF_COUNT];
+        } fluxcap[FLUX_CAP_COUNT];
+        struct
+        {
+            int16_t temp;
+            uint16_t timeout;
+        } oven;
+    };
+    
+    struct test_settings_t settings1 = { 1, 2, 3, 4};
+    struct test_settings_t settings2;
+
+    struct kowhai_tree_t tree_left, tree_right;
+
     printf("kowhai_diff tests!\n");
-    printf("  TODO: implement me!!!!\n");
-    //getc(stdin);
+
+    // init trees
+    tree_left.desc = test_descriptor;
+    tree_left.data = &settings1;
+    tree_right.desc = test_descriptor;
+    tree_right.data = &settings2;
+
+    // tests
+    memcpy(&settings2, &settings1, sizeof(struct test_settings_t));
+    assert(memcmp(&settings2, &settings1, sizeof(struct test_settings_t)) == 0);
+    diff_status = DIFF_NONE;
+    kowhai_diff(&tree_left, &tree_right, NULL, _on_diff);
+    assert(diff_status == DIFF_NONE);
+    assert(memcmp(&settings2, &settings1, sizeof(struct test_settings_t)) == 0);
+    settings1.oven.temp++;
+    kowhai_diff(&tree_left, &tree_right, NULL, _on_diff);
+    assert(diff_status == DIFF_DATA);
+    assert(diff_address == &settings2.oven.temp);
+    settings1.oven.temp--;
+    diff_status = DIFF_NONE;
+    settings1.fluxcap[1].coeff[3]++;
+    kowhai_diff(&tree_left, &tree_right, NULL, _on_diff);
+    assert(diff_status == DIFF_DATA);
+    assert(diff_address == &settings2.fluxcap[1].coeff[3]);
+
     printf(" passed!\n");
 }
 
