@@ -522,8 +522,9 @@ namespace kowhai_sharp
         public void _diffAt(Kowhai.kowhai_symbol_t[] symbolPath, bool[] symbolPathMatchesArrayIndex, int symbolPathIndex, TreeNode node)
         {
             KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
-            bool isBranchArrayItem = info.IsArrayItem && (info.KowhaiNode.type == Kowhai.BRANCH_START || info.KowhaiNode.type == Kowhai.BRANCH_U_START);
-            bool isLeafArrayParent = node.Nodes.Count > 0 && (info.KowhaiNode.type != Kowhai.BRANCH_START && info.KowhaiNode.type != Kowhai.BRANCH_U_START);
+            bool isBranch = info.KowhaiNode.type == Kowhai.BRANCH_START || info.KowhaiNode.type == Kowhai.BRANCH_U_START;
+            bool isBranchArrayItem = info.IsArrayItem && isBranch;
+            bool isLeafArrayParent = node.Nodes.Count > 0 && !isBranch;
             // poplulate symbolPathMatchesArrayIndex to ensure we are on the correct branch of the treeview
             if (isBranchArrayItem)
                 symbolPathMatchesArrayIndex[symbolPathIndex - 1] = info.ArrayIndex == symbolPath[symbolPathIndex - 1].parts.array_index;
@@ -533,6 +534,9 @@ namespace kowhai_sharp
                     return;
                 symbolPathMatchesArrayIndex[symbolPathIndex] = info.ArrayIndex == symbolPath[symbolPathIndex].parts.array_index;
             }
+            // color treeview node orange is match in this branch
+            if (!symbolPathMatchesArrayIndex.Take(symbolPathIndex).Contains(false))
+                node.BackColor = Color.Yellow;
             // color treeview node red is match is found
             if (symbolPathIndex == symbolPath.Length - 1 && !symbolPathMatchesArrayIndex.Contains(false) &&
                 !isLeafArrayParent && !isBranchArrayItem)
