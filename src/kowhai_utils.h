@@ -16,13 +16,13 @@
 typedef int (*kowhai_on_diff_t)(void* param, const struct kowhai_node_t *left_node, void *left_data, const struct kowhai_node_t *right_node, void *right_data, int index, int depth);
 
 /**
- * @brief diff left and right tree
- * If a node is found in the left tree that is not in the right tree (ie symbol path and types/array size match) or visa versa, call on_diff
+ * @brief diff left against right tree
+ * If a node is found in the left tree that is not in the right tree (ie symbol path and types/array size match), call on_diff
  * If a node is found in both left and right tree, but the values of the node items do not match call on_diff
  * @param left, diff this tree against right
  * @param right, diff this tree against left
  * @param on_diff_param, application specific parameter passed through the on_diff callback
- * @param on_diff, call this when a unique node or common nodes that have different values are found
+ * @param on_diff, call this when a unique (to left) node or common nodes that have different values are found
  */
 int kowhai_diff(struct kowhai_tree_t *left, struct kowhai_tree_t *right, void* on_diff_param, kowhai_on_diff_t on_diff);
 
