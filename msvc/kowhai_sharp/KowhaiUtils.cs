@@ -23,7 +23,7 @@ namespace kowhai_sharp
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_create_symbol_path2(ref Kowhai.kowhai_tree_t tree, IntPtr target_location, IntPtr target, ref int target_size);
 
-        public delegate void OnDiff(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath);
+        public delegate void OnDiff(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath, int offset, int size);
 
         public static int Diff(Kowhai.Tree left, Kowhai.Tree right, Object onDiffParam, OnDiff onDiffLeft, OnDiff onDiffRight)
         {
@@ -46,13 +46,13 @@ namespace kowhai_sharp
                 {
                     result = _CreateSymbolPath(ref l, left_data, out symbolPath);
                     if (result == Kowhai.STATUS_OK)
-                        onDiffLeft(onDiffParam, left, symbolPath);
+                        onDiffLeft(onDiffParam, left, symbolPath, (int)(left_data.ToInt64() - l.data.ToInt64()), Kowhai.kowhai_get_node_type_size(left_node.type));
                 }
                 if (onDiffRight != null && right_data.ToInt32() != 0)
                 {
                     result = _CreateSymbolPath(ref r, right_data, out symbolPath);
                     if (result == Kowhai.STATUS_OK)
-                        onDiffRight(onDiffParam, right, symbolPath);
+                        onDiffRight(onDiffParam, right, symbolPath, (int)(right_data.ToInt64() - r.data.ToInt64()), Kowhai.kowhai_get_node_type_size(right_node.type));
                 }
                 return Kowhai.STATUS_OK;
             };

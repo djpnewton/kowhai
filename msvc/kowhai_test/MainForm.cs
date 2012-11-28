@@ -496,9 +496,9 @@ namespace kowhai_test
             LoadTree(kowhaiTreeScratch);
         }
 
-        void onSettingsDiffRight(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath)
+        void onSettingsDiffRight(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath, int diffOffset, int diffSize)
         {
-            kowhaiTreeScratch.DiffAt(symbolPath);
+            kowhaiTreeScratch.DiffAt(symbolPath, diffOffset, diffSize);
         }
 
         private void btnDiff_Click(object sender, EventArgs e)

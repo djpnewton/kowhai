@@ -511,20 +511,23 @@ namespace kowhai_sharp
                 BlankNodes(childNode);
         }
 
-        public void DiffAt(Kowhai.kowhai_symbol_t[] symbolPath)
+        public void DiffAt(Kowhai.kowhai_symbol_t[] symbolPath, int diffOffset, int diffSize)
         {
             treeView1.BeginUpdate();
             foreach (TreeNode childNode in treeView1.Nodes)
-                _diffAt(symbolPath, new bool[symbolPath.Length], 0, childNode);
+                _diffAt(symbolPath, new bool[symbolPath.Length], 0, childNode, diffOffset, diffSize);
             treeView1.EndUpdate();
         }
 
-        public void _diffAt(Kowhai.kowhai_symbol_t[] symbolPath, bool[] symbolPathMatchesArrayIndex, int symbolPathIndex, TreeNode node)
+        public void _diffAt(Kowhai.kowhai_symbol_t[] symbolPath, bool[] symbolPathMatchesArrayIndex, int symbolPathIndex, TreeNode node, int diffOffset, int diffSize)
         {
             KowhaiNodeInfo info = (KowhaiNodeInfo)node.Tag;
             bool isBranch = info.KowhaiNode.type == Kowhai.BRANCH_START || info.KowhaiNode.type == Kowhai.BRANCH_U_START;
             bool isBranchArrayItem = info.IsArrayItem && isBranch;
             bool isLeafArrayParent = node.Nodes.Count > 0 && !isBranch;
+            // color treeview node red if match is found
+            if (info.Offset >= diffOffset && info.Offset < diffOffset + diffSize)
+                node.BackColor = Color.Red;
             // poplulate symbolPathMatchesArrayIndex to ensure we are on the correct branch of the treeview
             if (isBranchArrayItem)
                 symbolPathMatchesArrayIndex[symbolPathIndex - 1] = info.ArrayIndex == symbolPath[symbolPathIndex - 1].parts.array_index;
@@ -535,17 +538,13 @@ namespace kowhai_sharp
                 symbolPathMatchesArrayIndex[symbolPathIndex] = info.ArrayIndex == symbolPath[symbolPathIndex].parts.array_index;
             }
             // color treeview node orange is match in this branch
-            if (!symbolPathMatchesArrayIndex.Take(symbolPathIndex).Contains(false))
+            if (!symbolPathMatchesArrayIndex.Take(symbolPathIndex).Contains(false) && node.BackColor != Color.Red)
                 node.BackColor = Color.Yellow;
-            // color treeview node red is match is found
-            if (symbolPathIndex == symbolPath.Length - 1 && !symbolPathMatchesArrayIndex.Contains(false) &&
-                !isLeafArrayParent && !isBranchArrayItem)
-                node.BackColor = Color.Red;
             // increment symbol path index and check next level of treeview
             if (!isBranchArrayItem && !isLeafArrayParent)
                 symbolPathIndex++;
             foreach (TreeNode childNode in node.Nodes)
-                _diffAt(symbolPath, symbolPathMatchesArrayIndex, symbolPathIndex, childNode);
+                _diffAt(symbolPath, symbolPathMatchesArrayIndex, symbolPathIndex, childNode, diffOffset, diffSize);
         }
 
         public void ResetNodesBackColor()
@@ -558,7 +557,7 @@ namespace kowhai_sharp
 
         private void _resetNodesBackColor(TreeNode node)
         {
-            if (node.Nodes.Count == 0)
+            if (node.BackColor != Color.White)
                 node.BackColor = Color.White;
             foreach (TreeNode childNode in node.Nodes)
                 _resetNodesBackColor(childNode);
