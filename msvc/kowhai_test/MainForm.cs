@@ -496,9 +496,10 @@ namespace kowhai_test
             LoadTree(kowhaiTreeScratch);
         }
 
-        void onSettingsDiffRight(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath, int diffOffset, int diffSize)
+        void onSettingsDiff(Object param, Kowhai.Tree left, Kowhai.kowhai_symbol_t[] symbolPathLeft, int offsetLeft, Kowhai.Tree right, Kowhai.kowhai_symbol_t[] symbolPathRight, int offsetRight, int size)
         {
-            kowhaiTreeScratch.DiffAt(symbolPath, diffOffset, diffSize);
+            if (symbolPathRight != null)
+                kowhaiTreeScratch.DiffAt(symbolPathRight, offsetRight, size);
         }
 
         private void btnDiff_Click(object sender, EventArgs e)
@@ -507,7 +508,7 @@ namespace kowhai_test
             Kowhai.Tree left = new Kowhai.Tree(leftTree.GetDescriptor(), leftTree.GetData());
             kowhaiTreeScratch.ResetNodesBackColor();
             Kowhai.Tree right = new Kowhai.Tree(kowhaiTreeScratch.GetDescriptor(), kowhaiTreeScratch.GetData());
-            if (KowhaiUtils.Diff(left, right, null, null, onSettingsDiffRight) != Kowhai.STATUS_OK)
+            if (KowhaiUtils.Diff(left, right, null, onSettingsDiff) != Kowhai.STATUS_OK)
                 MessageBox.Show("Diff Error", "Doh!", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 

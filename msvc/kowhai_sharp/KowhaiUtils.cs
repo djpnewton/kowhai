@@ -23,9 +23,9 @@ namespace kowhai_sharp
         [DllImport(Kowhai.dllname, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int kowhai_create_symbol_path2(ref Kowhai.kowhai_tree_t tree, IntPtr target_location, IntPtr target, ref int target_size);
 
-        public delegate void OnDiff(Object param, Kowhai.Tree tree, Kowhai.kowhai_symbol_t[] symbolPath, int offset, int size);
+        public delegate void OnDiff(Object param, Kowhai.Tree left, Kowhai.kowhai_symbol_t[] symbolPathLeft, int offsetLeft, Kowhai.Tree right, Kowhai.kowhai_symbol_t[] symbolPathRight, int offsetRight, int size);
 
-        public static int Diff(Kowhai.Tree left, Kowhai.Tree right, Object onDiffParam, OnDiff onDiffLeft, OnDiff onDiffRight)
+        public static int Diff(Kowhai.Tree left, Kowhai.Tree right, Object onDiffParam, OnDiff onDiff)
         {
             int result;
             Kowhai.kowhai_tree_t l, r;
@@ -41,19 +41,34 @@ namespace kowhai_sharp
 
             kowhai_on_diff_t _onDiff = delegate(IntPtr param_, ref Kowhai.kowhai_node_t left_node, IntPtr left_data, ref Kowhai.kowhai_node_t right_node, IntPtr right_data, int index, int depth)
             {
-                Kowhai.kowhai_symbol_t[] symbolPath;
-                if (onDiffLeft != null && left_data.ToInt32() != 0)
+                Kowhai.kowhai_symbol_t[] symbolPathLeft = null;
+                int offsetLeft = 0;
+                if (left_data.ToInt32() != 0)
                 {
-                    result = _CreateSymbolPath(ref l, left_data, out symbolPath);
-                    if (result == Kowhai.STATUS_OK)
-                        onDiffLeft(onDiffParam, left, symbolPath, (int)(left_data.ToInt64() - l.data.ToInt64()), Kowhai.kowhai_get_node_type_size(left_node.type));
+                    result = _CreateSymbolPath(ref l, left_data, out symbolPathLeft);
+                    if (result != Kowhai.STATUS_OK)
+                        return result;
+                    offsetLeft = (int)(left_data.ToInt64() - l.data.ToInt64());
                 }
-                if (onDiffRight != null && right_data.ToInt32() != 0)
+                Kowhai.kowhai_symbol_t[] symbolPathRight = null;
+                int offsetRight = 0;
+                if (right_data.ToInt32() != 0)
                 {
-                    result = _CreateSymbolPath(ref r, right_data, out symbolPath);
-                    if (result == Kowhai.STATUS_OK)
-                        onDiffRight(onDiffParam, right, symbolPath, (int)(right_data.ToInt64() - r.data.ToInt64()), Kowhai.kowhai_get_node_type_size(right_node.type));
+                    result = _CreateSymbolPath(ref r, right_data, out symbolPathRight);
+                    if (result != Kowhai.STATUS_OK)
+                        return result;
+                    offsetRight = (int)(right_data.ToInt64() - r.data.ToInt64());
                 }
+                int size = 0;
+                if (left_data.ToInt32() != 0)
+                {
+                    size = Kowhai.kowhai_get_node_type_size(left_node.type);
+                    if (right_data.ToInt32() != 0)
+                        System.Diagnostics.Debug.Assert(left_node.type == right_node.type);
+                }
+                else if (right_data.ToInt32() != 0)
+                    size = Kowhai.kowhai_get_node_type_size(right_node.type);
+                onDiff(onDiffParam, left, symbolPathLeft, offsetLeft, right, symbolPathRight, offsetRight, size);
                 return Kowhai.STATUS_OK;
             };
 
