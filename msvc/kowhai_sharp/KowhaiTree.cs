@@ -76,6 +76,8 @@ namespace kowhai_sharp
 
         public event DataChangeEventHandler DataChange;
         public event NodeReadEventHandler NodeRead;
+        public event EventHandler LoadSettings;
+        public event EventHandler SaveSettings;
 
         public KowhaiTree()
         {
@@ -348,6 +350,11 @@ namespace kowhai_sharp
             return descriptor;
         }
 
+        public string[] GetSymbols()
+        {
+            return symbols;
+        }
+
         public byte[] GetData()
         {
             return data;
@@ -433,14 +440,21 @@ namespace kowhai_sharp
             treeView1.LabelEdit = false;
         }
 
+        private void contextMenuStrip1_Opening(object sender, CancelEventArgs e)
+        {
+            refreshNodeToolStripMenuItem.Visible = NodeRead != null;
+            editNodeToolStripMenuItem.Visible = DataChange != null;
+            loadSettingsToolStripMenuItem.Visible = LoadSettings != null;
+            saveSettingsToolStripMenuItem.Visible = SaveSettings != null;
+        }
+
         private void refreshNodeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (selectedNode != null && selectedNode.Tag != null)
             {
                 BlankNodes(selectedNode);
                 KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
-                if (NodeRead != null)
-                    NodeRead(this, new NodeReadEventArgs(info));
+                NodeRead(this, new NodeReadEventArgs(info));
             }
         }
 
@@ -493,6 +507,16 @@ namespace kowhai_sharp
                 else
                     BeginEdit(selectedNode);
             }
+        }
+
+        private void loadSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            LoadSettings(this, new EventArgs());
+        }
+
+        private void saveSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveSettings(this, new EventArgs());
         }
 
         private void BlankNodes(TreeNode node)

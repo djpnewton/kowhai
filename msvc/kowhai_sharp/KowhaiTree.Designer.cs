@@ -33,6 +33,8 @@
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.refreshNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loadSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.saveSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -40,9 +42,9 @@
             // 
             this.treeView1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.treeView1.Location = new System.Drawing.Point(0, 0);
-            this.treeView1.Margin = new System.Windows.Forms.Padding(2);
+            this.treeView1.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.treeView1.Name = "treeView1";
-            this.treeView1.Size = new System.Drawing.Size(112, 122);
+            this.treeView1.Size = new System.Drawing.Size(149, 150);
             this.treeView1.TabIndex = 0;
             this.treeView1.AfterLabelEdit += new System.Windows.Forms.NodeLabelEditEventHandler(this.treeView1_AfterLabelEdit);
             this.treeView1.DoubleClick += new System.EventHandler(this.treeView1_DoubleClick);
@@ -54,32 +56,49 @@
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.refreshNodeToolStripMenuItem,
-            this.editNodeToolStripMenuItem});
+            this.editNodeToolStripMenuItem,
+            this.loadSettingsToolStripMenuItem,
+            this.saveSettingsToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(153, 70);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(169, 122);
+            this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // refreshNodeToolStripMenuItem
             // 
             this.refreshNodeToolStripMenuItem.Name = "refreshNodeToolStripMenuItem";
-            this.refreshNodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.refreshNodeToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
             this.refreshNodeToolStripMenuItem.Text = "Refresh Node";
             this.refreshNodeToolStripMenuItem.Click += new System.EventHandler(this.refreshNodeToolStripMenuItem_Click);
             // 
             // editNodeToolStripMenuItem
             // 
             this.editNodeToolStripMenuItem.Name = "editNodeToolStripMenuItem";
-            this.editNodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.editNodeToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
             this.editNodeToolStripMenuItem.Text = "Edit Node";
             this.editNodeToolStripMenuItem.Click += new System.EventHandler(this.editNodeToolStripMenuItem_Click);
             // 
+            // loadSettingsToolStripMenuItem
+            // 
+            this.loadSettingsToolStripMenuItem.Name = "loadSettingsToolStripMenuItem";
+            this.loadSettingsToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
+            this.loadSettingsToolStripMenuItem.Text = "Load Settings";
+            this.loadSettingsToolStripMenuItem.Click += new System.EventHandler(this.loadSettingsToolStripMenuItem_Click);
+            // 
+            // saveSettingsToolStripMenuItem
+            // 
+            this.saveSettingsToolStripMenuItem.Name = "saveSettingsToolStripMenuItem";
+            this.saveSettingsToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
+            this.saveSettingsToolStripMenuItem.Text = "Save Settings";
+            this.saveSettingsToolStripMenuItem.Click += new System.EventHandler(this.saveSettingsToolStripMenuItem_Click);
+            // 
             // KowhaiTree
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.treeView1);
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "KowhaiTree";
-            this.Size = new System.Drawing.Size(112, 122);
+            this.Size = new System.Drawing.Size(149, 150);
             this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -91,5 +110,7 @@
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.ToolStripMenuItem refreshNodeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem editNodeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem loadSettingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveSettingsToolStripMenuItem;
     }
 }
