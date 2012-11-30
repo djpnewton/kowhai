@@ -159,40 +159,40 @@ namespace kowhai_sharp
         public static extern int kowhai_get_node_count(IntPtr tree_descriptor, out int count);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_read(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int read_offset, IntPtr result, int read_size);
+        public static extern int kowhai_read(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, int read_offset, IntPtr result, int read_size);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_write(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int write_offset, IntPtr value, int write_size);
+        public static extern int kowhai_write(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, int write_offset, IntPtr value, int write_size);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_int8(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out byte result);
+        public static extern int kowhai_get_int8(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, out byte result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out sbyte result);
+        public static extern int kowhai_get_char(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, out sbyte result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out int16_t result);
+        public static extern int kowhai_get_int16(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, out int16_t result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_int32(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out int32_t result);
+        public static extern int kowhai_get_int32(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, out int32_t result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_get_float(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, out float result);
+        public static extern int kowhai_get_float(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, out float result);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_set_int8(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, byte value);
+        public static extern int kowhai_set_int8(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, byte value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_set_char(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, sbyte value);
+        public static extern int kowhai_set_char(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, sbyte value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_set_int16(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int16_t value);
+        public static extern int kowhai_set_int16(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, int16_t value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_set_int32(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, int32_t value);
+        public static extern int kowhai_set_int32(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, int32_t value);
 
         [DllImport(dllname, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int kowhai_set_float(IntPtr tree_descriptor, IntPtr tree_data, int num_symbols, IntPtr symbols, float value);
+        public static extern int kowhai_set_float(ref kowhai_tree_t tree, int num_symbols, IntPtr symbols, float value);
 
         public static int GetNode(kowhai_node_t[] descriptor, kowhai_symbol_t[] symbols, out int offset, out kowhai_node_t node)
         {
@@ -214,6 +214,40 @@ namespace kowhai_sharp
             GCHandle h = GCHandle.Alloc(descriptor, GCHandleType.Pinned);
             int result = kowhai_get_node_size(h.AddrOfPinnedObject(), out size);
             h.Free();
+            return result;
+        }
+
+        public static int Read(Tree tree, kowhai_symbol_t[] symbolPath, int offset, ref byte[] data)
+        {
+            GCHandle hDesc = GCHandle.Alloc(tree.Descriptor, GCHandleType.Pinned);
+            GCHandle hTreeData = GCHandle.Alloc(tree.Data, GCHandleType.Pinned);
+            kowhai_tree_t nativeTree = new kowhai_tree_t();
+            nativeTree.desc = hDesc.AddrOfPinnedObject();
+            nativeTree.data = hTreeData.AddrOfPinnedObject();
+            GCHandle hSyms = GCHandle.Alloc(symbolPath, GCHandleType.Pinned);
+            GCHandle hReadData = GCHandle.Alloc(data, GCHandleType.Pinned);
+            int result = kowhai_read(ref nativeTree, symbolPath.Length, hSyms.AddrOfPinnedObject(), offset, hReadData.AddrOfPinnedObject(), data.Length);
+            hReadData.Free();
+            hSyms.Free();
+            hTreeData.Free();
+            hDesc.Free();
+            return result;
+        }
+
+        public static int Write(Tree tree, kowhai_symbol_t[] symbolPath, int offset, byte[] data)
+        {
+            GCHandle hDesc = GCHandle.Alloc(tree.Descriptor, GCHandleType.Pinned);
+            GCHandle hTreeData = GCHandle.Alloc(tree.Data, GCHandleType.Pinned);
+            kowhai_tree_t nativeTree = new kowhai_tree_t();
+            nativeTree.desc = hDesc.AddrOfPinnedObject();
+            nativeTree.data = hTreeData.AddrOfPinnedObject();
+            GCHandle hSyms = GCHandle.Alloc(symbolPath, GCHandleType.Pinned);
+            GCHandle hWriteData = GCHandle.Alloc(data, GCHandleType.Pinned);
+            int result = kowhai_write(ref nativeTree, symbolPath.Length, hSyms.AddrOfPinnedObject(), offset, hWriteData.AddrOfPinnedObject(), data.Length);
+            hWriteData.Free();
+            hSyms.Free();
+            hTreeData.Free();
+            hDesc.Free();
             return result;
         }
     }
