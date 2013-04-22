@@ -1,5 +1,6 @@
-CC 	   = gcc
-CFLAGS     = -g -DKOWHAI_DBG -fPIC
+CC 	   ?= gcc
+AR 	   ?= ar
+CFLAGS += -g -DKOWHAI_DBG -fPIC
 ## ARM stuff
 #CC 	   = arm-none-eabi-gcc
 #CFLAGS    = -fpic -static
@@ -20,18 +21,20 @@ else
 	LIBS += -lpthread
 endif
 
-all: jsmn kowhai test
+all: jsmn libkowhai.a test
 
 test: tools/test.o tools/xpsocket.o tools/beep.o tools/timer.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) -L. -Wl,-Bstatic -lkowhai -Wl,-Bdynamic
 
-kowhai: src/kowhai.o src/kowhai_log.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o src/kowhai_utils.o 3rdparty/jsmn/jsmn.o
-	ar rs lib$@.a $?
+libkowhai.a: src/kowhai.o src/kowhai_log.o src/kowhai_protocol.o src/kowhai_protocol_server.o src/kowhai_serialize.o src/kowhai_utils.o 3rdparty/jsmn/jsmn.o
+	$(AR) rs $@ $?
+
+libkowhai.so: src/kowhai.c src/kowhai_log.c src/kowhai_protocol.c src/kowhai_protocol_server.c src/kowhai_serialize.c src/kowhai_utils.c 3rdparty/jsmn/jsmn.c
 	# make a shared library for linux/mac (@todo versioning)
-	$(CC) $(CFLAGS) -shared -Wl,-soname,lib$@.so -o lib$@.so $?
+	$(CC) $(CFLAGS) -shared -Wl,-soname,$@ -o $@ $?
 
 jsmn: 3rdparty/jsmn/jsmn.o
-	ar rs lib$@.a $?
+	$(AR) rs lib$@.a $?
 
 3rdparty/jsmn/jsmn.o: 3rdparty/jsmn/jsmn.c
 	$(CC) $(CFLAGS) -c -o $@ $<
