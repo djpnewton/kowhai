@@ -35,6 +35,7 @@
             this.editNodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.showNodeSymbolPathToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -57,39 +58,47 @@
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.refreshNodeToolStripMenuItem,
             this.editNodeToolStripMenuItem,
+            this.showNodeSymbolPathToolStripMenuItem,
             this.loadSettingsToolStripMenuItem,
             this.saveSettingsToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(169, 122);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(243, 146);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip1_Opening);
             // 
             // refreshNodeToolStripMenuItem
             // 
             this.refreshNodeToolStripMenuItem.Name = "refreshNodeToolStripMenuItem";
-            this.refreshNodeToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
+            this.refreshNodeToolStripMenuItem.Size = new System.Drawing.Size(242, 24);
             this.refreshNodeToolStripMenuItem.Text = "Refresh Node";
             this.refreshNodeToolStripMenuItem.Click += new System.EventHandler(this.refreshNodeToolStripMenuItem_Click);
             // 
             // editNodeToolStripMenuItem
             // 
             this.editNodeToolStripMenuItem.Name = "editNodeToolStripMenuItem";
-            this.editNodeToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
+            this.editNodeToolStripMenuItem.Size = new System.Drawing.Size(242, 24);
             this.editNodeToolStripMenuItem.Text = "Edit Node";
             this.editNodeToolStripMenuItem.Click += new System.EventHandler(this.editNodeToolStripMenuItem_Click);
             // 
             // loadSettingsToolStripMenuItem
             // 
             this.loadSettingsToolStripMenuItem.Name = "loadSettingsToolStripMenuItem";
-            this.loadSettingsToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
+            this.loadSettingsToolStripMenuItem.Size = new System.Drawing.Size(242, 24);
             this.loadSettingsToolStripMenuItem.Text = "Load Settings";
             this.loadSettingsToolStripMenuItem.Click += new System.EventHandler(this.loadSettingsToolStripMenuItem_Click);
             // 
             // saveSettingsToolStripMenuItem
             // 
             this.saveSettingsToolStripMenuItem.Name = "saveSettingsToolStripMenuItem";
-            this.saveSettingsToolStripMenuItem.Size = new System.Drawing.Size(168, 24);
+            this.saveSettingsToolStripMenuItem.Size = new System.Drawing.Size(242, 24);
             this.saveSettingsToolStripMenuItem.Text = "Save Settings";
             this.saveSettingsToolStripMenuItem.Click += new System.EventHandler(this.saveSettingsToolStripMenuItem_Click);
+            // 
+            // showNodeSymbolPathToolStripMenuItem
+            // 
+            this.showNodeSymbolPathToolStripMenuItem.Name = "showNodeSymbolPathToolStripMenuItem";
+            this.showNodeSymbolPathToolStripMenuItem.Size = new System.Drawing.Size(242, 24);
+            this.showNodeSymbolPathToolStripMenuItem.Text = "Show Node Symbol Path";
+            this.showNodeSymbolPathToolStripMenuItem.Click += new System.EventHandler(this.showNodeSymbolPathToolStripMenuItem_Click);
             // 
             // KowhaiTree
             // 
@@ -112,5 +121,6 @@
         private System.Windows.Forms.ToolStripMenuItem editNodeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem loadSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem saveSettingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem showNodeSymbolPathToolStripMenuItem;
     }
 }
