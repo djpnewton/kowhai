@@ -533,7 +533,7 @@ namespace kowhai_sharp
                         pathIndexes += ", ";
                     }
                 }
-                MessageBox.Show(string.Format("Symbol Strings: {0}\nSymbol Indexes{1}", pathHumanReadable, pathIndexes),
+                MessageBox.Show(string.Format("Symbol Strings:\n    {0}\nSymbol Indexes:\n    {1}", pathHumanReadable, pathIndexes),
                     "Node Symbol Path");
             }
         }
