@@ -349,7 +349,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     server->current_write_node_offset = offset;
                     server->current_write_node_bytes_written = 0;
                     // call node_pre_write callback
-                    server->node_pre_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset);
+                    if (server->node_pre_write)
+                        server->node_pre_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset);
                 }
             }
             // write to tree
@@ -366,7 +367,8 @@ int kowhai_server_process_packet(struct kowhai_protocol_server_t* server, void* 
                     // call node_post_write callback
                     if (prot.header.command == KOW_CMD_WRITE_DATA_END)
                     {
-                        server->node_post_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset, server->current_write_node_bytes_written);
+                        if (server->node_post_write)
+                            server->node_post_write(server, server->node_write_param, prot.header.id, server->current_write_node, server->current_write_node_offset, server->current_write_node_bytes_written);
                         // clear current write node if at end of write sequence
                         server->current_write_node = NULL;
                     }
