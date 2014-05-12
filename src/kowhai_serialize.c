@@ -76,31 +76,45 @@ int add_indent(char** dest, size_t* dest_size, int* current_offset, int depth)
 int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node_type, void* data)
 {
     int chars;
+    union
+    {
+        uint8_t b[4];
+        char c;
+        int8_t i8;
+        int16_t i16;
+        int32_t i32;
+        uint8_t ui8;
+        uint16_t ui16;
+        uint32_t ui32;
+        float f;
+    } val;
+    memcpy(&val, data, 4);
+
     switch (node_type)
     {
         case KOW_CHAR:
-            chars = write_string(*dest, *dest_size, "%d", *((char *)data));
+            chars = write_string(*dest, *dest_size, "%d", val.c);
             break;
         case KOW_INT8:
-            chars = write_string(*dest, *dest_size, "%d", *((int8_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.i8);
             break;
         case KOW_INT16:
-            chars = write_string(*dest, *dest_size, "%d", *((int16_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.i16);
             break;
         case KOW_INT32:
-            chars = write_string(*dest, *dest_size, "%d", *((int32_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.i32);
             break;
         case KOW_UINT8:
-            chars = write_string(*dest, *dest_size, "%d", *((uint8_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.ui8);
             break;
         case KOW_UINT16:
-            chars = write_string(*dest, *dest_size, "%d", *((uint16_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.ui16);
             break;
         case KOW_UINT32:
-            chars = write_string(*dest, *dest_size, "%d", *((uint32_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.ui32);
             break;
         case KOW_FLOAT:
-            chars = write_string(*dest, *dest_size, "%f", *((float*)data));
+            chars = write_string(*dest, *dest_size, "%f", val.f);
             break;
         default:
             return -1;
