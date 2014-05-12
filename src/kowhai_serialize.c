@@ -620,6 +620,8 @@ int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kow
             return KOW_STATUS_BUFFER_INVALID;
         case JSMN_ERROR_NOMEM:
             return KOW_STATUS_SCRATCH_TOO_SMALL;
+        default:
+            break;
     }
 
     result = process_token(&parser, 0, descriptor, *descriptor_size, &desc_nodes_populated, data, *data_size, &data_offset);
