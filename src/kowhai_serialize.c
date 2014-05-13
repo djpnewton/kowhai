@@ -78,7 +78,6 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     int chars;
     union
     {
-        uint8_t b[4];
         char c;
         int8_t i8;
         int16_t i16;
@@ -88,7 +87,11 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
         uint32_t ui32;
         float f;
     } val;
-    memcpy(&val, data, 4);
+
+    // on some systems vsnprintf requires the src buffer to be aligned
+    // properly, since data is possibly packed to make the tree tidier
+    // the memcpy below gets our data into an aligned var
+    memcpy(&val, data, kowhai_get_node_type_size(node_type));
 
     switch (node_type)
     {
