@@ -471,6 +471,21 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                     }
                     for (k = 0; k < desc->count; k++)
                     {
+                        // on some systems casting unaligned memory (ie the data pointer) to 
+                        // types like uint32's, float's etc results in nonsense values because
+                        // the memory is assumed to be aligned ... hence to solve this we 
+                        // memcpy from an aligned buffer (value) to an unaligned buffer (data so
+                        // it works as raw byte moves, see below)
+                        union
+                        {
+                            uint8_t ui8;
+                            uint16_t ui16;
+                            uint32_t ui32;
+                            float f;
+                        } value;
+                        int size = kowhai_get_node_type_size(desc->type);
+                        if (size < 0)
+                            return -1;
                         token_index++;
                         tok++;
                         switch (desc->type)
@@ -479,65 +494,39 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                             case KOW_INT8:
                             case KOW_CHAR:
                             {
-                                uint8_t value;
-                                //TODO: could probably call get_token_uint32 instead and remove get_token_uint8 (needs testing)
-                                res = get_token_uint8(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(uint8_t) > data_size)
-                                    return -3;
-                                *((uint8_t*)data) = value;
-                                data = (char*)data + sizeof(uint8_t);
-                                data_size -= sizeof(uint8_t);
-                                *data_offset += sizeof(uint8_t);
+                                //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
+                                res = get_token_uint8(parser, tok, &value.ui8);
                                 break;
                             }
                             case KOW_UINT16:
                             case KOW_INT16:
                             {
-                                uint16_t value;
                                 //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
-                                res = get_token_uint16(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(uint16_t) > data_size)
-                                    return -3;
-                                *((uint16_t*)data) = value;
-                                data = (char*)data + sizeof(uint16_t);
-                                data_size -= sizeof(uint16_t);
-                                *data_offset += sizeof(uint16_t);
+                                res = get_token_uint16(parser, tok, &value.ui16);
                                 break;
                             }
                             case KOW_UINT32:
                             case KOW_INT32:
                             {
-                                uint32_t value;
-                                res = get_token_uint32(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(uint32_t) > data_size)
-                                    return -3;
-                                *((uint32_t*)data) = value;
-                                data = (char*)data + sizeof(uint32_t);
-                                data_size -= sizeof(uint32_t);
-                                *data_offset += sizeof(uint32_t);
+                                res = get_token_uint32(parser, tok, &value.ui32);
                                 break;
                             }
                             case KOW_FLOAT:
                             {
-                                float value;
-                                res = get_token_float(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(float) > data_size)
-                                    return -3;
-                                *((float*)data) = value;
-                                data = (char*)data + sizeof(float);
-                                data_size -= sizeof(float);
-                                *data_offset += sizeof(float);
+                                res = get_token_float(parser, tok, &value.f);
                                 break;
                             }
                         }
+                        
+                        if (res != KOW_STATUS_OK)
+                            return -1;
+                        if ((*data_offset) + size > data_size)
+                            return -3;
+
+                        memcpy(data, &value, size);
+                        data = (char*)data + size;
+                        data_size -= size;
+                        *data_offset += size;
                     }
                     continue;
                 }
