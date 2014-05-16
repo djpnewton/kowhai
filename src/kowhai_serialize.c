@@ -76,31 +76,48 @@ int add_indent(char** dest, size_t* dest_size, int* current_offset, int depth)
 int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node_type, void* data)
 {
     int chars;
+    union
+    {
+        char c;
+        int8_t i8;
+        int16_t i16;
+        int32_t i32;
+        uint8_t ui8;
+        uint16_t ui16;
+        uint32_t ui32;
+        float f;
+    } val;
+
+    // on some systems vsnprintf requires the src buffer to be aligned
+    // properly, since data is possibly packed to make the tree tidier
+    // the memcpy below gets our data into an aligned var
+    memcpy(&val, data, kowhai_get_node_type_size(node_type));
+
     switch (node_type)
     {
         case KOW_CHAR:
-            chars = write_string(*dest, *dest_size, "%d", *((char *)data));
+            chars = write_string(*dest, *dest_size, "%d", val.c);
             break;
         case KOW_INT8:
-            chars = write_string(*dest, *dest_size, "%d", *((int8_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.i8);
             break;
         case KOW_INT16:
-            chars = write_string(*dest, *dest_size, "%d", *((int16_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.i16);
             break;
         case KOW_INT32:
-            chars = write_string(*dest, *dest_size, "%d", *((int32_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.i32);
             break;
         case KOW_UINT8:
-            chars = write_string(*dest, *dest_size, "%d", *((uint8_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.ui8);
             break;
         case KOW_UINT16:
-            chars = write_string(*dest, *dest_size, "%d", *((uint16_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.ui16);
             break;
         case KOW_UINT32:
-            chars = write_string(*dest, *dest_size, "%d", *((uint32_t*)data));
+            chars = write_string(*dest, *dest_size, "%d", val.ui32);
             break;
         case KOW_FLOAT:
-            chars = write_string(*dest, *dest_size, "%f", *((float*)data));
+            chars = write_string(*dest, *dest_size, "%f", val.f);
             break;
         default:
             return -1;
@@ -454,6 +471,21 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                     }
                     for (k = 0; k < desc->count; k++)
                     {
+                        // on some systems casting unaligned memory (ie the data pointer) to 
+                        // types like uint32's, float's etc results in nonsense values because
+                        // the memory is assumed to be aligned ... hence to solve this we 
+                        // memcpy from an aligned buffer (value) to an unaligned buffer (data so
+                        // it works as raw byte moves, see below)
+                        union
+                        {
+                            uint8_t ui8;
+                            uint16_t ui16;
+                            uint32_t ui32;
+                            float f;
+                        } value;
+                        int size = kowhai_get_node_type_size(desc->type);
+                        if (size < 0)
+                            return -1;
                         token_index++;
                         tok++;
                         switch (desc->type)
@@ -462,65 +494,39 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                             case KOW_INT8:
                             case KOW_CHAR:
                             {
-                                uint8_t value;
-                                //TODO: could probably call get_token_uint32 instead and remove get_token_uint8 (needs testing)
-                                res = get_token_uint8(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(uint8_t) > data_size)
-                                    return -3;
-                                *((uint8_t*)data) = value;
-                                data = (char*)data + sizeof(uint8_t);
-                                data_size -= sizeof(uint8_t);
-                                *data_offset += sizeof(uint8_t);
+                                //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
+                                res = get_token_uint8(parser, tok, &value.ui8);
                                 break;
                             }
                             case KOW_UINT16:
                             case KOW_INT16:
                             {
-                                uint16_t value;
                                 //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
-                                res = get_token_uint16(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(uint16_t) > data_size)
-                                    return -3;
-                                *((uint16_t*)data) = value;
-                                data = (char*)data + sizeof(uint16_t);
-                                data_size -= sizeof(uint16_t);
-                                *data_offset += sizeof(uint16_t);
+                                res = get_token_uint16(parser, tok, &value.ui16);
                                 break;
                             }
                             case KOW_UINT32:
                             case KOW_INT32:
                             {
-                                uint32_t value;
-                                res = get_token_uint32(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(uint32_t) > data_size)
-                                    return -3;
-                                *((uint32_t*)data) = value;
-                                data = (char*)data + sizeof(uint32_t);
-                                data_size -= sizeof(uint32_t);
-                                *data_offset += sizeof(uint32_t);
+                                res = get_token_uint32(parser, tok, &value.ui32);
                                 break;
                             }
                             case KOW_FLOAT:
                             {
-                                float value;
-                                res = get_token_float(parser, tok, &value);
-                                if (res != KOW_STATUS_OK)
-                                    return -1;
-                                if ((*data_offset) + (int)sizeof(float) > data_size)
-                                    return -3;
-                                *((float*)data) = value;
-                                data = (char*)data + sizeof(float);
-                                data_size -= sizeof(float);
-                                *data_offset += sizeof(float);
+                                res = get_token_float(parser, tok, &value.f);
                                 break;
                             }
                         }
+                        
+                        if (res != KOW_STATUS_OK)
+                            return -1;
+                        if ((*data_offset) + size > data_size)
+                            return -3;
+
+                        memcpy(data, &value, size);
+                        data = (char*)data + size;
+                        data_size -= size;
+                        *data_offset += size;
                     }
                     continue;
                 }
@@ -620,6 +626,8 @@ int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kow
             return KOW_STATUS_BUFFER_INVALID;
         case JSMN_ERROR_NOMEM:
             return KOW_STATUS_SCRATCH_TOO_SMALL;
+        default:
+            break;
     }
 
     result = process_token(&parser, 0, descriptor, *descriptor_size, &desc_nodes_populated, data, *data_size, &data_offset);
