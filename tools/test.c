@@ -486,7 +486,7 @@ void serialization_tests()
     buf_size = BUF_SIZE;
     assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_OK);
     printf("---\n%s\n***\n", js);
-    printf("js length: %d\n", strlen(js));
+    printf("js length: %d\n", (int)strlen(js));
     printf("---\n");
     // kowhai_deserialize
     buf_size = BUF_SIZE;
