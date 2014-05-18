@@ -19,6 +19,21 @@
 #define VALUE "value"
 #define ARRAY "array"
 #define CHILDREN "children"
+#define PATH "path"
+
+#define MIN(a,b) ((a<b)?a:b)
+
+union any_type_t
+{
+    char c;
+    int8_t i8;
+    int16_t i16;
+    int32_t i32;
+    uint8_t ui8;
+    uint16_t ui16;
+    uint32_t ui32;
+    float f;
+};
 
 int write_string(char* buffer, size_t buffer_size, const char* format, ...)
 {
@@ -76,17 +91,7 @@ int add_indent(char** dest, size_t* dest_size, int* current_offset, int depth)
 int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node_type, void* data)
 {
     int chars;
-    union
-    {
-        char c;
-        int8_t i8;
-        int16_t i16;
-        int32_t i32;
-        uint8_t ui8;
-        uint16_t ui16;
-        uint32_t ui32;
-        float f;
-    } val;
+    union any_type_t val;
 
     // on some systems vsnprintf requires the src buffer to be aligned
     // properly, since data is possibly packed to make the tree tidier
@@ -131,7 +136,7 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     return chars;
 }
 
-int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer, size_t target_size, int level, void* get_name_param, kowhai_get_symbol_name_t get_name, int in_union, int* largest_data_field)
+int serialize_tree(struct kowhai_node_t** desc, void** data, char* target_buffer, size_t target_size, int level, void* get_name_param, kowhai_get_symbol_name_t get_name, int in_union, int* largest_data_field)
 {
     int target_offset = 0;
     struct kowhai_node_t* node;
@@ -187,7 +192,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         if (chars < 0)
                             return chars;
                         // write branch children
-                        chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name, node_is_union, &largest_child_data_field);
+                        chars = serialize_tree(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name, node_is_union, &largest_child_data_field);
                         if (chars < 0)
                             return chars;
                         target_offset += chars;
@@ -229,7 +234,7 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
                         return chars;
                     // write branch children
                     (*desc) += 1;
-                    chars = serialize_node(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name, node_is_union, &largest_child_data_field);
+                    chars = serialize_tree(desc, data, target_buffer, target_size, level + 1, get_name_param, get_name, node_is_union, &largest_child_data_field);
                     if (chars < 0)
                         return chars;
                     target_offset += chars;
@@ -326,13 +331,456 @@ int serialize_node(struct kowhai_node_t** desc, void** data, char* target_buffer
     }
 }
 
-int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name)
+int kowhai_serialize_tree(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name)
 {
     int largest_data_field;
-    int chars = serialize_node(&tree.desc, &tree.data, target_buffer, *target_size, 0, get_name_param, get_name, tree.desc->type == KOW_BRANCH_U_START, &largest_data_field);
+    int chars = serialize_tree(&tree.desc, &tree.data, target_buffer, *target_size, 0, get_name_param, get_name, tree.desc->type == KOW_BRANCH_U_START, &largest_data_field);
     if (chars < 0)
         return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
     *target_size = chars;
+    return KOW_STATUS_OK;
+}
+
+int path_to_str(union kowhai_symbol_t *path, int path_len, char *dst, int dst_len, const char *separator, int hide_last_index, struct kowhai_node_t *root, void* get_name_param, kowhai_get_symbol_name_t get_name)
+{
+    int i, r, e;
+    int count = 0;
+
+    for (i = 0; i < path_len; i++)
+    {
+        struct kowhai_node_t *tnode;
+    
+        // if a root is given we can use this to hide ugly [0] on each node since we can look-up the
+        // node count for each path item using kowhai_get_node(), then we only add the index if it
+        // is not 0 
+        if (root)
+            if ((e = kowhai_get_node(root, i+1, path, 0, &tnode)) != KOW_STATUS_OK)
+                return -1;
+        
+        // display the index at the end of this node if we can know the count of this node (needs root so we can find this node from
+        // the path), and if the count > 1 ie is an array, and if this is the last item and hide_last_index == true
+        if (root == NULL || tnode->count == 1 || ((i == (path_len - 1)) && hide_last_index))
+            r = snprintf(dst, dst_len, "%s", get_name(get_name_param, path[i].parts.name));
+        else
+            r = snprintf(dst, dst_len, "%s[%d]", get_name(get_name_param, path[i].parts.name), path[i].parts.array_index);
+        if (r < 0)
+            return r; // real error
+        if (r > dst_len)
+            return count + r; // dst not long enough
+        dst += r;
+        count += r;
+        dst_len -= r;
+        
+        // put separator unless this is the last item
+        if (i != path_len - 1)
+        {
+            r = snprintf(dst, dst_len, "%s", separator);
+            if (r < 0)
+                return r; // real error
+            if (r > dst_len)
+                return count + r; // dst not long enough
+            dst += r;
+            count += r;
+            dst_len -= r;
+        }
+    }
+
+    return count;
+}
+
+const char *strnchr(const char *str, size_t len, char c)
+{
+    int l;
+    for (l = 0; l < len; l++)
+    {
+        if (str[l] == c) // found
+            return &str[l];
+        if (str[l] == 0) // null terminated
+            return NULL;
+    }
+    return NULL;
+}
+
+int str_to_path(jsmn_parser* parser, jsmntok_t* tok, union kowhai_symbol_t *path, int path_len, void *get_name_param, kowhai_get_symbol_t get_name)
+{
+    int ipath = 0;
+    int len = tok->end - tok->start;
+    const char *init = &parser->js[tok->start];
+    const char *sym_start = init, *sym_end;
+    const char *istart = init, *iend;
+    int r, index;
+
+    while (sym_start < init + len)
+    {
+        // find next symbol
+        sym_end = strnchr(sym_start, len, '.');
+        if (sym_end == NULL)
+            sym_end = init + len; // so the rest of the string
+
+        // check for index
+        index = 0;
+        istart = strnchr(sym_start, sym_end - sym_start, '[');
+        iend = strnchr(sym_start, sym_end - sym_start, ']');
+        if (istart != NULL)
+        {
+            if (iend == NULL)
+                return -2; // malformed path, array index start must have a end
+            index = atoi(istart + 1);
+        }
+        else
+            istart = sym_end; // if no indexing this starts (and ends) at the last char
+
+        r = get_name(get_name_param, sym_start, istart - sym_start);
+        if (r < 0)
+            return -4; // cannot find name 
+        path[ipath++].symbol = KOWHAI_SYMBOL(r, index);
+        if (ipath >= path_len)
+            return -3; // path buffer not big enough
+
+        sym_start = sym_end + 1;
+    }
+
+    // return number of symbols in the path
+    return ipath;
+}
+
+int val_to_str(struct kowhai_node_t *node, void *data, char *dst, int dst_len)
+{
+    int r, i, count = 0;
+    int node_type_size = kowhai_get_node_type_size(node->type);
+    union any_type_t val;
+
+    for (i = 0; i < node->count; i++)
+    {
+        // some systems require that the src buffer to be aligned
+        // properly, since data is possibly packed to make the tree 
+        // tidier the memcpy below gets our data into an aligned var
+        memcpy(&val, data, node_type_size);
+        data = (char *)data + node_type_size;
+
+        switch (node->type)
+        {
+            case KOW_CHAR:
+                ///@todo handle this better so it looks like a proper string !
+                r = snprintf(dst, dst_len, "%i", val.c);
+                break;
+            case KOW_INT8:
+                r = snprintf(dst, dst_len, "%i", val.i8);
+                break;
+            case KOW_INT16:
+                r = snprintf(dst, dst_len, "%i", val.i16);
+                break;
+            case KOW_INT32:
+                r = snprintf(dst, dst_len, "%i", val.i32);
+                break;
+            case KOW_UINT8:
+                r = snprintf(dst, dst_len, "%u", val.ui8);
+                break;
+            case KOW_UINT16:
+                r = snprintf(dst, dst_len, "%u", val.ui16);
+                break;
+            case KOW_UINT32:
+                r = snprintf(dst, dst_len, "%u", val.ui32);
+                break;
+            case KOW_FLOAT:
+                r = snprintf(dst, dst_len, "%f", val.f);
+                break;
+            default:
+                return -1;
+        }
+        if (r < 0)
+            return r; // real error
+        if (r > dst_len)
+            return count + r; // dst not long enough
+        dst += r;
+        count += r;
+        dst_len -= r;
+
+        // put the next separator (ie ,) if this not the last item
+        if (i != node->count - 1)
+        {
+            r = snprintf(dst, dst_len, ", ");
+            if (r < 0)
+                return r; // real error
+            if (r > dst_len)
+                return count + r; // dst not long enough
+            dst += r;
+            count += r;
+            dst_len -= r;
+        }
+    }
+    return count;
+}
+
+static int print_node_type(struct kowhai_node_t *root, char *dst, int dst_len, struct kowhai_node_t *node, void **src_data, 
+        union kowhai_symbol_t *path, int ipath, void* get_name_param, kowhai_get_symbol_name_t get_name)
+{
+    int r, count = 0;
+
+    // print the path
+    r = snprintf(dst, dst_len, "{\""PATH"\": \"");
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    r = path_to_str(path, ipath + 1, dst, dst_len, ".", 1, root, get_name_param, get_name);
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    r = snprintf(dst, dst_len, "\", ");
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    // print type
+    r = snprintf(dst, dst_len, "\""TYPE"\": %d, ", node->type);
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    // print count
+    r = snprintf(dst, dst_len, "\""COUNT"\": %d, ", node->count);
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    // print tag
+    r = snprintf(dst, dst_len, "\""TAG"\": %d, ", node->tag);
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    // print the value(s)
+    if (node->count == 1)
+        r = snprintf(dst, dst_len, "\""VALUE"\": ");
+    else
+        r = snprintf(dst, dst_len, "\""VALUE"\": [");
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    r = val_to_str(node, *src_data, dst, dst_len);
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    if (node->count == 1)
+        r = snprintf(dst, dst_len, "}\n");
+    else
+        r = snprintf(dst, dst_len, "]}\n");
+    if (r < 0)
+        return -1;
+    if (r > dst_len)
+        return count + r;
+    dst += r;
+    count += r;
+    dst_len -= r;
+
+    return count;
+}
+
+int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, struct kowhai_node_t *src_node, void **src_data, 
+                    union kowhai_symbol_t *path, int ipath, int path_len, void* get_name_param, kowhai_get_symbol_name_t get_name,
+                    int is_union, int level)
+{
+    int r, i, n = 0;
+    int count = 0;
+    int node_size;
+    int node_count;
+    int max_union_size = 0;
+    int rmax = 0;
+
+    while (1)
+    {
+        struct kowhai_node_t *node = &src_node[n];
+        
+        switch(node->type)
+        {
+            case KOW_BRANCH_U_START:
+                if (kowhai_get_node_size(node, &node_size) != KOW_STATUS_OK)
+                    return -1;
+
+                // for each complex array type recurse into each array element
+                for (i = 0; i < node->count; i++)
+                {
+                    // append this branch to the path
+                    if (ipath >= path_len)
+                        return -2;
+                    path[ipath].symbol = KOWHAI_SYMBOL(node->symbol, i);
+                
+                    // recurse into branch
+                    r = serialize_nodes(root, dst, dst_len, node + 1, src_data, path, ipath + 1, path_len, get_name_param, get_name, 1, level + 1);
+                    if (r < 0)
+                        return r;
+                }
+                
+                // union type over
+                dst += r;
+                count += r;
+                dst_len -= r;
+                *(char **)src_data += node_size;
+
+
+                // move past this branch in the descriptor
+                if (kowhai_get_node_count(node, &node_count) != KOW_STATUS_OK)
+                    return -1;
+                node_count -= 1;
+                n += node_count;
+
+                // ending criteria
+                if (level == 0)
+                    return count;
+                break;
+
+            case KOW_BRANCH_START:
+                if (kowhai_get_node_size(node, &node_size) != KOW_STATUS_OK)
+                    return -1;
+
+                // for each complex array type recurse into each array element
+                if ((is_union && (node_size >= max_union_size)) || !is_union)
+                {
+                    for (i = 0; i < node->count; i++)
+                    {
+                        // append this branch to the path
+                        if (ipath >= path_len)
+                            return -2;
+                        path[ipath].symbol = KOWHAI_SYMBOL(node->symbol, i);
+                    
+                        // recurse into branch
+                        r = serialize_nodes(root, dst, dst_len, node + 1, src_data, path, ipath + 1, path_len, get_name_param, get_name, 0, level + 1);
+                        if (r < 0)
+                            return r;
+                        rmax = r;
+
+                        // push pointer on if this is not a union
+                        // if it is we do this at the end for the
+                        // biggest field
+                        if (!is_union)
+                        {
+                            dst += r;
+                            count += r;
+                            dst_len -= r;
+                        }
+                    }
+                }
+                
+                // move past this branch in the descriptor
+                if (kowhai_get_node_count(node, &node_count) != KOW_STATUS_OK)
+                    return -1;
+                node_count -= 1;
+                n += node_count;
+
+                // ending criteria
+                if (level == 0)
+                    return count;
+                break;
+
+            case KOW_BRANCH_END:
+                if (is_union)
+                {
+                    dst += rmax;
+                    count += rmax;
+                    dst_len -= rmax;
+                }
+                return count;
+
+            default:
+
+                // get this node size in bytes
+                node_size = kowhai_get_node_type_size(node->type) * node->count;
+                if (node_size < 0)
+                    return -1;
+
+                // handle unions
+                if (is_union)
+                {
+                    if (node_size <= max_union_size)
+                        break;
+                    max_union_size = node_size;
+                }
+
+                // update the path scratch buffer for this item
+                if (ipath >= path_len)
+                    return -2;
+                path[ipath].symbol = KOWHAI_SYMBOL(node->symbol, 0);
+
+                // print this item
+                r = print_node_type(root, dst, dst_len, node, src_data, path, ipath, get_name_param, get_name);
+                if (r < 0)
+                    return r;
+                if (r > dst_len)
+                    return count + r;
+                rmax = r;
+                if (!is_union)
+                {
+                    dst += r;
+                    count += r;
+                    dst_len -= r;
+
+                    // move the data pointer
+                    *(char **)src_data += node_size;
+                }
+
+                break;
+        }
+        n++;
+    }
+}
+
+int kowhai_serialize_nodes(char *dst, int *dst_len, struct kowhai_tree_t *src_tree, union kowhai_symbol_t *path, int path_len, void* get_name_param, kowhai_get_symbol_name_t get_name)
+{
+    void *src_data = src_tree->data;
+    int is_union = src_tree->desc->type == KOW_BRANCH_U_START;
+    int chars = serialize_nodes(src_tree->desc, dst, *dst_len, src_tree->desc, &src_data, path, 0, path_len, get_name_param, get_name, is_union, 0);
+
+    // handle errors
+    switch (chars)
+    {
+        case -1:
+            return KOW_STATUS_UNKNOWN_ERROR;
+        case -2:
+            return KOW_STATUS_PATH_TOO_SMALL;
+        default:
+            break;
+    }
+    
+    if (chars >= *dst_len)
+        return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
+
+    *dst_len = chars;
     return KOW_STATUS_OK;
 }
 
@@ -404,7 +852,7 @@ int token_string_match(jsmn_parser* parser, jsmntok_t* tok, char* str)
         strncmp(parser->js + tok->start, str, strlen(str)) == 0;
 }
 
-int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* desc, int desc_size, int* desc_nodes_populated, void* data, int data_size, int* data_offset)
+int process_tree_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* desc, int desc_size, int* desc_nodes_populated, void* data, int data_size, int* data_offset)
 {
 #define INC { i++; token_index++; continue; }
     int initial_token_index = token_index;
@@ -476,13 +924,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                         // the memory is assumed to be aligned ... hence to solve this we 
                         // memcpy from an aligned buffer (value) to an unaligned buffer (data so
                         // it works as raw byte moves, see below)
-                        union
-                        {
-                            uint8_t ui8;
-                            uint16_t ui16;
-                            uint32_t ui32;
-                            float f;
-                        } value;
+                        union any_type_t val;
                         int size = kowhai_get_node_type_size(desc->type);
                         if (size < 0)
                             return -1;
@@ -495,25 +937,25 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                             case KOW_CHAR:
                             {
                                 //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
-                                res = get_token_uint8(parser, tok, &value.ui8);
+                                res = get_token_uint8(parser, tok, &val.ui8);
                                 break;
                             }
                             case KOW_UINT16:
                             case KOW_INT16:
                             {
                                 //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
-                                res = get_token_uint16(parser, tok, &value.ui16);
+                                res = get_token_uint16(parser, tok, &val.ui16);
                                 break;
                             }
                             case KOW_UINT32:
                             case KOW_INT32:
                             {
-                                res = get_token_uint32(parser, tok, &value.ui32);
+                                res = get_token_uint32(parser, tok, &val.ui32);
                                 break;
                             }
                             case KOW_FLOAT:
                             {
-                                res = get_token_float(parser, tok, &value.f);
+                                res = get_token_float(parser, tok, &val.f);
                                 break;
                             }
                         }
@@ -523,7 +965,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                         if ((*data_offset) + size > data_size)
                             return -3;
 
-                        memcpy(data, &value, size);
+                        memcpy(data, &val, size);
                         data = (char*)data + size;
                         data_size -= size;
                         *data_offset += size;
@@ -557,7 +999,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
                             token_index++;
                             for (k = 0; k < array_tok->size; k++)
                             {
-                                res = process_token(parser, token_index, desc + 1, desc_size - 1, &nodes_populated, data, data_size, &_data_offset);
+                                res = process_tree_token(parser, token_index, desc + 1, desc_size - 1, &nodes_populated, data, data_size, &_data_offset);
                                 if (res >= 0)
                                 {
                                     if (largest_child_offset < _data_offset)
@@ -610,7 +1052,7 @@ int process_token(jsmn_parser* parser, int token_index, struct kowhai_node_t* de
     return token_index - initial_token_index;
 }
 
-int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size)
+int kowhai_deserialize_tree(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size)
 {
     int desc_nodes_populated, data_offset, result;
     jsmn_parser parser;
@@ -630,7 +1072,7 @@ int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kow
             break;
     }
 
-    result = process_token(&parser, 0, descriptor, *descriptor_size, &desc_nodes_populated, data, *data_size, &data_offset);
+    result = process_tree_token(&parser, 0, descriptor, *descriptor_size, &desc_nodes_populated, data, *data_size, &data_offset);
     switch (result)
     {
         case -1:
@@ -643,4 +1085,175 @@ int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kow
     *data_size = data_offset;
 
     return KOW_STATUS_OK;
+}
+
+int process_nodes_token(jsmn_parser *parser, int src_size, struct kowhai_tree_t *dst_tree, union kowhai_symbol_t *path, int path_len, int *node_count, void *get_name_param, kowhai_get_symbol_t get_name, void *not_found_param, kowhai_node_not_found_t not_found)
+{
+    int res;
+    int t = 0;
+    jsmntok_t *path_tok = NULL;
+    uint16_t type = KOW_BRANCH_START;
+    uint16_t count = 0;
+    uint16_t tag = 0;
+
+    while (t < parser->num_tokens)
+    {
+        // get next token, and check if we are done
+        jsmntok_t *tok = &parser->tokens[t++];
+        if (tok->end > src_size || tok->end < 0 || tok->start > src_size || tok->start < 0)
+            break;
+        
+        // clear all stored info for the previous kowhai node object
+        if (tok->type == JSMN_OBJECT)
+        {
+            path_tok = NULL;
+            type = KOW_BRANCH_START; // invalid value
+            count = 0;
+            tag = 0;
+        }
+
+        // if this is a path token then store a pointer to the path
+        if (token_string_match(parser, tok, PATH))
+        {
+            path_tok = tok + 1;
+            t++;
+            continue;
+        }
+        
+        // if this is a type token the store the type
+        if (token_string_match(parser, tok, TYPE))
+        {
+            res = get_token_uint16(parser, tok + 1, &type);
+            if (res != KOW_STATUS_OK)
+                return -1;
+            t++;
+            continue;
+        }
+
+        // if this is a count token then store the count
+        if (token_string_match(parser, tok, COUNT))
+        {
+            res = get_token_uint16(parser, tok + 1, &count);
+            if (res != KOW_STATUS_OK)
+                return -1;
+            t++;
+            continue;
+        }
+        
+        // if this is a tag token then store the tag
+        if (token_string_match(parser, tok, TAG))
+        {
+            res = get_token_uint16(parser, tok + 1, &tag);
+            if (res != KOW_STATUS_OK)
+                return -1;
+            t++;
+            continue;
+        }
+        
+        // if this is a value token then parse the values and write node to dst_tree
+        if (token_string_match(parser, tok, VALUE))
+        {
+            int i;
+            int N;
+            int path_syms = 0;
+
+            ///@todo check node types match
+
+            // parse path string to kowhai_path
+            path_syms = str_to_path(parser, path_tok, path, path_len, get_name_param, get_name);
+            if (path_syms < 0)
+                return path_syms;
+            
+            // write each value item one by one to the dst_tree
+            if (count > 1)
+            {
+                t++;
+                tok++;
+                N = MIN(tok->size, count);
+            }
+            else
+                N = 1;
+            for (i = 0; i < N; i++)
+            {
+                union any_type_t val;
+                int size = kowhai_get_node_type_size(type);
+                
+                t++;
+                tok++;
+                path[path_syms - 1].parts.array_index = i;
+
+                switch (type)
+                {
+                    case KOW_UINT8:
+                    case KOW_INT8:
+                    case KOW_CHAR:
+                        res = get_token_uint8(parser, tok, &val.ui8);
+                        break;
+                    case KOW_UINT16:
+                    case KOW_INT16:
+                        res = get_token_uint16(parser, tok, &val.ui16);
+                        break;
+                    case KOW_UINT32:
+                    case KOW_INT32:
+                        res = get_token_uint32(parser, tok, &val.ui32);
+                        break;
+                    case KOW_FLOAT:
+                        res = get_token_float(parser, tok, &val.f);
+                        break;
+                }
+                if (res != KOW_STATUS_OK)
+                    return -1;
+
+                res = kowhai_write(dst_tree, path_syms, path, 0, &val, size);
+                if (res == KOW_STATUS_INVALID_SYMBOL_PATH)
+                {
+                    if ((not_found != NULL) && (not_found(not_found_param, path, path_syms) == 0))
+                        res = KOW_STATUS_OK;
+                }
+                if (res != KOW_STATUS_OK)
+                    return -2;
+            }
+        }
+
+    }
+
+    return 0;
+}
+
+int kowhai_deserialize_nodes(char* src, int src_size, struct kowhai_tree_t *dst_tree, union kowhai_symbol_t *path, int path_len, void* scratch, int scratch_size, void *get_name_param, kowhai_get_symbol_t get_name, void *not_found_param, kowhai_node_not_found_t not_found)
+{
+    int desc_nodes_populated = 0, result;
+    jsmn_parser parser;
+    jsmntok_t* tokens = (jsmntok_t*)scratch;
+    int token_count = scratch_size / sizeof(jsmntok_t);
+    jsmnerr_t err;
+
+    jsmn_init_parser(&parser, src, tokens, token_count);
+    err = jsmn_parse(&parser);
+    switch (err)
+    {
+        case JSMN_ERROR_INVAL:
+        case JSMN_ERROR_PART:
+            return KOW_STATUS_BUFFER_INVALID;
+        case JSMN_ERROR_NOMEM:
+            return KOW_STATUS_SCRATCH_TOO_SMALL;
+        default:
+            break;
+    }
+
+    result = process_nodes_token(&parser, src_size, dst_tree, path, path_len, &desc_nodes_populated, get_name_param, get_name, not_found_param, not_found);
+    switch (result)
+    {
+        case -1:
+            return KOW_STATUS_UNKNOWN_ERROR;
+        case -2:
+            return KOW_STATUS_INVALID_SYMBOL_PATH;
+        case -3:
+            return KOW_STATUS_PATH_TOO_SMALL;
+        case -4:
+            return KOW_STATUS_NOT_FOUND;
+        default:
+            return KOW_STATUS_OK;
+    }
+
 }
