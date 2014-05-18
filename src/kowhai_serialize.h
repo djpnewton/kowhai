@@ -12,6 +12,22 @@
 typedef char* (*kowhai_get_symbol_name_t)(void* param, uint16_t symbol);
 
 /**
+ * @brief callback used to convert a kowhai symbol string to its kowhai_symbol_t representation
+ * @param param application specific parameter passed through
+ * @param symbol the symbol string to convert
+ * @param len  length of symbol string (it is not NULL terminated !!)
+ * @return string symbol id or -1 if symbol is not found
+ */
+typedef int (*kowhai_get_symbol_t)(void* param, const char *symbol, int len);
+
+/**
+ * @brief callback used to convert a kowhai symbol string to its kowhai_symbol_t representation
+ * @param param application specific parameter passed through
+ * @return 0 to continue, -1 to return error
+ */
+typedef int (*kowhai_node_not_found_t)(void* param, union kowhai_symbol_t *path, int path_len);
+
+/**
  * Convert a kowhai tree to a json ascii string
  *
  * @param tree, the kowhai tree
@@ -21,7 +37,21 @@ typedef char* (*kowhai_get_symbol_name_t)(void* param, uint16_t symbol);
  * @param get_name, a pointer to a function that resolves kowhai symbol integers to strings
  * @return KOW_STATUS_OK if the function was successfull
  */
-int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name);
+int kowhai_serialize_tree(struct kowhai_tree_t tree, char* target_buffer, int* target_size, void* get_name_param, kowhai_get_symbol_name_t get_name);
+
+/**
+ * Serialize all the nodes in a tree to a jason ascii string format
+ * This differs from kowhai_serialize_tree in that it cannot create a new tree when de-serialized, 
+ * it can only merge the de-serialized nodes into an existing tree (see kowhai_deserialize_nodes)
+ * @param dst, put the serialized jason string here
+ * @param dst_len, size of dst in characters
+ * @param src_tree, tree to serialize
+ * @param path, working buffer to store the running path in (must be large enough to encode the whole tree)
+ * @param path_len, size of above path (if too small to encode the whole tree this will fail)
+ * @param get_name_param argument for above callback
+ * @param get_name called to convert path value to string
+ */
+int kowhai_serialize_nodes(char *dst, int *dst_len, struct kowhai_tree_t *src_tree, union kowhai_symbol_t *path, int path_len, void* get_name_param, kowhai_get_symbol_name_t get_name);
 
 /**
  * Convert a json ascii string to a kowhai tree
@@ -35,6 +65,23 @@ int kowhai_serialize(struct kowhai_tree_t tree, char* target_buffer, int* target
  * @param data_size, the size of the tree data (returns size of tree data as written on success)
  * @return KOW_STATUS_OK if the function was successfull
  */
-int kowhai_deserialize(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size);
+int kowhai_deserialize_tree(char* buffer, void* scratch, int scratch_size, struct kowhai_node_t* descriptor, int* descriptor_size, void* data, int* data_size);
+
+
+/**
+ * Deserialize all the nodes in a tree to a jason ascii string format back into a tree
+ * This differs from kowhai_deserialize_tree in that it cannot create a new tree it can only 
+ * merge the de-serialized nodes into an existing tree (see kowhai_serialize_nodes)
+ * @param src, buffer containing nodes in jason ascii format
+ * @param src_len, size of the src buffer in bytes
+ * @param dst_tree, deserialize the src buffer in to this tree
+ * @param path, working buffer to store the running path in (must be large enough to encode the whole tree)
+ * @param path_len, size of above path (if too small to encode the whole tree this will fail)
+ * @param get_name_param argument for callback below
+ * @param get_name called to convert symbols from strings back to numerical values
+ * @param not_found_param argument for callback below
+ * @param not_found called when a node is not found in the dst_tree, if it returns 0 the error is ignored
+ */
+int kowhai_deserialize_nodes(char* src, int src_size, struct kowhai_tree_t *dst_tree, union kowhai_symbol_t *path, int path_len, void* scratch, int scratch_size, void *get_name_param, kowhai_get_symbol_t get_name, void *not_found_param, kowhai_node_not_found_t not_found);
 
 #endif
