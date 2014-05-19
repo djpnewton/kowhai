@@ -83,6 +83,8 @@ union kowhai_symbol_t
 #define KOW_STATUS_NOT_FOUND               12
 #define KOW_STATUS_INVALID_SEQUENCE        13
 #define KOW_STATUS_NO_DATA                 14
+#define KOW_STATUS_PATH_TOO_SMALL          15
+#define KOW_STATUS_UNKNOWN_ERROR           16
 
 /**
  * @brief return the version of the kowhai library
