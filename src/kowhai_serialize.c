@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #define NAME "name"
 #define TYPE "type"
@@ -462,25 +463,25 @@ int val_to_str(struct kowhai_node_t *node, void *data, char *dst, int dst_len)
         {
             case KOW_CHAR:
                 ///@todo handle this better so it looks like a proper string !
-                r = snprintf(dst, dst_len, "%i", val.c);
+                r = snprintf(dst, dst_len, "%"PRIi8, (uint8_t)val.c);
                 break;
             case KOW_INT8:
-                r = snprintf(dst, dst_len, "%i", val.i8);
+                r = snprintf(dst, dst_len, "%"PRIi8, val.i8);
                 break;
             case KOW_INT16:
-                r = snprintf(dst, dst_len, "%i", val.i16);
+                r = snprintf(dst, dst_len, "%"PRIi16, val.i16);
                 break;
             case KOW_INT32:
-                r = snprintf(dst, dst_len, "%i", val.i32);
+                r = snprintf(dst, dst_len, "%"PRIi32, val.i32);
                 break;
             case KOW_UINT8:
-                r = snprintf(dst, dst_len, "%u", val.ui8);
+                r = snprintf(dst, dst_len, "%"PRIu8, val.ui8);
                 break;
             case KOW_UINT16:
-                r = snprintf(dst, dst_len, "%u", val.ui16);
+                r = snprintf(dst, dst_len, "%"PRIu16, val.ui16);
                 break;
             case KOW_UINT32:
-                r = snprintf(dst, dst_len, "%u", val.ui32);
+                r = snprintf(dst, dst_len, "%"PRIu32, val.ui32);
                 break;
             case KOW_FLOAT:
                 r = snprintf(dst, dst_len, "%f", val.f);
