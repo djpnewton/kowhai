@@ -542,7 +542,7 @@ static int print_node_type(struct kowhai_node_t *root, char *dst, int dst_len, s
     int r, count = 0;
 
     // print the path
-    r = snprintf(dst, dst_len, "{\""PATH"\": \"");
+    r = snprintf(dst, dst_len, "\t{\""PATH"\": \"");
     if (r < 0)
         return -1;
     if (r > dst_len)
@@ -622,9 +622,9 @@ static int print_node_type(struct kowhai_node_t *root, char *dst, int dst_len, s
     dst_len -= r;
 
     if (node->count == 1)
-        r = snprintf(dst, dst_len, "}\n");
+        r = snprintf(dst, dst_len, "},\n");
     else
-        r = snprintf(dst, dst_len, "]}\n");
+        r = snprintf(dst, dst_len, "]},\n");
     if (r < 0)
         return -1;
     if (r > dst_len)
@@ -636,6 +636,19 @@ static int print_node_type(struct kowhai_node_t *root, char *dst, int dst_len, s
     return count;
 }
 
+#define STARTEND(x) \
+{ \
+    r = snprintf(dst, dst_len, x"\n"); \
+    if (r < 0) \
+        return -1; \
+    if (r > dst_len) \
+        return count + r; \
+    dst += r; \
+    count += r; \
+    dst_len -= r; \
+}
+
+
 static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, struct kowhai_node_t *src_node, void **src_data, 
                     union kowhai_symbol_t *path, int ipath, int path_len, void* get_name_param, kowhai_get_symbol_name_t get_name,
                     int is_union, int level)
@@ -646,6 +659,10 @@ static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, s
     int node_count;
     int max_union_size = 0;
     int rmax = 0;
+
+    // print opening array brace only if we are level 0
+    if (level == 0)
+        STARTEND("[");
 
     while (1)
     {
@@ -677,7 +694,6 @@ static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, s
                 dst_len -= r;
                 *(char **)src_data += node_size;
 
-
                 // move past this branch in the descriptor
                 if (kowhai_get_node_count(node, &node_count) != KOW_STATUS_OK)
                     return -1;
@@ -686,7 +702,10 @@ static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, s
 
                 // ending criteria
                 if (level == 0)
+                {
+                    STARTEND("]");
                     return count;
+                }
                 break;
 
             case KOW_BRANCH_START:
@@ -729,7 +748,10 @@ static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, s
 
                 // ending criteria
                 if (level == 0)
+                {
+                    STARTEND("]");
                     return count;
+                }
                 break;
 
             case KOW_BRANCH_END:
