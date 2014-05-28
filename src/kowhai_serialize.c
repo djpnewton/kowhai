@@ -404,68 +404,68 @@ static const char *strnchr(const char *str, size_t len, char c)
 
 int kowhai_str_to_path(const char *path_str, int path_strlen, union kowhai_symbol_t *path, int *path_len, void *get_name_param, kowhai_get_symbol_t get_name)
 {
-	int ipath = 0;
-	const char *init = path_str;
-	const char *sym_start = init, *sym_end;
-	const char *istart = init, *iend;
-	int r, index;
+    int ipath = 0;
+    const char *init = path_str;
+    const char *sym_start = init, *sym_end;
+    const char *istart = init, *iend;
+    int r, index;
 
-	while (sym_start < init + path_strlen)
-	{
-		// find next symbol
-		sym_end = strnchr(sym_start, path_strlen, '.');
-		if (sym_end == NULL)
-			sym_end = init + path_strlen; // so the rest of the string
+    while (sym_start < init + path_strlen)
+    {
+        // find next symbol
+        sym_end = strnchr(sym_start, path_strlen, '.');
+        if (sym_end == NULL)
+            sym_end = init + path_strlen; // so the rest of the string
 
-		// check for index
-		index = 0;
-		istart = strnchr(sym_start, sym_end - sym_start, '[');
-		iend = strnchr(sym_start, sym_end - sym_start, ']');
-		if (istart != NULL)
-		{
-			if (iend == NULL)
-				return KOW_STATUS_INVALID_SYMBOL_PATH; // malformed path, array index start must have a end
-			index = atoi(istart + 1);
-		}
-		else
-			istart = sym_end; // if no indexing this starts (and ends) at the last char
+        // check for index
+        index = 0;
+        istart = strnchr(sym_start, sym_end - sym_start, '[');
+        iend = strnchr(sym_start, sym_end - sym_start, ']');
+        if (istart != NULL)
+        {
+            if (iend == NULL)
+                return KOW_STATUS_INVALID_SYMBOL_PATH; // malformed path, array index start must have a end
+            index = atoi(istart + 1);
+        }
+        else
+            istart = sym_end; // if no indexing this starts (and ends) at the last char
 
-		r = get_name(get_name_param, sym_start, istart - sym_start);
-		if (r < 0)
-			return KOW_STATUS_NOT_FOUND;
-		path[ipath++].symbol = KOWHAI_SYMBOL(r, index);
-		if (ipath >= *path_len)
-			return KOW_STATUS_PATH_TOO_SMALL; // path buffer not big enough
+        r = get_name(get_name_param, sym_start, istart - sym_start);
+        if (r < 0)
+            return KOW_STATUS_NOT_FOUND;
+        path[ipath++].symbol = KOWHAI_SYMBOL(r, index);
+        if (ipath >= *path_len)
+            return KOW_STATUS_PATH_TOO_SMALL; // path buffer not big enough
 
-		sym_start = sym_end + 1;
-	}
+        sym_start = sym_end + 1;
+    }
 
-	// return number of symbols in the path
-	*path_len = ipath;
-	return KOW_STATUS_OK;
+    // return number of symbols in the path
+    *path_len = ipath;
+    return KOW_STATUS_OK;
 }
 
 // internal helper function to avoid return type conflicts with the kowhai method
 static int str_to_path(jsmn_parser* parser, jsmntok_t* tok, union kowhai_symbol_t *path, int path_len, void *get_name_param, kowhai_get_symbol_t get_name)
 {
-	const char *path_str = &parser->js[tok->start];
-	int path_strlen = tok->end - tok->start;
-	int e;
+    const char *path_str = &parser->js[tok->start];
+    int path_strlen = tok->end - tok->start;
+    int e;
 
-	e = kowhai_str_to_path(path_str, path_strlen, path, &path_len, get_name_param, get_name);
-	switch (e)
-	{
-		case KOW_STATUS_INVALID_SYMBOL_PATH:
-			return -2;
-		case KOW_STATUS_NOT_FOUND:
-			return -4;
-		case KOW_STATUS_PATH_TOO_SMALL:
-			return -3;
-		case KOW_STATUS_OK:
-			return path_len;
-		default:
-			return KOW_STATUS_UNKNOWN_ERROR;
-	}
+    e = kowhai_str_to_path(path_str, path_strlen, path, &path_len, get_name_param, get_name);
+    switch (e)
+    {
+        case KOW_STATUS_INVALID_SYMBOL_PATH:
+            return -2;
+        case KOW_STATUS_NOT_FOUND:
+            return -4;
+        case KOW_STATUS_PATH_TOO_SMALL:
+            return -3;
+        case KOW_STATUS_OK:
+            return path_len;
+        default:
+            return KOW_STATUS_UNKNOWN_ERROR;
+    }
 }
 
 static int val_to_str(struct kowhai_node_t *node, void *data, char *dst, int dst_len)
