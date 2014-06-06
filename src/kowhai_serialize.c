@@ -123,7 +123,7 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
             chars = write_string(*dest, *dest_size, "%d", val.ui32);
             break;
         case KOW_FLOAT:
-            chars = write_string(*dest, *dest_size, "%f", val.f);
+            chars = write_string(*dest, *dest_size, "%.17g", val.f);
             break;
         default:
             return -1;
@@ -507,7 +507,7 @@ static int val_to_str(struct kowhai_node_t *node, void *data, char *dst, int dst
                 r = snprintf(dst, dst_len, "%"PRIu32, val.ui32);
                 break;
             case KOW_FLOAT:
-                r = snprintf(dst, dst_len, "%f", val.f);
+                r = snprintf(dst, dst_len, "%.17g", val.f);
                 break;
             default:
                 return -1;
