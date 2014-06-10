@@ -509,6 +509,35 @@ namespace kowhai_sharp
             }
         }
 
+        private void showNodeSymbolPathToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (selectedNode != null && selectedNode.Tag != null)
+            {
+                KowhaiNodeInfo info = (KowhaiNodeInfo)selectedNode.Tag;
+                var symbols = KowhaiTree.KowhaiNodeInfo.CreateNodeInfoSymbolList(info);
+                string pathHumanReadable = "";
+                string pathIndexes = "";
+                for (int i = 0; i < symbols.Count; i++)
+                {
+                    Kowhai.kowhai_symbol_t sym = symbols[i];
+                    pathHumanReadable += GetSymbols()[sym.parts.name];
+                    pathIndexes += sym.parts.name.ToString();
+                    if (sym.parts.array_index > 0)
+                    {
+                        pathHumanReadable += string.Format("[{0}]", sym.parts.array_index);
+                        pathIndexes += string.Format("[{0}]", sym.parts.array_index);
+                    }
+                    if (i < symbols.Count - 1)
+                    {
+                        pathHumanReadable += ", ";
+                        pathIndexes += ", ";
+                    }
+                }
+                MessageBox.Show(string.Format("Symbol Strings:\n    {0}\nSymbol Indexes:\n    {1}", pathHumanReadable, pathIndexes),
+                    "Node Symbol Path");
+            }
+        }
+
         private void loadSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             LoadSettings(this, new EventArgs());

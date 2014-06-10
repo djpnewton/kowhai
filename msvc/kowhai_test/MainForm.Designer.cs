@@ -275,9 +275,9 @@
             // 
             // btnDisconnect
             // 
-            this.btnDisconnect.Location = new System.Drawing.Point(153, 36);
+            this.btnDisconnect.Location = new System.Drawing.Point(19, 10);
             this.btnDisconnect.Name = "btnDisconnect";
-            this.btnDisconnect.Size = new System.Drawing.Size(100, 26);
+            this.btnDisconnect.Size = new System.Drawing.Size(128, 26);
             this.btnDisconnect.TabIndex = 15;
             this.btnDisconnect.Text = "Disconnect";
             this.btnDisconnect.UseVisualStyleBackColor = true;

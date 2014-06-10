@@ -1126,6 +1126,8 @@ int kowhai_deserialize_tree(char* buffer, void* scratch, int scratch_size, struc
         case -2:
         case -3:
             return KOW_STATUS_TARGET_BUFFER_TOO_SMALL;
+        default:
+            break;
     }
     *descriptor_size = desc_nodes_populated;
     *data_size = data_offset;
