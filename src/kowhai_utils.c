@@ -1,7 +1,6 @@
 #include "kowhai_utils.h"
 
 #include <string.h>
-#include <assert.h>
 
 #define KOWHAI_UTILS_ERR "KOWHAI_UTILS ERROR:"
 #define KOWHAI_UTILS_INFO "KOWHAI_UTILS INFO: "
@@ -22,8 +21,6 @@ static int compare_simple_node_contents(struct kowhai_tree_t *left, struct kowha
 
     left_size = kowhai_get_node_type_size(left->desc->type);
     right_size = kowhai_get_node_type_size(right->desc->type);
-
-    assert(left_size > 0 && right_size > 0);
 
     for (i = 0; i < left->desc->count; i++)
     {
@@ -96,10 +93,6 @@ static int diff_l2r(struct kowhai_tree_t *left, struct kowhai_tree_t *right, voi
     int ret;
     int in_union = left->desc->type == KOW_BRANCH_U_START;
     struct kowhai_tree_t left_leafs, right_leafs;
-
-    assert(left->desc->type == KOW_BRANCH_START || in_union);
-    assert(left->desc->type == right->desc->type);
-    assert(left->desc->symbol == right->desc->symbol);
 
     // init left tree (first node to compare at this level)
     left_leafs.desc = left->desc + 1;
