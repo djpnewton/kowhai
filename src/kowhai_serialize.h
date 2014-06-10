@@ -28,6 +28,18 @@ typedef int (*kowhai_get_symbol_t)(void* param, const char *symbol, int len);
 typedef int (*kowhai_node_not_found_t)(void* param, union kowhai_symbol_t *path, int path_len);
 
 /**
+ * @brief convert a string with symbol names separated by '.' delimiters and arrays '[]' into a kowhai_symbol_t array
+ * @param path_str path string to convert (symbols should be separated by '.' chars and array index designated by '[2]' for example, 0 is assumed if index not present
+ * @param path_strlen number of chars in the above string
+ * @param path destination populated with kowhai_symbol_t to make the path
+ * @param path_len size of path (number of kowhai_symbol_t allocated), updated on KOW_STATUS_OK to the number of symbols populated
+ * @param get_name_param passed to the callback below
+ * @param get_name called supplied callback, given a symbol string it returns the symbol ID
+ * @return standard kowhai returns (ie KOW_STATUS_OK on success, else error)
+ */
+int kowhai_str_to_path(const char *path_str, int path_strlen, union kowhai_symbol_t *path, int *path_len, void *get_name_param, kowhai_get_symbol_t get_name);
+
+/**
  * Convert a kowhai tree to a json ascii string
  *
  * @param tree, the kowhai tree
