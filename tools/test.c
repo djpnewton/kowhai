@@ -243,6 +243,7 @@ struct scope_data_t
 //
 
 struct settings_data_t settings;
+struct settings_data_t settings2;
 struct kowhai_tree_t settings_tree = {settings_descriptor, &settings};
 struct shadow_data_t shadow;
 struct kowhai_tree_t shadow_tree = {shadow_descriptor, &shadow};
@@ -466,6 +467,22 @@ char* get_symbol_name(void* param, uint16_t symbol)
     return symbols[symbol];
 }
 
+int get_symbol_index(void *param, const char *symbol, int len)
+{
+    int i;
+    for (i = 0; i < COUNT_OF(symbols); i++)
+    {
+        if (strncmp(symbols[i], symbol, len) == 0 && strlen(symbols[i]) == len)
+            return i;
+    }
+    return -1;
+}
+
+int ignore_missing_nodes(void* param, union kowhai_symbol_t *path, int path_len)
+{
+    return 0;
+}
+
 void serialization_tests()
 {
 #define BUF_SIZE 0x3000
@@ -473,35 +490,69 @@ void serialization_tests()
     int desc_size = BUF_SIZE;
     int data_size = BUF_SIZE;
     char* js = (char*)malloc(BUF_SIZE);
+    char* badjs = (char*)malloc(BUF_SIZE);
     char* scratch = (char*)malloc(BUF_SIZE);
     struct kowhai_node_t* desc = (struct kowhai_node_t*)malloc(BUF_SIZE);
     char* data = (char*)malloc(BUF_SIZE);
+    union kowhai_symbol_t path[32];
+    int n;
 
     printf("test kowhai_serialize/kowhai_deserialize...\n");
 
-    // kowhai_serialize
+    // kowhai_serialize (tree)
     assert(js != NULL && scratch != NULL && desc != NULL && data != NULL);
     buf_size = 100;
-    assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    assert(kowhai_serialize_tree(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
     buf_size = BUF_SIZE;
-    assert(kowhai_serialize(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_OK);
+    assert(kowhai_serialize_tree(settings_tree, js, &buf_size, NULL, get_symbol_name) == KOW_STATUS_OK);
     printf("---\n%s\n***\n", js);
     printf("js length: %d\n", (int)strlen(js));
     printf("---\n");
-    // kowhai_deserialize
+    
+    // kowhai_deserialize (tree)
     buf_size = BUF_SIZE;
     desc_size = 10;
     data_size = 10;
-    assert(kowhai_deserialize(js, scratch, 100, desc, &desc_size, data, &data_size) == KOW_STATUS_SCRATCH_TOO_SMALL);
-    assert(kowhai_deserialize(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    assert(kowhai_deserialize_tree(js, scratch, 100, desc, &desc_size, data, &data_size) == KOW_STATUS_SCRATCH_TOO_SMALL);
+    assert(kowhai_deserialize_tree(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
     desc_size = buf_size / sizeof(struct kowhai_node_t);
-    assert(kowhai_deserialize(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    assert(kowhai_deserialize_tree(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
     data_size = buf_size;
-    assert(kowhai_deserialize(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_OK);
+    assert(kowhai_deserialize_tree(js, scratch, buf_size, desc, &desc_size, data, &data_size) == KOW_STATUS_OK);
     assert(desc_size == sizeof(settings_descriptor) / sizeof(struct kowhai_node_t));
     assert(memcmp(desc, settings_descriptor, sizeof(settings_descriptor)) == 0);
     assert(data_size == sizeof(settings));
     assert(memcmp(data, &settings, sizeof(settings)) == 0);
+
+    // kowhai serialize (nodes)
+    buf_size = 10; // test dst buffer too small
+    assert(kowhai_serialize_nodes(js, &buf_size, &settings_tree, path, COUNT_OF(path), NULL, get_symbol_name) == KOW_STATUS_TARGET_BUFFER_TOO_SMALL);
+    buf_size = BUF_SIZE; // test path too small
+    assert(kowhai_serialize_nodes(js, &buf_size, &settings_tree, path, 3, NULL, get_symbol_name) == KOW_STATUS_PATH_TOO_SMALL);
+    assert(kowhai_serialize_nodes(js, &buf_size, &settings_tree, path, COUNT_OF(path), NULL, get_symbol_name) == KOW_STATUS_OK);
+    printf("---\n%s\n***\n", js);
+    printf("js length: %d\n", (int)strlen(js));
+    printf("---\n");
+
+    // kowhai deserialize (nodes)
+    n = sprintf(badjs, "{\"path\": \"Settings.Oven.Gain\", \"type\": 114, \"count\": 1, \"tag\": 0, \"value\": 999}\n"); // test a path that does not exist in the dst_tree
+    assert(kowhai_deserialize_nodes(badjs, n, &settings_tree, path, COUNT_OF(path), scratch, BUF_SIZE, NULL, get_symbol_index, NULL, NULL) == KOW_STATUS_INVALID_SYMBOL_PATH);
+    n = sprintf(badjs, "{\"path\": \"Settings.Oven.Gain\", \"type\": 114, \"count\": 1, \"tag\": 0, \"value\": 999}\n"); // test a path that does not exist in the dst_tree, but ignore the error
+    assert(kowhai_deserialize_nodes(badjs, n, &settings_tree, path, COUNT_OF(path), scratch, BUF_SIZE, NULL, get_symbol_index, NULL, ignore_missing_nodes) == KOW_STATUS_OK);
+    n = sprintf(badjs, "{\"path\": \"Settings.Oven.Gain[5\", \"type\": 114, \"count\": 1, \"tag\": 0, \"value\": 999}\n"); // test a mangled path
+    assert(kowhai_deserialize_nodes(badjs, n, &settings_tree, path, COUNT_OF(path), scratch, BUF_SIZE, NULL, get_symbol_index, NULL, NULL) == KOW_STATUS_INVALID_SYMBOL_PATH);
+    n = sprintf(badjs, "{\"path\": \"Settings.Oven.Moo\", \"type\": 114, \"count\": 1, \"tag\": 0, \"value\": 999}\n"); // test a symbol that we dont know
+    assert(kowhai_deserialize_nodes(badjs, n, &settings_tree, path, COUNT_OF(path), scratch, BUF_SIZE, NULL, get_symbol_index, NULL, NULL) == KOW_STATUS_NOT_FOUND);
+    assert(kowhai_deserialize_nodes(js, buf_size, &settings_tree, path, 3, scratch, BUF_SIZE, NULL, get_symbol_index, NULL, NULL) == KOW_STATUS_PATH_TOO_SMALL);
+    assert(kowhai_deserialize_nodes(js, buf_size, &settings_tree, path, COUNT_OF(path), scratch, 1, NULL, get_symbol_index, NULL, NULL) == KOW_STATUS_SCRATCH_TOO_SMALL);
+    settings2 = settings;
+    memset(&settings, 0, sizeof(settings));
+    assert(kowhai_deserialize_nodes(js, buf_size, &settings_tree, path, COUNT_OF(path), scratch, BUF_SIZE, NULL, get_symbol_index, NULL, NULL) == KOW_STATUS_OK);
+    assert(settings.flux_capacitor[0].frequency == settings2.flux_capacitor[0].frequency);
+    assert(settings.flux_capacitor[FLUX_CAP_COUNT - 1].coefficient[COEFF_COUNT - 1] == settings2.flux_capacitor[FLUX_CAP_COUNT - 1].coefficient[COEFF_COUNT - 1]);
+    assert(settings.union_container[UNION_COUNT - 1].union_[UNION_COUNT - 1].beep == settings2.union_container[UNION_COUNT - 1].union_[UNION_COUNT - 1].beep);
+    assert(memcmp(settings.union_container[UNION_COUNT - 1].union_[UNION_COUNT - 1].owner, settings2.union_container[UNION_COUNT - 1].union_[UNION_COUNT - 1].owner, OWNER_MAX_LEN) == 0);
+    assert(settings.check == settings2.check);
 
     printf(" passed!\n");
 }
