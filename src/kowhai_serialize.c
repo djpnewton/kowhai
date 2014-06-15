@@ -686,6 +686,8 @@ static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, s
                     r = serialize_nodes(root, dst, dst_len, node + 1, src_data, path, ipath + 1, path_len, get_name_param, get_name, 1, level + 1);
                     if (r < 0)
                         return r;
+                    if (r >= dst_len)
+                        return count + r;
                 }
                 
                 // union type over
@@ -726,6 +728,8 @@ static int serialize_nodes(struct kowhai_node_t *root, char *dst, int dst_len, s
                         r = serialize_nodes(root, dst, dst_len, node + 1, src_data, path, ipath + 1, path_len, get_name_param, get_name, 0, level + 1);
                         if (r < 0)
                             return r;
+                        if (r >= dst_len)
+                            return count + r;
                         rmax = r;
 
                         // push pointer on if this is not a union
