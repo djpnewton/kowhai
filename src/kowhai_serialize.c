@@ -413,7 +413,8 @@ int kowhai_str_to_path(const char *path_str, int path_strlen, union kowhai_symbo
     while (sym_start < init + path_strlen)
     {
         // find next symbol
-        sym_end = strnchr(sym_start, path_strlen, '.');
+        int n = path_strlen - (sym_start - init);
+        sym_end = strnchr(sym_start, n, '.');
         if (sym_end == NULL)
             sym_end = init + path_strlen; // so the rest of the string
 
