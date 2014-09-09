@@ -1233,7 +1233,6 @@ static int process_nodes_token(jsmn_parser *parser, int src_size, struct kowhai_
                 
                 t++;
                 tok++;
-                path[path_syms - 1].parts.array_index = i;
 
                 switch (type)
                 {
@@ -1265,6 +1264,7 @@ static int process_nodes_token(jsmn_parser *parser, int src_size, struct kowhai_
                 }
                 if (res != KOW_STATUS_OK)
                     return -2;
+                path[path_syms - 1].parts.array_index++;
             }
         }
 
