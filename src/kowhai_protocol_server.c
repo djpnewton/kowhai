@@ -8,7 +8,7 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_protocol_server_tree
     int i;
     for (i = 0; i < num; i++)
     {
-        struct kowhai_node_t* desc = tree_list[i].descriptor;
+        const struct kowhai_node_t* desc = tree_list[i].descriptor;
         tree_list[i].descriptor_size = 0;
         if (desc != NULL)
         {
@@ -34,7 +34,7 @@ void kowhai_server_init_tree_id_list(struct kowhai_protocol_server_tree_item_t* 
         tree_id_list[i] = tree_list[i].list_id;
 }
 
-void kowhai_server_init_function_id_list(struct kowhai_protocol_server_function_item_t* function_list, int num, struct kowhai_protocol_id_list_item_t* function_id_list)
+void kowhai_server_init_function_id_list(const struct kowhai_protocol_server_function_item_t* function_list, int num, struct kowhai_protocol_id_list_item_t* function_id_list)
 {
     int i;
     for (i = 0; i < num; i++)
@@ -53,7 +53,7 @@ void kowhai_server_init(struct kowhai_protocol_server_t* server,
     struct kowhai_protocol_server_tree_item_t* tree_list,
     struct kowhai_protocol_id_list_item_t* tree_id_list,
     int function_list_count,
-    struct kowhai_protocol_server_function_item_t* function_list,
+    const struct kowhai_protocol_server_function_item_t* function_list,
     struct kowhai_protocol_id_list_item_t* function_id_list,
     kowhai_function_called_t function_called,
     void* function_called_param,
@@ -107,7 +107,7 @@ struct kowhai_tree_t _populate_tree(struct kowhai_protocol_server_t* server, uin
     if (tree_id != KOW_UNDEFINED_SYMBOL &&
         _get_tree_index(server, tree_id, &index))
     {
-        tree.desc = server->tree_list[index].descriptor;
+        tree.desc = (struct kowhai_node_t *)server->tree_list[index].descriptor;
         tree.data = server->tree_list[index].data;
     }
     return tree;
