@@ -34,7 +34,7 @@ void kowhai_server_init_tree_id_list(struct kowhai_protocol_server_tree_item_t* 
         tree_id_list[i] = tree_list[i].list_id;
 }
 
-void kowhai_server_init_function_id_list(struct kowhai_protocol_server_function_item_t* function_list, int num, struct kowhai_protocol_id_list_item_t* function_id_list)
+void kowhai_server_init_function_id_list(const struct kowhai_protocol_server_function_item_t* function_list, int num, struct kowhai_protocol_id_list_item_t* function_id_list)
 {
     int i;
     for (i = 0; i < num; i++)
@@ -53,7 +53,7 @@ void kowhai_server_init(struct kowhai_protocol_server_t* server,
     struct kowhai_protocol_server_tree_item_t* tree_list,
     struct kowhai_protocol_id_list_item_t* tree_id_list,
     int function_list_count,
-    struct kowhai_protocol_server_function_item_t* function_list,
+    const struct kowhai_protocol_server_function_item_t* function_list,
     struct kowhai_protocol_id_list_item_t* function_id_list,
     kowhai_function_called_t function_called,
     void* function_called_param,
