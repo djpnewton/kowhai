@@ -8,7 +8,7 @@ void kowhai_server_init_tree_descriptor_sizes(struct kowhai_protocol_server_tree
     int i;
     for (i = 0; i < num; i++)
     {
-        struct kowhai_node_t* desc = tree_list[i].descriptor;
+        const struct kowhai_node_t* desc = tree_list[i].descriptor;
         tree_list[i].descriptor_size = 0;
         if (desc != NULL)
         {
@@ -107,7 +107,7 @@ struct kowhai_tree_t _populate_tree(struct kowhai_protocol_server_t* server, uin
     if (tree_id != KOW_UNDEFINED_SYMBOL &&
         _get_tree_index(server, tree_id, &index))
     {
-        tree.desc = server->tree_list[index].descriptor;
+        tree.desc = (struct kowhai_node_t *)server->tree_list[index].descriptor;
         tree.data = server->tree_list[index].data;
     }
     return tree;

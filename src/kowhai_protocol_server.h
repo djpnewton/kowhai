@@ -50,7 +50,7 @@ typedef int (*kowhai_function_called_t)(pkowhai_protocol_server_t server, void* 
 struct kowhai_protocol_server_tree_item_t
 {
     struct kowhai_protocol_id_list_item_t list_id;
-    struct kowhai_node_t* descriptor;
+    const struct kowhai_node_t * descriptor;
     size_t descriptor_size;
     void* data;
 };
