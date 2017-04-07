@@ -102,7 +102,7 @@ int add_value(char** dest, size_t* dest_size, int* current_offset, uint16_t node
     switch (node_type)
     {
         case KOW_CHAR:
-            chars = write_string(*dest, *dest_size, "%d", val.c);
+            chars = write_string(*dest, *dest_size, "%c", val.c);
             break;
         case KOW_INT8:
             chars = write_string(*dest, *dest_size, "%d", val.i8);
@@ -475,6 +475,23 @@ static int val_to_str(struct kowhai_node_t *node, void *data, char *dst, int dst
     int node_type_size = kowhai_get_node_type_size(node->type);
     union any_type_t val;
 
+    // handle special string case
+    if (node->type == KOW_CHAR)
+    {
+        r = snprintf(dst, dst_len, "%.*s", node->count, (char *)data);
+
+        if (r < 0)
+            return r; // real error
+        if (r > dst_len)
+            return count + r; // dst not long enough
+        dst += r;
+        count += r;
+        dst_len -= r;
+
+        return count;
+    }
+
+    // all other cases
     for (i = 0; i < node->count; i++)
     {
         // some systems require that the src buffer to be aligned
@@ -485,10 +502,6 @@ static int val_to_str(struct kowhai_node_t *node, void *data, char *dst, int dst
 
         switch (node->type)
         {
-            case KOW_CHAR:
-                ///@todo handle this better so it looks like a proper string !
-                r = snprintf(dst, dst_len, "%"PRIi8, (uint8_t)val.c);
-                break;
             case KOW_INT8:
                 r = snprintf(dst, dst_len, "%"PRIi8, val.i8);
                 break;
@@ -603,6 +616,8 @@ static int print_node_type(struct kowhai_node_t *root, char *dst, int dst_len, s
     // print the value(s)
     if (node->count == 1)
         r = snprintf(dst, dst_len, "\""VALUE"\": ");
+    else if (node->type == KOW_CHAR)
+        r = snprintf(dst, dst_len, "\""VALUE"\": \"");
     else
         r = snprintf(dst, dst_len, "\""VALUE"\": [");
     if (r < 0)
@@ -624,6 +639,8 @@ static int print_node_type(struct kowhai_node_t *root, char *dst, int dst_len, s
 
     if (node->count == 1)
         r = snprintf(dst, dst_len, "},\n");
+    else if (node->type == KOW_CHAR)
+        r = snprintf(dst, dst_len, "\"},\n");
     else
         r = snprintf(dst, dst_len, "]},\n");
     if (r < 0)
@@ -962,12 +979,27 @@ static int process_tree_token(jsmn_parser* parser, int token_index, struct kowha
                 else if (token_string_match(parser, tok, VALUE))
                 {
                     int k;
+                    int size = kowhai_get_node_type_size(desc->type);
                     i++;
+
+                    // skip the [ or " wrappers
                     if (desc->count > 1)
                     {
                         token_index++;
                         tok++;
                     }
+
+                    // special string case
+                    if (desc->type == KOW_CHAR)
+                    {
+                        token_index++;
+                        memcpy(data, tok, desc->count * size);
+                        data = (char*)data + desc->count * size;
+                        data_size -= desc->count * desc->count * size;
+                        *data_offset += desc->count * size;
+                        continue;
+                    }
+
                     for (k = 0; k < desc->count; k++)
                     {
                         // on some systems casting unaligned memory (ie the data pointer) to 
@@ -976,7 +1008,6 @@ static int process_tree_token(jsmn_parser* parser, int token_index, struct kowha
                         // memcpy from an aligned buffer (value) to an unaligned buffer (data so
                         // it works as raw byte moves, see below)
                         union any_type_t val;
-                        int size = kowhai_get_node_type_size(desc->type);
                         if (size < 0)
                             return -1;
                         token_index++;
@@ -985,7 +1016,6 @@ static int process_tree_token(jsmn_parser* parser, int token_index, struct kowha
                         {
                             case KOW_UINT8:
                             case KOW_INT8:
-                            case KOW_CHAR:
                             {
                                 //TODO: could probably call get_token_uint32 instead and remove get_token_uint16 (needs testing)
                                 res = get_token_uint8(parser, tok, &val.ui8);
@@ -1209,6 +1239,7 @@ static int process_nodes_token(jsmn_parser *parser, int src_size, struct kowhai_
             int i;
             int N;
             int path_syms = 0;
+            int size = kowhai_get_node_type_size(type);
 
             ///@todo check node types match
 
@@ -1216,8 +1247,8 @@ static int process_nodes_token(jsmn_parser *parser, int src_size, struct kowhai_
             path_syms = str_to_path(parser, path_tok, path, path_len, get_name_param, get_name);
             if (path_syms < 0)
                 return path_syms;
-            
-            // write each value item one by one to the dst_tree
+
+            // skip the [ or " wrappers for array like objects
             if (count > 1)
             {
                 t++;
@@ -1226,11 +1257,38 @@ static int process_nodes_token(jsmn_parser *parser, int src_size, struct kowhai_
             }
             else
                 N = 1;
+
+            // special string case
+            if (type == KOW_CHAR)
+            {
+                char null_buf[1] = {0,};
+                int len = MIN(tok->end - tok->start + 1, count) * size;
+                res = kowhai_write(dst_tree, path_syms, path, 0, (void *)(parser->js + tok->start), len);
+                if (res == KOW_STATUS_INVALID_SYMBOL_PATH)
+                {
+                    if ((not_found != NULL) && (not_found(not_found_param, path, path_syms) == 0))
+                        res = KOW_STATUS_OK;
+                }
+                if (res != KOW_STATUS_OK)
+                    return -2;
+                // null terminate all strings !
+                res = kowhai_write(dst_tree, path_syms, path, len - size, (void *)null_buf, sizeof(null_buf));
+                if (res == KOW_STATUS_INVALID_SYMBOL_PATH)
+                {
+                    if ((not_found != NULL) && (not_found(not_found_param, path, path_syms) == 0))
+                        res = KOW_STATUS_OK;
+                }
+                if (res != KOW_STATUS_OK)
+                    return -2;
+                t++;
+                continue;
+            }
+
+            // process other items 1 value at a time
             for (i = 0; i < N; i++)
             {
                 union any_type_t val;
-                int size = kowhai_get_node_type_size(type);
-                
+
                 t++;
                 tok++;
 
